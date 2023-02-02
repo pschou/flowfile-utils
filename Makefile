@@ -23,4 +23,3 @@ readme:
 	echo -e '```\n\n```\n# nifi-diode -h' >> README.md
 	./nifi-diode -h 2>> README.md
 	echo -e '```' >> README.md
-	cat TAIL.md >> README.md

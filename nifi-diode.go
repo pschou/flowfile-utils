@@ -86,5 +86,11 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 	// back with an error and this in turn will be passed back to the sender
 	// side.  All this is done without allowing any bytes to transfer from the
 	// reciever side to the sender side.
-	return hs.Send(f)
+	sendConfig := &flowfile.SendConfig{}
+	if xForwardFor := r.Header.Get("X-Forwarded-For"); xForwardFor != "" {
+		sendConfig.Header.Set("X-Forwarded-For", r.RemoteAddr+","+xForwardFor)
+	} else {
+		sendConfig.Header.Set("X-Forwarded-For", r.RemoteAddr)
+	}
+	return hs.Send(f, sendConfig)
 }

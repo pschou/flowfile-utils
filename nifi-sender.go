@@ -61,13 +61,13 @@ func main() {
 			}
 			for i, ff := range segments {
 				fmt.Printf("%d) %#v\n", i, ff.Attrs)
-				err = hs.Send(ff)
+				err = hs.Send(ff, nil)
 				if err != nil {
 					log.Panic(err)
 				}
 			}
 		} else {
-			err = hs.Send(f)
+			err = hs.Send(f, nil)
 			if err != nil {
 				log.Panic(err)
 			}

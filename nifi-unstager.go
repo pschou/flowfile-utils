@@ -100,7 +100,7 @@ func main() {
 					f := flowfile.New(fh, fileInfo.Size())
 					f.Attrs = a
 
-					err = hs.Send(f)
+					err = hs.Send(f, nil)
 					if err != nil {
 						log.Println("Error sending file", err)
 						return
