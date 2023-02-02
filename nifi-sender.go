@@ -29,13 +29,15 @@ func main() {
 		loadTLS()
 	}
 
+	// Connect to the NiFi server and establish a session
 	log.Println("creating sender...")
 	hs, err := flowfile.NewHTTPSender(*url, http.DefaultClient)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	for _, filename := range os.Args[1:] {
+	// Loop over the files sending them one at a time
+	for _, filename := range flag.Args() {
 		dn, fn := path.Split(filename)
 		if dn == "" {
 			dn = "./"
@@ -52,13 +54,20 @@ func main() {
 		f.Attrs.Set("modtime", fileInfo.ModTime().Format(time.RFC3339))
 		f.AddChecksum("SHA256")
 
-		segments, err := flowfile.Segment(f, 7)
-		if err != nil {
-			log.Panic(err)
-		}
-		for i, ff := range segments {
-			fmt.Printf("%d) %#v\n", i, ff.Attrs)
-			err = hs.Send(ff)
+		if hs.MaxPartitionSize > 0 {
+			segments, err := flowfile.SegmentBySize(f, int64(hs.MaxPartitionSize))
+			if err != nil {
+				log.Panic(err)
+			}
+			for i, ff := range segments {
+				fmt.Printf("%d) %#v\n", i, ff.Attrs)
+				err = hs.Send(ff)
+				if err != nil {
+					log.Panic(err)
+				}
+			}
+		} else {
+			err = hs.Send(f)
 			if err != nil {
 				log.Panic(err)
 			}

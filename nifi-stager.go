@@ -36,11 +36,12 @@ func main() {
 
 	ffReciever := flowfile.HTTPReciever{Handler: post}
 	http.Handle(*listenPath, ffReciever)
-	log.Println("Listening on", *listen)
 	if *enableTLS {
+		log.Println("Listening with HTTPS on", *listen, "at", *listenPath)
 		server := &http.Server{Addr: *listen, TLSConfig: tlsConfig}
 		log.Fatal(server.ListenAndServeTLS(*certFile, *keyFile))
 	} else {
+		log.Println("Listening with HTTP on", *listen, "at", *listenPath)
 		log.Fatal(http.ListenAndServe(*listen, nil))
 	}
 }

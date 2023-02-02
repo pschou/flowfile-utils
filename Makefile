@@ -11,7 +11,7 @@ build:
 	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o nifi-diode nifi-diode.go lib-*.go
 
 readme:
-	cp README.head README.md
+	cp HEAD.md README.md
 	echo -e '\n```\n# nifi-stager -h' >> README.md
 	./nifi-stager -h 2>> README.md
 	echo -e '```\n\n```\n# nifi-sender -h' >> README.md
@@ -23,3 +23,4 @@ readme:
 	echo -e '```\n\n```\n# nifi-diode -h' >> README.md
 	./nifi-diode -h 2>> README.md
 	echo -e '```' >> README.md
+	cat TAIL.md >> README.md
