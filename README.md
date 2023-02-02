@@ -115,7 +115,7 @@ target$ ./nifi-reciever -path output2
 
 Setup the diode to make the connections in-between:
 ```
-diode$ ./nifi-diode -ff-max-size 10MB
+diode$ ./nifi-diode -segment-max-size 10MB
 2023/02/02 14:58:28 creating sender...
 2023/02/02 14:58:28 Listening with HTTP on :8082 at /contentListener
 ```
@@ -137,7 +137,7 @@ infile_rnd.dat
 
 ```
 # nifi-stager -h
-NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230202.1524)
+NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230202.1526)
 
 This utility is intended to take input over a NiFi compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
@@ -162,7 +162,7 @@ Usage of ./nifi-stager:
 
 ```
 # nifi-sender -h
-NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230202.1524)
+NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230202.1526)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote NiFi server for processing.
@@ -182,7 +182,7 @@ Usage of ./nifi-sender:
 
 ```
 # nifi-unstager -h
-NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230202.1524)
+NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230202.1526)
 
 This utility is intended to take a directory of NiFi flow files and ship them
 out to a listening NiFi endpoint while maintaining the same set of attribute
@@ -203,7 +203,7 @@ Usage of ./nifi-unstager:
 
 ```
 # nifi-reciever -h
-NiFi Reciever (github.com/pschou/flowfile-utils, version: 0.1.20230202.1524)
+NiFi Reciever (github.com/pschou/flowfile-utils, version: 0.1.20230202.1526)
 
 This utility is intended to listen for flow files on a NifI compatible port and
 then parse these files and drop them to disk for usage elsewhere.
@@ -227,7 +227,7 @@ Usage of ./nifi-reciever:
 
 ```
 # nifi-diode -h
-NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230202.1524)
+NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230202.1526)
 
 This utility is intended to take input over a NiFi compatible port and pass all
 FlowFiles into another NiFi port while updating the attributes with the
@@ -238,8 +238,6 @@ Usage of ./nifi-diode:
     	A PEM eoncoded CA's certificate file. (default "someCertCAFile")
   -cert string
     	A PEM eoncoded certificate file. (default "someCertFile")
-  -ff-max-size string
-    	Set a maximum partition size for partitioning files to send
   -key string
     	A PEM encoded private key file. (default "someKeyFile")
   -listen string
@@ -248,6 +246,8 @@ Usage of ./nifi-diode:
     	Where to expect FlowFiles to be posted (default "/contentListener")
   -path string
     	Directory which to scan for FlowFiles (default "stager")
+  -segment-max-size string
+    	Set a maximum partition size for partitioning files to send
   -tls
     	Enforce TLS for secure transport on incoming connections
   -update-chain

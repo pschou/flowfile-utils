@@ -25,7 +25,7 @@ var (
 	enableTLS  = flag.Bool("tls", false, "Enforce TLS for secure transport on incoming connections")
 	url        = flag.String("url", "http://localhost:8080/contentListener", "Where to send the files from staging")
 	chain      = flag.Bool("update-chain", true, "Add the client certificate to the connection-chain-# header")
-	maxSize    = flag.String("ff-max-size", "", "Set a maximum partition size for partitioning files to send")
+	maxSize    = flag.String("segment-max-size", "", "Set a maximum partition size for partitioning files to send")
 	//ecc        = flag.Float("ff-ecc", 0, "Set the amount of error correction to be sent (decimal percent)")
 
 	hs *flowfile.HTTPSender

@@ -115,7 +115,7 @@ target$ ./nifi-reciever -path output2
 
 Setup the diode to make the connections in-between:
 ```
-diode$ ./nifi-diode -ff-max-size 10MB
+diode$ ./nifi-diode -segment-max-size 10MB
 2023/02/02 14:58:28 creating sender...
 2023/02/02 14:58:28 Listening with HTTP on :8082 at /contentListener
 ```
