@@ -19,7 +19,6 @@ FlowFiles into another NiFi port while updating the attributes with the
 certificate and chaining any previous certificates.`
 
 var (
-	basePath   = flag.String("path", "stager", "Directory which to scan for FlowFiles")
 	listen     = flag.String("listen", ":8082", "Where to listen to incoming connections (example 1.2.3.4:8080)")
 	listenPath = flag.String("listenPath", "/contentListener", "Where to expect FlowFiles to be posted")
 	enableTLS  = flag.Bool("tls", false, "Enforce TLS for secure transport on incoming connections")
