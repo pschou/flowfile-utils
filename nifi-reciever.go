@@ -36,7 +36,8 @@ func main() {
 	http.Handle("/contentListener", ffReciever)
 	log.Println("Listening on", listen)
 	if *enableTLS {
-		log.Fatal(http.ListenAndServeTLS(*listen, *certFile, *keyFile, nil))
+		server := &http.Server{Addr: *listen, TLSConfig: tlsConfig}
+		log.Fatal(server.ListenAndServeTLS(*certFile, *keyFile))
 	} else {
 		log.Fatal(http.ListenAndServe(*listen, nil))
 	}

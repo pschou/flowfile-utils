@@ -10,3 +10,5 @@ NiFi-Stager - take a NiFi feed and temporarily store them to disk for processing
 
 NiFi-Unstager - take a directory of staged files and send them to a NiFi endpoint
 
+NiFi-Diode - takes a NiFi feed and forwards the FlowFiles to another NiFi (assures one direction)
+

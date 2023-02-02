@@ -8,6 +8,7 @@ build:
 	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o nifi-sender nifi-sender.go lib-*.go
 	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o nifi-unstager nifi-unstager.go lib-*.go
 	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o nifi-reciever nifi-reciever.go lib-*.go
+	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o nifi-diode nifi-diode.go lib-*.go
 
 readme:
 	cp README.head README.md
@@ -19,4 +20,6 @@ readme:
 	./nifi-unstager -h 2>> README.md
 	echo -e '```\n\n```\n# nifi-reciever -h' >> README.md
 	./nifi-reciever -h 2>> README.md
+	echo -e '```\n\n```\n# nifi-diode -h' >> README.md
+	./nifi-diode -h 2>> README.md
 	echo -e '```' >> README.md
