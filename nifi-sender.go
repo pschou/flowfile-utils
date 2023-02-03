@@ -112,6 +112,7 @@ func sendFile(filename string, fileInfo os.FileInfo) (err error) {
 	f.Attrs.Set("filename", fn)
 	f.Attrs.Set("modtime", fileInfo.ModTime().Format(time.RFC3339))
 	f.AddChecksum("SHA256")
+	f.Attrs.GenerateUUID()
 
 	//fmt.Printf("hs = %#v\n", hs)
 
