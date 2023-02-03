@@ -66,6 +66,7 @@ func main() {
 						f.Attrs.Set("filename", fn)
 						f.Attrs.Set("kind", "dir")
 						f.Attrs.Set("modtime", fileInfo.ModTime().Format(time.RFC3339))
+						f.Attrs.GenerateUUID()
 						if *verbose {
 							adat, _ := json.Marshal(f.Attrs)
 							fmt.Printf("  [dir] %s\n", adat)
