@@ -76,8 +76,8 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 	filename := f.Attrs.Get("filename")
 	uuid := f.Attrs.Get("uuid")
 	output := path.Join(dir, uuid+"-"+filename)
-	outputTemp := path.Join(dir, uuid+".attrs_working")
-	outputAttrs := path.Join(dir, uuid+".attrs_json")
+	outputTemp := path.Join(dir, uuid+".attrs_tmp")
+	outputAttrs := path.Join(dir, uuid+".attrs")
 	var fh, fha *os.File
 	fmt.Println("  Recieving nifi file", filename, "size", f.Size(), "uuid", uuid)
 	if *verbose {
@@ -99,6 +99,9 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 	_, err = io.Copy(fh, f)
 	if err != nil {
 		return err
+	}
+	if f.Attrs.Get("kind") == "dir" {
+		return nil
 	}
 	return f.Verify() // Return the verification of the checksum
 }
