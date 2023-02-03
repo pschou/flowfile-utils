@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/inhies/go-bytesize"
 	"github.com/pschou/go-flowfile"
@@ -26,6 +27,7 @@ var (
 	chain      = flag.Bool("update-chain", true, "Add the client certificate to the connection-chain-# header")
 	maxSize    = flag.String("segment-max-size", "", "Set a maximum partition size for partitioning files to send")
 	//ecc        = flag.Float("ff-ecc", 0, "Set the amount of error correction to be sent (decimal percent)")
+	retries = flag.Int("retries", 3, "Retries after failing to send a file")
 
 	hs *flowfile.HTTPSender
 )
@@ -91,5 +93,15 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 	} else {
 		sendConfig.Header.Set("X-Forwarded-For", r.RemoteAddr)
 	}
-	return hs.Send(f, sendConfig)
+	err = hs.Send(f, sendConfig)
+
+	// Try a few more times before we give up
+	for i := 0; err != nil && i < *retries; i++ {
+		time.Sleep(10 * time.Second)
+		err = hs.Handshake()
+		if err != nil {
+			err = hs.Send(f, nil)
+		}
+	}
+	return err
 }

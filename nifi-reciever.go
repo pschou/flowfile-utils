@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -48,7 +49,8 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 	dir := filepath.Clean(f.Attrs.Get("path"))
 	filename := f.Attrs.Get("filename")
 	fmt.Println("  Recieving nifi file", path.Join(dir, filename), "size", f.Size())
-	fmt.Printf("    %#v\n", f.Attrs)
+	adat, _ := json.Marshal(f.Attrs)
+	fmt.Printf("    %s\n", adat)
 
 	_, err = f.Save(*basePath)
 	return

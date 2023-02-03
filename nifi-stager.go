@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -61,20 +62,24 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 	filename := f.Attrs.Get("filename")
 	uuid := f.Attrs.Get("uuid")
 	output := path.Join(dir, uuid+"-"+filename)
-	outputAttrs := path.Join(dir, uuid+".attrs")
+	outputTemp := path.Join(dir, uuid+".attrs_working")
+	outputAttrs := path.Join(dir, uuid+".attrs_json")
 	var fh, fha *os.File
 	fmt.Println("  Recieving nifi file", filename, "size", f.Size(), "uuid", uuid)
-	fmt.Printf("  %#v\n", f.Attrs)
+	adat, _ := json.Marshal(f.Attrs)
+	fmt.Printf("    %s\n", adat)
+
 	if fh, err = os.Create(output); err != nil {
 		return err
 	}
 	defer fh.Close() // Make sure file is closed at the end of the function
-	if fha, err = os.Create(outputAttrs); err != nil {
+	if fha, err = os.Create(outputTemp); err != nil {
 		return err
 	}
-	f.Attrs.Marshall(fha)
+	f.Attrs.Marshal(fha)
 	binary.Write(fha, binary.BigEndian, uint64(f.Size()))
 	fha.Close()
+	os.Rename(outputTemp, outputAttrs)
 	_, err = io.Copy(fh, f)
 	if err != nil {
 		return err

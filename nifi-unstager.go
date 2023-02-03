@@ -22,6 +22,7 @@ headers.`
 var (
 	basePath = flag.String("path", "stager", "Directory which to scan for FlowFiles")
 	url      = flag.String("url", "http://localhost:8080/contentListener", "Where to send the files from staging")
+	retries  = flag.Int("retries", 3, "Retries after failing to send a file")
 )
 
 func main() {
@@ -101,6 +102,16 @@ func main() {
 					f.Attrs = a
 
 					err = hs.Send(f, nil)
+
+					// Try a few more times before we give up
+					for i := 0; err != nil && i < *retries; i++ {
+						time.Sleep(10 * time.Second)
+						err = hs.Handshake()
+						if err != nil {
+							err = hs.Send(f, nil)
+						}
+					}
+
 					if err != nil {
 						log.Println("Error sending file", err)
 						return
