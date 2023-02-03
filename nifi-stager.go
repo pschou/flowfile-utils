@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/inhies/go-bytesize"
 	"github.com/pschou/go-flowfile"
 )
 
@@ -27,6 +28,7 @@ var (
 	listen     = flag.String("listen", ":8080", "Where to listen to incoming connections (example 1.2.3.4:8080)")
 	listenPath = flag.String("listenPath", "/contentListener", "Where to expect FlowFiles to be posted")
 	enableTLS  = flag.Bool("tls", false, "Enable TLS for secure transport")
+	maxSize    = flag.String("segment-max-size", "", "Set a maximum partition size for partitioning files to send")
 )
 
 func main() {
@@ -35,7 +37,19 @@ func main() {
 		loadTLS()
 	}
 
+	fmt.Println("output set to", *basePath)
+
+	// Settings for the flow file reciever
 	ffReciever := flowfile.HTTPReciever{Handler: post}
+	if *maxSize != "" {
+		if bs, err := bytesize.Parse(*maxSize); err != nil {
+			log.Fatal("Unable to parse max-size", err)
+		} else {
+			log.Println("Setting max-size to", bs)
+			ffReciever.MaxPartitionSize = int(uint64(bs))
+		}
+	}
+
 	http.Handle(*listenPath, ffReciever)
 	if *enableTLS {
 		log.Println("Listening with HTTPS on", *listen, "at", *listenPath)
@@ -54,7 +68,7 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 	}
 	dir = path.Join(*basePath, dir)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		if err := os.Mkdir(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0755); err != nil {
 			return err
 		}
 	}
@@ -66,8 +80,10 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 	outputAttrs := path.Join(dir, uuid+".attrs_json")
 	var fh, fha *os.File
 	fmt.Println("  Recieving nifi file", filename, "size", f.Size(), "uuid", uuid)
-	adat, _ := json.Marshal(f.Attrs)
-	fmt.Printf("    %s\n", adat)
+	if *verbose {
+		adat, _ := json.Marshal(f.Attrs)
+		fmt.Printf("    %s\n", adat)
+	}
 
 	if fh, err = os.Create(output); err != nil {
 		return err

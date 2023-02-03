@@ -1,11 +1,14 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
+	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -42,9 +45,10 @@ func main() {
 	ffReciever := flowfile.HTTPReciever{Handler: post}
 	if *maxSize != "" {
 		if bs, err := bytesize.Parse(*maxSize); err != nil {
-			log.Panic("Unable to parse max-size", err)
+			log.Fatal("Unable to parse max-size", err)
 		} else {
-			ffReciever.MaxPartitionSize = uint64(bs)
+			log.Println("Setting max-size to", bs)
+			ffReciever.MaxPartitionSize = int(uint64(bs))
 		}
 	}
 
@@ -53,7 +57,16 @@ func main() {
 	var err error
 	hs, err = flowfile.NewHTTPSender(*url, http.DefaultClient)
 	if err != nil {
-		log.Panic(err)
+		log.Fatal(err)
+	}
+	if hs.MaxPartitionSize > 0 || ffReciever.MaxPartitionSize > 0 {
+		if ffReciever.MaxPartitionSize == 0 ||
+			(hs.MaxPartitionSize > 0 && hs.MaxPartitionSize < ffReciever.MaxPartitionSize) {
+			log.Println("Setting max-size to", hs.MaxPartitionSize)
+			ffReciever.MaxPartitionSize = hs.MaxPartitionSize
+		} else {
+			log.Println("Keeping max-size at", ffReciever.MaxPartitionSize)
+		}
 	}
 
 	// Open the local port to listen for incoming connections
@@ -89,14 +102,30 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 	// reciever side to the sender side.
 	sendConfig := &flowfile.SendConfig{}
 	if xForwardFor := r.Header.Get("X-Forwarded-For"); xForwardFor != "" {
-		sendConfig.Header.Set("X-Forwarded-For", r.RemoteAddr+","+xForwardFor)
+		sendConfig.SetHeader("X-Forwarded-For", r.RemoteAddr+","+xForwardFor)
 	} else {
-		sendConfig.Header.Set("X-Forwarded-For", r.RemoteAddr)
+		sendConfig.SetHeader("X-Forwarded-For", r.RemoteAddr)
 	}
+	filename := f.Attrs.Get("filename")
+
+	if id := f.Attrs.Get("segment-index"); id != "" {
+		i, _ := strconv.Atoi(id)
+		fmt.Printf("  Dioding segment %d of %s of %s for %s\n", i+1,
+			f.Attrs.Get("segment-count"), path.Join(dir, filename), r.RemoteAddr)
+	} else {
+		fmt.Printf("  Dioding file %s for %s\n", path.Join(dir, filename), r.RemoteAddr)
+	}
+
+	if *verbose {
+		adat, _ := json.Marshal(f.Attrs)
+		fmt.Printf("    %s\n", adat)
+	}
+
 	err = hs.Send(f, sendConfig)
 
 	// Try a few more times before we give up
-	for i := 0; err != nil && i < *retries; i++ {
+	for i := 1; err != nil && i < *retries; i++ {
+		log.Println("  Upstream not accepting", filename, "retrying", i, "of", *retries)
 		time.Sleep(10 * time.Second)
 		err = hs.Handshake()
 		if err != nil {

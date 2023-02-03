@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -34,7 +36,7 @@ func main() {
 	log.Println("Creating FlowFile sender to url", *url)
 	hs, err := flowfile.NewHTTPSender(*url, http.DefaultClient)
 	if err != nil {
-		log.Panic(err)
+		log.Fatal(err)
 	}
 
 	log.Println("Creating directory listener on", *basePath)
@@ -95,16 +97,20 @@ func main() {
 					log.Println("  sending", a.Get("filename"), "...")
 					fh, err := os.Open(filename)
 					if err != nil {
-						log.Panic(err)
+						log.Fatal(err)
 					}
 					fileInfo, _ := fh.Stat()
 					f := flowfile.New(fh, fileInfo.Size())
 					f.Attrs = a
+					if *verbose {
+						adat, _ := json.Marshal(f.Attrs)
+						fmt.Printf("    %s\n", adat)
+					}
 
 					err = hs.Send(f, nil)
 
 					// Try a few more times before we give up
-					for i := 0; err != nil && i < *retries; i++ {
+					for i := 1; err != nil && i < *retries; i++ {
 						time.Sleep(10 * time.Second)
 						err = hs.Handshake()
 						if err != nil {

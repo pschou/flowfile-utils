@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/pschou/go-flowfile"
 )
@@ -59,6 +60,10 @@ func loadTLS() {
 	tlsConfig.BuildNameToCertificate()
 	transport := &http.Transport{TLSClientConfig: tlsConfig}
 	http.DefaultClient = &http.Client{Transport: transport}
+	http.DefaultClient = &http.Client{
+		Transport: transport,
+		Timeout:   10 * time.Second,
+	}
 }
 
 func certPKIXString(name pkix.Name, sep string) (out string) {
