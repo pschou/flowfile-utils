@@ -24,13 +24,14 @@ certificate and chaining any previous certificates.`
 
 var (
 	listen     = flag.String("listen", ":8082", "Where to listen to incoming connections (example 1.2.3.4:8080)")
-	listenPath = flag.String("listenPath", "/contentListener", "Where to expect FlowFiles to be posted")
+	listenPath = flag.String("listenPath", "/contentListener", "Path in URL where to expect FlowFiles to be posted")
 	enableTLS  = flag.Bool("tls", false, "Enforce TLS for secure transport on incoming connections")
 	url        = flag.String("url", "http://localhost:8080/contentListener", "Where to send the files from staging")
 	chain      = flag.Bool("update-chain", true, "Add the client certificate to the connection-chain-# header")
-	maxSize    = flag.String("segment-max-size", "", "Set a maximum partition size for partitioning files to send")
+	maxSize    = flag.String("segment-max-size", "", "Set a maximum size for partitioning files in sending")
+	retries    = flag.Int("retries", 3, "Retries after failing to send a file")
+	noChecksum = flag.Bool("no-checksums", false, "Ignore doing checksum checks")
 	//ecc        = flag.Float("ff-ecc", 0, "Set the amount of error correction to be sent (decimal percent)")
-	retries = flag.Int("retries", 3, "Retries after failing to send a file")
 
 	hs *flowfile.HTTPSender
 )
@@ -130,6 +131,15 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 		err = hs.Handshake()
 		if err != nil {
 			err = hs.Send(f, nil)
+		}
+	}
+	if err == nil && !*noChecksum {
+		err = f.Verify()
+		if err == flowfile.ErrorChecksumMissing {
+			if *verbose {
+				log.Println("  No checksum found for", filename)
+			}
+			err = nil
 		}
 	}
 	return err

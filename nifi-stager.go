@@ -24,11 +24,11 @@ FlowFiles into directory along with associated attributes which can then be
 unstaged using the NiFi Unstager.`
 
 var (
-	basePath   = flag.String("path", "stager", "Directory which to scan for FlowFiles")
+	basePath   = flag.String("path", "stager", "Directory in which stage FlowFiles")
 	listen     = flag.String("listen", ":8080", "Where to listen to incoming connections (example 1.2.3.4:8080)")
-	listenPath = flag.String("listenPath", "/contentListener", "Where to expect FlowFiles to be posted")
+	listenPath = flag.String("listenPath", "/contentListener", "Path in URL where to expect FlowFiles to be posted")
 	enableTLS  = flag.Bool("tls", false, "Enable TLS for secure transport")
-	maxSize    = flag.String("segment-max-size", "", "Set a maximum partition size for partitioning files to send")
+	maxSize    = flag.String("segment-max-size", "", "Set a maximum size for partitioning files in sending")
 )
 
 func main() {

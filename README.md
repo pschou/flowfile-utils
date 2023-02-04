@@ -137,7 +137,7 @@ infile_rnd.dat
 
 ```
 # nifi-stager -h
-NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230203.1301)
+NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230203.2002)
 
 This utility is intended to take input over a NiFi compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
@@ -153,11 +153,11 @@ Usage: ./nifi-stager [options]
   -listen string
     	Where to listen to incoming connections (example 1.2.3.4:8080) (default ":8080")
   -listenPath string
-    	Where to expect FlowFiles to be posted (default "/contentListener")
+    	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
   -path string
-    	Directory which to scan for FlowFiles (default "stager")
+    	Directory in which stage FlowFiles (default "stager")
   -segment-max-size string
-    	Set a maximum partition size for partitioning files to send
+    	Set a maximum size for partitioning files in sending
   -tls
     	Enable TLS for secure transport
   -verbose
@@ -166,7 +166,7 @@ Usage: ./nifi-stager [options]
 
 ```
 # nifi-sender -h
-NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230203.1301)
+NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230203.2002)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote NiFi server for processing.
@@ -181,14 +181,14 @@ Usage: ./nifi-sender [options] path1 path2...
   -retries int
     	Retries after failing to send a file (default 3)
   -url string
-    	Where to send the files from staging (default "http://localhost:8080/contentListener")
+    	Where to send the files (default "http://localhost:8080/contentListener")
   -verbose
     	Turn on verbosity
 ```
 
 ```
 # nifi-unstager -h
-NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230203.1301)
+NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230203.2002)
 
 This utility is intended to take a directory of NiFi flow files and ship them
 out to a listening NiFi endpoint while maintaining the same set of attribute
@@ -213,7 +213,7 @@ Usage: ./nifi-unstager [options]
 
 ```
 # nifi-reciever -h
-NiFi Reciever (github.com/pschou/flowfile-utils, version: 0.1.20230203.1301)
+NiFi Reciever (github.com/pschou/flowfile-utils, version: 0.1.20230203.2002)
 
 This utility is intended to listen for flow files on a NifI compatible port and
 then parse these files and drop them to disk for usage elsewhere.
@@ -228,11 +228,11 @@ Usage: ./nifi-reciever [options]
   -listen string
     	Where to listen to incoming connections (example 1.2.3.4:8080) (default ":8080")
   -listenPath string
-    	Where to expect FlowFiles to be posted (default "/contentListener")
+    	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
   -path string
-    	Directory which to scan for FlowFiles (default "output")
+    	Directory in which to place files recieved (default "output")
   -segment-max-size string
-    	Set a maximum partition size for partitioning files to send
+    	Set a maximum size for partitioning files in sending
   -tls
     	Enable TLS for secure transport
   -verbose
@@ -241,7 +241,7 @@ Usage: ./nifi-reciever [options]
 
 ```
 # nifi-diode -h
-NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230203.1301)
+NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230203.2002)
 
 This utility is intended to take input over a NiFi compatible port and pass all
 FlowFiles into another NiFi port while updating the attributes with the
@@ -257,11 +257,13 @@ Usage: ./nifi-diode [options]
   -listen string
     	Where to listen to incoming connections (example 1.2.3.4:8080) (default ":8082")
   -listenPath string
-    	Where to expect FlowFiles to be posted (default "/contentListener")
+    	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
+  -no-checksums
+    	Ignore doing checksum checks
   -retries int
     	Retries after failing to send a file (default 3)
   -segment-max-size string
-    	Set a maximum partition size for partitioning files to send
+    	Set a maximum size for partitioning files in sending
   -tls
     	Enforce TLS for secure transport on incoming connections
   -update-chain

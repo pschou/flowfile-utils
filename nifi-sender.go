@@ -22,7 +22,7 @@ This utility is intended to capture a set of files or directory of files and
 send them to a remote NiFi server for processing.`
 
 var (
-	url     = flag.String("url", "http://localhost:8080/contentListener", "Where to send the files from staging")
+	url     = flag.String("url", "http://localhost:8080/contentListener", "Where to send the files")
 	retries = flag.Int("retries", 3, "Retries after failing to send a file")
 )
 

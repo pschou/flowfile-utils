@@ -22,11 +22,11 @@ This utility is intended to listen for flow files on a NifI compatible port and
 then parse these files and drop them to disk for usage elsewhere.`
 
 var (
-	basePath   = flag.String("path", "output", "Directory which to scan for FlowFiles")
+	basePath   = flag.String("path", "output", "Directory in which to place files recieved")
 	listen     = flag.String("listen", ":8080", "Where to listen to incoming connections (example 1.2.3.4:8080)")
-	listenPath = flag.String("listenPath", "/contentListener", "Where to expect FlowFiles to be posted")
+	listenPath = flag.String("listenPath", "/contentListener", "Path in URL where to expect FlowFiles to be posted")
 	enableTLS  = flag.Bool("tls", false, "Enable TLS for secure transport")
-	maxSize    = flag.String("segment-max-size", "", "Set a maximum partition size for partitioning files to send")
+	maxSize    = flag.String("segment-max-size", "", "Set a maximum size for partitioning files in sending")
 )
 
 func main() {
