@@ -27,6 +27,28 @@ instance are:
 
 - Enables segmenting, so an upstream stream handler with limited capabilities can get segments instead of a whole file
 
+NiFi-Sender Usage:
+```
+NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230206.1219)
+
+This utility is intended to capture a set of files or directory of files and
+send them to a remote NiFi server for processing.
+
+Usage: ./nifi-sender [options] path1 path2...
+  -CA string
+    	A PEM eoncoded CA's certificate file. (default "someCertCAFile")
+  -cert string
+    	A PEM eoncoded certificate file. (default "someCertFile")
+  -key string
+    	A PEM encoded private key file. (default "someKeyFile")
+  -retries int
+    	Retries after failing to send a file (default 3)
+  -url string
+    	Where to send the files (default "http://localhost:8080/contentListener")
+  -verbose
+    	Turn on verbosity
+```
+
 Example:
 ```
 $ ./nifi-sender -url http://localhost:8080/contentListener file1.dat file2.dat myDir/
@@ -40,6 +62,42 @@ $ ./nifi-sender -url http://localhost:8080/contentListener file1.dat file2.dat m
 ## NiFi Reciever
 
 NiFi Reciever listens on a port for NiFi flow files and then acts on them accordingly as they are streamed in.
+
+NiFi-Reciever Usage:
+```
+NiFi Reciever (github.com/pschou/flowfile-utils, version: 0.1.20230206.1219)
+
+This utility is intended to listen for flow files on a NifI compatible port and
+then parse these files and drop them to disk for usage elsewhere.
+
+Usage: ./nifi-reciever [options]
+  -CA string
+    	A PEM eoncoded CA's certificate file. (default "someCertCAFile")
+  -cert string
+    	A PEM eoncoded certificate file. (default "someCertFile")
+  -debug
+    	Turn on debug
+  -key string
+    	A PEM encoded private key file. (default "someKeyFile")
+  -listen string
+    	Where to listen to incoming connections (example 1.2.3.4:8080) (default ":8080")
+  -listenPath string
+    	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
+  -path string
+    	Directory in which to place files recieved (default "./output/")
+  -rm
+    	Automatically remove file after script has finished
+  -script string
+    	Shell script to be called on successful post
+  -script-shell string
+    	Shell to be used for script run (default "/bin/bash")
+  -segment-max-size string
+    	Set a maximum size for partitioning files in sending
+  -tls
+    	Enable TLS for secure transport
+  -verbose
+    	Turn on verbosity
+```
 
 Example:
 ```
@@ -104,6 +162,43 @@ $
 ## NiFi Stager
 
 This tool enables files to be layed down to disk, to be replayed at a later time or different location into a flowfile feed.  Note that the binary payload that is layed down is FlowFile encoded and not parsed out for making sure the exact binary payload is replayed.
+
+NiFi-Stager Usage:
+```
+NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1219)
+
+This utility is intended to take input over a NiFi compatible port and drop all
+FlowFiles into directory along with associated attributes which can then be
+unstaged using the NiFi Unstager.
+
+Usage: ./nifi-stager [options]
+  -CA string
+    	A PEM eoncoded CA's certificate file. (default "someCertCAFile")
+  -cert string
+    	A PEM eoncoded certificate file. (default "someCertFile")
+  -key string
+    	A PEM encoded private key file. (default "someKeyFile")
+  -listen string
+    	Where to listen to incoming connections (example 1.2.3.4:8080) (default ":8080")
+  -listenPath string
+    	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
+  -path string
+    	Directory in which stage FlowFiles (default "stager")
+  -rm
+    	Automatically remove file after script has finished
+  -rm-partial
+    	Automatically remove partial files (default true)
+  -script string
+    	Shell script to be called on successful post
+  -script-shell string
+    	Shell to be used for script run (default "/bin/bash")
+  -segment-max-size string
+    	Set a maximum size for partitioning files in sending
+  -tls
+    	Enable TLS for secure transport
+  -verbose
+    	Turn on verbosity
+```
 
 Example:
 ```
@@ -211,6 +306,41 @@ What are the pitfalls?
 - If you like burning all your data to a DVD and sneaker netting it between
   buildings, you'll have to find a gym now.  :(
 
+NiFi-Diode Usage:
+```
+NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230206.1219)
+
+This utility is intended to take input over a NiFi compatible port and pass all
+FlowFiles into another NiFi port while updating the attributes with the
+certificate and chaining any previous certificates.
+
+Usage: ./nifi-diode [options]
+  -CA string
+    	A PEM eoncoded CA's certificate file. (default "someCertCAFile")
+  -cert string
+    	A PEM eoncoded certificate file. (default "someCertFile")
+  -key string
+    	A PEM encoded private key file. (default "someKeyFile")
+  -listen string
+    	Where to listen to incoming connections (example 1.2.3.4:8080) (default ":8082")
+  -listenPath string
+    	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
+  -no-checksums
+    	Ignore doing checksum checks
+  -retries int
+    	Retries after failing to send a file (default 3)
+  -segment-max-size string
+    	Set a maximum size for partitioning files in sending
+  -tls
+    	Enforce TLS for secure transport on incoming connections
+  -update-chain
+    	Add the client certificate to the connection-chain-# header (default true)
+  -url string
+    	Where to send the files from staging (default "http://localhost:8080/contentListener")
+  -verbose
+    	Turn on verbosity
+```
+
 # Example:
 
 Here are some examples of the nifi-sender and nifi-reciever in action.  To set things up, we need some fake data first:
@@ -271,159 +401,3 @@ target$ ls output2/
 infile_rnd.dat
 ```
 
-# Usage Details:
-
-```
-# nifi-stager -h
-NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1208)
-
-This utility is intended to take input over a NiFi compatible port and drop all
-FlowFiles into directory along with associated attributes which can then be
-unstaged using the NiFi Unstager.
-
-Usage: ./nifi-stager [options]
-  -CA string
-    	A PEM eoncoded CA's certificate file. (default "someCertCAFile")
-  -cert string
-    	A PEM eoncoded certificate file. (default "someCertFile")
-  -key string
-    	A PEM encoded private key file. (default "someKeyFile")
-  -listen string
-    	Where to listen to incoming connections (example 1.2.3.4:8080) (default ":8080")
-  -listenPath string
-    	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
-  -path string
-    	Directory in which stage FlowFiles (default "stager")
-  -rm
-    	Automatically remove file after script has finished
-  -rm-partial
-    	Automatically remove partial files (default true)
-  -script string
-    	Shell script to be called on successful post
-  -script-shell string
-    	Shell to be used for script run (default "/bin/bash")
-  -segment-max-size string
-    	Set a maximum size for partitioning files in sending
-  -tls
-    	Enable TLS for secure transport
-  -verbose
-    	Turn on verbosity
-```
-
-```
-# nifi-sender -h
-NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230206.1208)
-
-This utility is intended to capture a set of files or directory of files and
-send them to a remote NiFi server for processing.
-
-Usage: ./nifi-sender [options] path1 path2...
-  -CA string
-    	A PEM eoncoded CA's certificate file. (default "someCertCAFile")
-  -cert string
-    	A PEM eoncoded certificate file. (default "someCertFile")
-  -key string
-    	A PEM encoded private key file. (default "someKeyFile")
-  -retries int
-    	Retries after failing to send a file (default 3)
-  -url string
-    	Where to send the files (default "http://localhost:8080/contentListener")
-  -verbose
-    	Turn on verbosity
-```
-
-```
-# nifi-unstager -h
-NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1208)
-
-This utility is intended to take a directory of NiFi flow files and ship them
-out to a listening NiFi endpoint while maintaining the same set of attribute
-headers.
-
-Usage: ./nifi-unstager [options]
-  -CA string
-    	A PEM eoncoded CA's certificate file. (default "someCertCAFile")
-  -cert string
-    	A PEM eoncoded certificate file. (default "someCertFile")
-  -key string
-    	A PEM encoded private key file. (default "someKeyFile")
-  -path string
-    	Directory which to scan for FlowFiles (default "stager")
-  -retries int
-    	Retries after failing to send a file (default 3)
-  -url string
-    	Where to send the files from staging (default "http://localhost:8080/contentListener")
-  -verbose
-    	Turn on verbosity
-```
-
-```
-# nifi-reciever -h
-NiFi Reciever (github.com/pschou/flowfile-utils, version: 0.1.20230206.1208)
-
-This utility is intended to listen for flow files on a NifI compatible port and
-then parse these files and drop them to disk for usage elsewhere.
-
-Usage: ./nifi-reciever [options]
-  -CA string
-    	A PEM eoncoded CA's certificate file. (default "someCertCAFile")
-  -cert string
-    	A PEM eoncoded certificate file. (default "someCertFile")
-  -debug
-    	Turn on debug
-  -key string
-    	A PEM encoded private key file. (default "someKeyFile")
-  -listen string
-    	Where to listen to incoming connections (example 1.2.3.4:8080) (default ":8080")
-  -listenPath string
-    	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
-  -path string
-    	Directory in which to place files recieved (default "./output/")
-  -rm
-    	Automatically remove file after script has finished
-  -script string
-    	Shell script to be called on successful post
-  -script-shell string
-    	Shell to be used for script run (default "/bin/bash")
-  -segment-max-size string
-    	Set a maximum size for partitioning files in sending
-  -tls
-    	Enable TLS for secure transport
-  -verbose
-    	Turn on verbosity
-```
-
-```
-# nifi-diode -h
-NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230206.1208)
-
-This utility is intended to take input over a NiFi compatible port and pass all
-FlowFiles into another NiFi port while updating the attributes with the
-certificate and chaining any previous certificates.
-
-Usage: ./nifi-diode [options]
-  -CA string
-    	A PEM eoncoded CA's certificate file. (default "someCertCAFile")
-  -cert string
-    	A PEM eoncoded certificate file. (default "someCertFile")
-  -key string
-    	A PEM encoded private key file. (default "someKeyFile")
-  -listen string
-    	Where to listen to incoming connections (example 1.2.3.4:8080) (default ":8082")
-  -listenPath string
-    	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
-  -no-checksums
-    	Ignore doing checksum checks
-  -retries int
-    	Retries after failing to send a file (default 3)
-  -segment-max-size string
-    	Set a maximum size for partitioning files in sending
-  -tls
-    	Enforce TLS for secure transport on incoming connections
-  -update-chain
-    	Add the client certificate to the connection-chain-# header (default true)
-  -url string
-    	Where to send the files from staging (default "http://localhost:8080/contentListener")
-  -verbose
-    	Turn on verbosity
-```
