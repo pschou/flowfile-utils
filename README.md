@@ -31,7 +31,7 @@ instance are:
 
 NiFi-Sender Usage:
 ```
-NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230206.1309)
+NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230206.1334)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote NiFi server for processing.
@@ -69,7 +69,7 @@ NiFi Reciever listens on a port for NiFi flow files and then acts on them accord
 
 NiFi-Reciever Usage:
 ```
-NiFi Reciever (github.com/pschou/flowfile-utils, version: 0.1.20230206.1309)
+NiFi Reciever (github.com/pschou/flowfile-utils, version: 0.1.20230206.1334)
 
 This utility is intended to listen for flow files on a NifI compatible port and
 then parse these files and drop them to disk for usage elsewhere.
@@ -81,6 +81,11 @@ Usage: ./nifi-receiver [options]
     	A PEM eoncoded certificate file. (default "someCertFile")
   -debug
     	Turn on debug
+  -init-script string
+    	Shell script to be called on start
+    	Used to manually setup the networking interfaces when this program is called from GRUB
+  -init-script-shell string
+    	Shell to be used for init script run (default "/bin/bash")
   -key string
     	A PEM encoded private key file. (default "someKeyFile")
   -listen string
@@ -101,6 +106,10 @@ Usage: ./nifi-receiver [options]
     	Enable TLS for secure transport
   -verbose
     	Turn on verbosity
+  -watchdog duration
+    	Trigger a reboot if no connection is seen within this time window
+    	You'll neet to make sure you have the watchdog module enabled on the host and kernel.
+    	Default is disabled (-watchdog=0s)
 ```
 
 Example:
@@ -171,7 +180,7 @@ This tool enables files to be layed down to disk, to be replayed at a later time
 
 NiFi-Stager Usage:
 ```
-NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1309)
+NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1334)
 
 This utility is intended to take input over a NiFi compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
@@ -182,6 +191,11 @@ Usage: ./nifi-stager [options]
     	A PEM eoncoded CA's certificate file. (default "someCertCAFile")
   -cert string
     	A PEM eoncoded certificate file. (default "someCertFile")
+  -init-script string
+    	Shell script to be called on start
+    	Used to manually setup the networking interfaces when this program is called from GRUB
+  -init-script-shell string
+    	Shell to be used for init script run (default "/bin/bash")
   -key string
     	A PEM encoded private key file. (default "someKeyFile")
   -listen string
@@ -204,6 +218,10 @@ Usage: ./nifi-stager [options]
     	Enable TLS for secure transport
   -verbose
     	Turn on verbosity
+  -watchdog duration
+    	Trigger a reboot if no connection is seen within this time window
+    	You'll neet to make sure you have the watchdog module enabled on the host and kernel.
+    	Default is disabled (-watchdog=0s)
 ```
 
 Example:
@@ -266,7 +284,7 @@ The purpose of the nifi-unstager is to replay the files layed to disk in the nif
 
 NiFi-Unstager Usage:
 ```
-NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1309)
+NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1334)
 
 This utility is intended to take a directory of NiFi flow files and ship them
 out to a listening NiFi endpoint while maintaining the same set of attribute
@@ -277,6 +295,11 @@ Usage: ./nifi-unstager [options]
     	A PEM eoncoded CA's certificate file. (default "someCertCAFile")
   -cert string
     	A PEM eoncoded certificate file. (default "someCertFile")
+  -init-script string
+    	Shell script to be called on start
+    	Used to manually setup the networking interfaces when this program is called from GRUB
+  -init-script-shell string
+    	Shell to be used for init script run (default "/bin/bash")
   -key string
     	A PEM encoded private key file. (default "someKeyFile")
   -path string
@@ -287,6 +310,10 @@ Usage: ./nifi-unstager [options]
     	Where to send the files from staging (default "http://localhost:8080/contentListener")
   -verbose
     	Turn on verbosity
+  -watchdog duration
+    	Trigger a reboot if no connection is seen within this time window
+    	You'll neet to make sure you have the watchdog module enabled on the host and kernel.
+    	Default is disabled (-watchdog=0s)
 ```
 
 Example:
@@ -369,7 +396,7 @@ What are the pitfalls?
 
 NiFi-Diode Usage:
 ```
-NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230206.1309)
+NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230206.1334)
 
 This utility is intended to take input over a NiFi compatible port and pass all
 FlowFiles into another NiFi port while updating the attributes with the
@@ -380,6 +407,11 @@ Usage: ./nifi-diode [options]
     	A PEM eoncoded CA's certificate file. (default "someCertCAFile")
   -cert string
     	A PEM eoncoded certificate file. (default "someCertFile")
+  -init-script string
+    	Shell script to be called on start
+    	Used to manually setup the networking interfaces when this program is called from GRUB
+  -init-script-shell string
+    	Shell to be used for init script run (default "/bin/bash")
   -key string
     	A PEM encoded private key file. (default "someKeyFile")
   -listen string
@@ -400,6 +432,10 @@ Usage: ./nifi-diode [options]
     	Where to send the files from staging (default "http://localhost:8080/contentListener")
   -verbose
     	Turn on verbosity
+  -watchdog duration
+    	Trigger a reboot if no connection is seen within this time window
+    	You'll neet to make sure you have the watchdog module enabled on the host and kernel.
+    	Default is disabled (-watchdog=0s)
 ```
 
 # Example:

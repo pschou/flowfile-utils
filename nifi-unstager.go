@@ -31,7 +31,9 @@ var (
 var hs *flowfile.HTTPSession
 
 func main() {
+	service_flag()
 	flag.Parse()
+	service_init()
 	if strings.HasPrefix(*url, "https") {
 		loadTLS()
 	}

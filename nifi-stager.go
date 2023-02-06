@@ -34,7 +34,9 @@ var (
 )
 
 func main() {
+	service_flag()
 	flag.Parse()
+	service_init()
 	if *enableTLS {
 		loadTLS()
 	}
