@@ -15,14 +15,96 @@ NiFi-Diode - takes a NiFi feed and forwards the FlowFiles to another NiFi (assur
 
 For more documentation about the go-flowfile library: https://pkg.go.dev/github.com/pschou/go-flowfile .
 
+## NiFi Sender
+
+NiFi sender does one thing, it will take data from the disk and upload it to a
+NiFi endpoint.  Some advantages of using this NiFi sender over a full NiFi
+instance are:
+
+- One does not need to install NiFi or have it running
+
+- It is ultra portable and can run on a minimal instance
+
+- Enables segmenting, so an upstream stream handler with limited capabilities can get segments instead of a whole file
+
+Example:
+```
+$ ./nifi-sender -url http://localhost:8080/contentListener file1.dat file2.dat myDir/
+2023/02/06 08:43:26 creating sender...
+2023/02/06 08:43:26   sending file1.dat ...
+2023/02/06 08:43:26   sending file2.dat ...
+2023/02/06 08:43:26   sending empty dir myDir/ ...
+2023/02/06 08:43:26 done.
+```
+
 ## NiFi Reciever
 
-This NiFi reciever does one thing, it will take data from the disk and upload it to a NiFi endpoint.
+NiFi Reciever listens on a port for NiFi flow files and then acts on them accordingly as they are streamed in.
+
+Example:
+```
+$ ./nifi-reciever
+Output set to ./output/
+2023/02/06 08:58:25 Listening with HTTP on :8080 at /contentListener
+2023/02/06 08:58:28   Recieving nifi file output/file1.dat size 18
+2023/02/06 08:58:28   Verified file output/file1.dat
+2023/02/06 08:58:28   Recieving nifi file output/file2.dat size 10
+2023/02/06 08:58:28   Verified file output/file2.dat
+```
+
+if one wants to act on the files after they arrive, they can add a script
+caller which performs functions on the files just after a successful send:
+
+```
+$ cat script.sh
+#!/bin/bash
+echo In Script, doing something:
+sha256sum "$1"
+$ ./nifi-reciever -script script.sh -verbose
+Output set to ./output/
+2023/02/06 08:59:38 Listening with HTTP on :8080 at /contentListener
+2023/02/06 08:59:40   Recieving nifi file output/file1.dat size 18
+    [{"Name":"path","Value":"./"},{"Name":"filename","Value":"file1.dat"},{"Name":"modtime","Value":"2023-02-06T08:47:47-05:00"},{"Name":"checksum-type","Value":"SHA256"},{"Name":"checksum","Value":"51fd71b1368a1b130b60cab1301b05bbef470cf4a21ef2956553def809edf4ec"},{"Name":"uuid","Value":"271d19fd-827a-4c9d-a21e-7ede9d652120"}]
+2023/02/06 08:59:40   Verified file output/file1.dat
+2023/02/06 08:59:40   Calling script /bin/bash script.sh output/file1.dat
+2023/02/06 08:59:40 ----- START script.sh output/file1.dat -----
+In Script, doing something:
+51fd71b1368a1b130b60cab1301b05bbef470cf4a21ef2956553def809edf4ec  output/file1.dat
+
+2023/02/06 08:59:40 ----- END script.sh output/file1.dat -----
+2023/02/06 08:59:40   Recieving nifi file output/file2.dat size 10
+    [{"Name":"path","Value":"./"},{"Name":"filename","Value":"file2.dat"},{"Name":"modtime","Value":"2023-02-06T08:47:53-05:00"},{"Name":"checksum-type","Value":"SHA256"},{"Name":"checksum","Value":"1e26ce5588db2ef5080a3df10385a731af2a4bfd0d2515f691d05d9dd900e18a"},{"Name":"uuid","Value":"08f48cce-b09f-47b7-9e5f-fbd0bf2e2b56"}]
+2023/02/06 08:59:40   Verified file output/file2.dat
+2023/02/06 08:59:40   Calling script /bin/bash script.sh output/file2.dat
+2023/02/06 08:59:40 ----- START script.sh output/file2.dat -----
+In Script, doing something:
+1e26ce5588db2ef5080a3df10385a731af2a4bfd0d2515f691d05d9dd900e18a  output/file2.dat
+
+2023/02/06 08:59:40 ----- END script.sh output/file2.dat -----
+```
+
+If one desires for the files to be removed after the script is ran:
+```
+$ ./nifi-reciever -script script.sh -rm
+Output set to ./output/
+2023/02/06 09:06:18 Listening with HTTP on :8080 at /contentListener
+2023/02/06 09:06:20   Recieving nifi file output/file1.dat size 18
+2023/02/06 09:06:20   Verified file output/file1.dat
+2023/02/06 09:06:20   Calling script /bin/bash script.sh output/file1.dat
+2023/02/06 09:06:20   Removed output/file1.dat
+2023/02/06 09:06:20   Recieving nifi file output/file2.dat size 10
+2023/02/06 09:06:20   Verified file output/file2.dat
+2023/02/06 09:06:20   Calling script /bin/bash script.sh output/file2.dat
+2023/02/06 09:06:20   Removed output/file2.dat
+^C
+$ ls output/
+$
+```
 
 ## NiFi Diode
 
 A simple NiFi Diode that does one thing, takes in data and passes it on to
-another NiFi without letting anything go the other direction.  Hence it's a
+another NiFi without letting anything go the other direction.  Hence it is a
 simple, no-cache-diode.
 
 The idea here is this server listens on a IP:Port and then any incomming

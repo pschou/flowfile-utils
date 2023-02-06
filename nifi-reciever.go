@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -23,12 +24,15 @@ This utility is intended to listen for flow files on a NifI compatible port and
 then parse these files and drop them to disk for usage elsewhere.`
 
 var (
-	basePath   = flag.String("path", "output", "Directory in which to place files recieved")
-	listen     = flag.String("listen", ":8080", "Where to listen to incoming connections (example 1.2.3.4:8080)")
-	listenPath = flag.String("listenPath", "/contentListener", "Path in URL where to expect FlowFiles to be posted")
-	enableTLS  = flag.Bool("tls", false, "Enable TLS for secure transport")
-	maxSize    = flag.String("segment-max-size", "", "Set a maximum size for partitioning files in sending")
-	debug      = flag.Bool("debug", false, "Turn on debug")
+	basePath    = flag.String("path", "./output/", "Directory in which to place files recieved")
+	listen      = flag.String("listen", ":8080", "Where to listen to incoming connections (example 1.2.3.4:8080)")
+	listenPath  = flag.String("listenPath", "/contentListener", "Path in URL where to expect FlowFiles to be posted")
+	enableTLS   = flag.Bool("tls", false, "Enable TLS for secure transport")
+	maxSize     = flag.String("segment-max-size", "", "Set a maximum size for partitioning files in sending")
+	debug       = flag.Bool("debug", false, "Turn on debug")
+	script      = flag.String("script", "", "Shell script to be called on successful post")
+	scriptShell = flag.String("script-shell", "/bin/bash", "Shell to be used for script run")
+	remove      = flag.Bool("rm", false, "Automatically remove file after script has finished")
 )
 
 func main() {
@@ -39,7 +43,7 @@ func main() {
 	if *enableTLS {
 		loadTLS()
 	}
-	fmt.Println("output set to", *basePath)
+	fmt.Println("Output set to", *basePath)
 
 	// Settings for the flow file reciever
 	ffReciever := flowfile.NewHTTPFileReciever(post)
@@ -80,7 +84,7 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 
 	switch kind := f.Attrs.Get("kind"); kind {
 	case "file", "":
-		fmt.Println("  Recieving nifi file", fp, "size", f.Size)
+		log.Println("  Recieving nifi file", fp, "size", f.Size)
 		if *verbose {
 			adat, _ := json.Marshal(f.Attrs)
 			fmt.Printf("    %s\n", adat)
@@ -91,11 +95,31 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 		if err == nil {
 			if id := f.Attrs.Get("segment-index"); id != "" {
 				i, _ := strconv.Atoi(id)
-				fmt.Printf("  Verified segment %d of %s of %s\n", i+1, f.Attrs.Get("segment-count"), path.Join(dir, filename))
+				log.Printf("  Verified segment %d of %s of %s\n", i+1, f.Attrs.Get("segment-count"), fp)
 			} else {
-				fmt.Printf("  Verified file %s\n", path.Join(dir, filename))
+				log.Printf("  Verified file %s\n", fp)
+			}
+			if *script != "" {
+				log.Println("  Calling script", *scriptShell, *script, fp)
+				output, err := exec.Command(*scriptShell, *script, fp).Output()
+				if *verbose {
+					log.Println("----- START", *script, fp, "-----")
+					fmt.Println(string(output))
+					log.Println("----- END", *script, fp, "-----")
+					if err != nil {
+						log.Printf("error %s", err)
+					}
+				}
+
+				if *remove {
+					os.Remove(fp)
+					//if *verbose {
+					log.Printf("  Removed %s\n", fp)
+					//}
+				}
 			}
 		}
+
 	case "dir":
 		err = os.MkdirAll(fp, 0755)
 		if *debug {
