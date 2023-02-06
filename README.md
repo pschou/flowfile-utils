@@ -256,7 +256,30 @@ Using the '-rm-partial=false' will keep files from being deleted if they fail ve
 
 The purpose of the nifi-unstager is to replay the files layed to disk in the nifi-stager operation.
 
-NiFi-Stager Usage:
+NiFi-Unstager Usage:
+```
+NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1228)
+
+This utility is intended to take a directory of NiFi flow files and ship them
+out to a listening NiFi endpoint while maintaining the same set of attribute
+headers.
+
+Usage: ./nifi-unstager [options]
+  -CA string
+    	A PEM eoncoded CA's certificate file. (default "someCertCAFile")
+  -cert string
+    	A PEM eoncoded certificate file. (default "someCertFile")
+  -key string
+    	A PEM encoded private key file. (default "someKeyFile")
+  -path string
+    	Directory which to scan for FlowFiles (default "stager")
+  -retries int
+    	Retries after failing to send a file (default 3)
+  -url string
+    	Where to send the files from staging (default "http://localhost:8080/contentListener")
+  -verbose
+    	Turn on verbosity
+```
 
 Example:
 
