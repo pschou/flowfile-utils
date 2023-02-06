@@ -31,7 +31,7 @@ instance are:
 
 NiFi-Sender Usage:
 ```
-NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230206.1337)
+NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230206.1340)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote NiFi server for processing.
@@ -68,15 +68,58 @@ NiFi Receiver listens on a port for NiFi flow files and then acts on them accord
 ![NiFi-Receiver](NiFi-Receiver.png)
 
 NiFi-Receiver Usage:
+```
+NiFi Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230206.1340)
+
+This utility is intended to listen for flow files on a NifI compatible port and
+then parse these files and drop them to disk for usage elsewhere.
+
+Usage: ./nifi-receiver [options]
+  -CA string
+    	A PEM eoncoded CA's certificate file. (default "someCertCAFile")
+  -cert string
+    	A PEM eoncoded certificate file. (default "someCertFile")
+  -debug
+    	Turn on debug
+  -init-script string
+    	Shell script to be called on start
+    	Used to manually setup the networking interfaces when this program is called from GRUB
+  -init-script-shell string
+    	Shell to be used for init script run (default "/bin/bash")
+  -key string
+    	A PEM encoded private key file. (default "someKeyFile")
+  -listen string
+    	Where to listen to incoming connections (example 1.2.3.4:8080) (default ":8080")
+  -listenPath string
+    	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
+  -path string
+    	Directory in which to place files received (default "./output/")
+  -rm
+    	Automatically remove file after script has finished
+  -script string
+    	Shell script to be called on successful post
+  -script-shell string
+    	Shell to be used for script run (default "/bin/bash")
+  -segment-max-size string
+    	Set a maximum size for partitioning files in sending
+  -tls
+    	Enable TLS for secure transport
+  -verbose
+    	Turn on verbosity
+  -watchdog duration
+    	Trigger a reboot if no connection is seen within this time window
+    	You'll neet to make sure you have the watchdog module enabled on the host and kernel.
+    	Default is disabled (-watchdog=0s)
+```
 
 Example:
 ```
 $ ./nifi-receiver
 Output set to ./output/
 2023/02/06 08:58:25 Listening with HTTP on :8080 at /contentListener
-2023/02/06 08:58:28   Recieving nifi file output/file1.dat size 18
+2023/02/06 08:58:28   Receiving nifi file output/file1.dat size 18
 2023/02/06 08:58:28   Verified file output/file1.dat
-2023/02/06 08:58:28   Recieving nifi file output/file2.dat size 10
+2023/02/06 08:58:28   Receiving nifi file output/file2.dat size 10
 2023/02/06 08:58:28   Verified file output/file2.dat
 ```
 
@@ -91,7 +134,7 @@ sha256sum "$1"
 $ ./nifi-receiver -script script.sh -verbose
 Output set to ./output/
 2023/02/06 08:59:38 Listening with HTTP on :8080 at /contentListener
-2023/02/06 08:59:40   Recieving nifi file output/file1.dat size 18
+2023/02/06 08:59:40   Receiving nifi file output/file1.dat size 18
     [{"Name":"path","Value":"./"},{"Name":"filename","Value":"file1.dat"},{"Name":"modtime","Value":"2023-02-06T08:47:47-05:00"},{"Name":"checksum-type","Value":"SHA256"},{"Name":"checksum","Value":"51fd71b1368a1b130b60cab1301b05bbef470cf4a21ef2956553def809edf4ec"},{"Name":"uuid","Value":"271d19fd-827a-4c9d-a21e-7ede9d652120"}]
 2023/02/06 08:59:40   Verified file output/file1.dat
 2023/02/06 08:59:40   Calling script /bin/bash script.sh output/file1.dat
@@ -100,7 +143,7 @@ In Script, doing something:
 51fd71b1368a1b130b60cab1301b05bbef470cf4a21ef2956553def809edf4ec  output/file1.dat
 
 2023/02/06 08:59:40 ----- END script.sh output/file1.dat -----
-2023/02/06 08:59:40   Recieving nifi file output/file2.dat size 10
+2023/02/06 08:59:40   Receiving nifi file output/file2.dat size 10
     [{"Name":"path","Value":"./"},{"Name":"filename","Value":"file2.dat"},{"Name":"modtime","Value":"2023-02-06T08:47:53-05:00"},{"Name":"checksum-type","Value":"SHA256"},{"Name":"checksum","Value":"1e26ce5588db2ef5080a3df10385a731af2a4bfd0d2515f691d05d9dd900e18a"},{"Name":"uuid","Value":"08f48cce-b09f-47b7-9e5f-fbd0bf2e2b56"}]
 2023/02/06 08:59:40   Verified file output/file2.dat
 2023/02/06 08:59:40   Calling script /bin/bash script.sh output/file2.dat
@@ -116,11 +159,11 @@ If one desires for the files to be removed after the script is ran:
 $ ./nifi-receiver -script script.sh -rm
 Output set to ./output/
 2023/02/06 09:06:18 Listening with HTTP on :8080 at /contentListener
-2023/02/06 09:06:20   Recieving nifi file output/file1.dat size 18
+2023/02/06 09:06:20   Receiving nifi file output/file1.dat size 18
 2023/02/06 09:06:20   Verified file output/file1.dat
 2023/02/06 09:06:20   Calling script /bin/bash script.sh output/file1.dat
 2023/02/06 09:06:20   Removed output/file1.dat
-2023/02/06 09:06:20   Recieving nifi file output/file2.dat size 10
+2023/02/06 09:06:20   Receiving nifi file output/file2.dat size 10
 2023/02/06 09:06:20   Verified file output/file2.dat
 2023/02/06 09:06:20   Calling script /bin/bash script.sh output/file2.dat
 2023/02/06 09:06:20   Removed output/file2.dat
@@ -137,7 +180,7 @@ This tool enables files to be layed down to disk, to be replayed at a later time
 
 NiFi-Stager Usage:
 ```
-NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1337)
+NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1340)
 
 This utility is intended to take input over a NiFi compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
@@ -186,8 +229,8 @@ Example:
 $ ./nifi-stager
 Output set to stager
 2023/02/06 12:01:10 Listening with HTTP on :8080 at /contentListener
-  Recieving nifi file file1.dat size 18
-  Recieving nifi file file2.dat size 10
+  Receiving nifi file file1.dat size 18
+  Receiving nifi file file2.dat size 10
 ```
 
 The sending side sends like this:
@@ -209,7 +252,7 @@ mv "$1" /tmp
 $ ./nifi-stager  -script stager_send.sh -verbose -rm
 Output set to stager
 2023/02/06 12:03:00 Listening with HTTP on :8080 at /contentListener
-  Recieving nifi file file1.dat size 18
+  Receiving nifi file file1.dat size 18
     [{"Name":"path","Value":"./"},{"Name":"filename","Value":"file1.dat"},{"Name":"modtime","Value":"2023-02-06T08:47:47-05:00"},{"Name":"checksum-type","Value":"SHA256"},{"Name":"checksum","Value":"51fd71b1368a1b130b60cab1301b05bbef470cf4a21ef2956553def809edf4ec"},{"Name":"uuid","Value":"f0aa041f-3302-4358-acd1-136ba76078cf"}]
 2023/02/06 12:03:06   Calling script /bin/bash stager_send.sh stager/60af9b0c-7f23-48a6-bc0e-4f44879e9f3a.dat stager/60af9b0c-7f23-48a6-bc0e-4f44879e9f3a.json
 2023/02/06 12:03:06 ----- START stager_send.sh 60af9b0c-7f23-48a6-bc0e-4f44879e9f3a -----
@@ -217,7 +260,7 @@ moving content stager/60af9b0c-7f23-48a6-bc0e-4f44879e9f3a.dat to another folder
 
 2023/02/06 12:03:06 ----- END stager_send.sh 60af9b0c-7f23-48a6-bc0e-4f44879e9f3a -----
 2023/02/06 12:03:06   Removed 60af9b0c-7f23-48a6-bc0e-4f44879e9f3a
-  Recieving nifi file file2.dat size 10
+  Receiving nifi file file2.dat size 10
     [{"Name":"path","Value":"./"},{"Name":"filename","Value":"file2.dat"},{"Name":"modtime","Value":"2023-02-06T08:47:53-05:00"},{"Name":"checksum-type","Value":"SHA256"},{"Name":"checksum","Value":"1e26ce5588db2ef5080a3df10385a731af2a4bfd0d2515f691d05d9dd900e18a"},{"Name":"uuid","Value":"794f5452-7aae-4748-8218-6892a9b0b4b5"}]
 2023/02/06 12:03:06   Calling script /bin/bash stager_send.sh stager/02b1ee5d-432a-478d-920b-0e3052dc2344.dat stager/02b1ee5d-432a-478d-920b-0e3052dc2344.json
 2023/02/06 12:03:06 ----- START stager_send.sh 02b1ee5d-432a-478d-920b-0e3052dc2344 -----
@@ -241,7 +284,7 @@ The purpose of the nifi-unstager is to replay the files layed to disk in the nif
 
 NiFi-Unstager Usage:
 ```
-NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1337)
+NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1340)
 
 This utility is intended to take a directory of NiFi flow files and ship them
 out to a listening NiFi endpoint while maintaining the same set of attribute
@@ -289,9 +332,9 @@ The remote side sees the files come in as if they were just sent out from a NiFi
 $ ./nifi-receiver
 Output set to ./output/
 2023/02/06 12:22:09 Listening with HTTP on :8080 at /contentListener
-2023/02/06 12:22:10   Recieving nifi file output/file2.dat size 10
+2023/02/06 12:22:10   Receiving nifi file output/file2.dat size 10
 2023/02/06 12:22:10   Verified file output/file2.dat
-2023/02/06 12:22:10   Recieving nifi file output/file1.dat size 18
+2023/02/06 12:22:10   Receiving nifi file output/file1.dat size 18
 2023/02/06 12:22:10   Verified file output/file1.dat
 ^C
 ```
@@ -353,7 +396,7 @@ What are the pitfalls?
 
 NiFi-Diode Usage:
 ```
-NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230206.1337)
+NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230206.1340)
 
 This utility is intended to take input over a NiFi compatible port and pass all
 FlowFiles into another NiFi port while updating the attributes with the

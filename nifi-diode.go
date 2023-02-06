@@ -45,13 +45,13 @@ func main() {
 	}
 
 	// Settings for the flow file receiver
-	ffReciever := flowfile.NewHTTPReciever(post)
+	ffReceiver := flowfile.NewHTTPReceiver(post)
 	if *maxSize != "" {
 		if bs, err := bytesize.Parse(*maxSize); err != nil {
 			log.Fatal("Unable to parse max-size", err)
 		} else {
 			log.Println("Setting max-size to", bs)
-			ffReciever.MaxPartitionSize = int(uint64(bs))
+			ffReceiver.MaxPartitionSize = int(uint64(bs))
 		}
 	}
 
@@ -62,18 +62,18 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if hs.MaxPartitionSize > 0 || ffReciever.MaxPartitionSize > 0 {
-		if ffReciever.MaxPartitionSize == 0 ||
-			(hs.MaxPartitionSize > 0 && hs.MaxPartitionSize < ffReciever.MaxPartitionSize) {
+	if hs.MaxPartitionSize > 0 || ffReceiver.MaxPartitionSize > 0 {
+		if ffReceiver.MaxPartitionSize == 0 ||
+			(hs.MaxPartitionSize > 0 && hs.MaxPartitionSize < ffReceiver.MaxPartitionSize) {
 			log.Println("Setting max-size to", hs.MaxPartitionSize)
-			ffReciever.MaxPartitionSize = hs.MaxPartitionSize
+			ffReceiver.MaxPartitionSize = hs.MaxPartitionSize
 		} else {
-			log.Println("Keeping max-size at", ffReciever.MaxPartitionSize)
+			log.Println("Keeping max-size at", ffReceiver.MaxPartitionSize)
 		}
 	}
 
 	// Open the local port to listen for incoming connections
-	http.Handle(*listenPath, ffReciever)
+	http.Handle(*listenPath, ffReceiver)
 	if *enableTLS {
 		log.Println("Listening with HTTPS on", *listen, "at", *listenPath)
 		server := &http.Server{Addr: *listen, TLSConfig: tlsConfig}

@@ -45,17 +45,17 @@ func main() {
 	os.MkdirAll(*basePath, 0755)
 
 	// Settings for the flow file receiver
-	ffReciever := flowfile.NewHTTPReciever(post)
+	ffReceiver := flowfile.NewHTTPReceiver(post)
 	if *maxSize != "" {
 		if bs, err := bytesize.Parse(*maxSize); err != nil {
 			log.Fatal("Unable to parse max-size", err)
 		} else {
 			log.Println("Setting max-size to", bs)
-			ffReciever.MaxPartitionSize = int(uint64(bs))
+			ffReceiver.MaxPartitionSize = int(uint64(bs))
 		}
 	}
 
-	http.Handle(*listenPath, ffReciever)
+	http.Handle(*listenPath, ffReceiver)
 	if *enableTLS {
 		log.Println("Listening with HTTPS on", *listen, "at", *listenPath)
 		server := &http.Server{Addr: *listen, TLSConfig: tlsConfig}
@@ -100,7 +100,7 @@ func post(s *flowfile.Scanner, r *http.Request) (err error) {
 		if f, err = s.File(); err != nil {
 			return
 		}
-		fmt.Println("  Recieving nifi file", f.Attrs.Get("filename"), "size", f.Size)
+		fmt.Println("  Receiving nifi file", f.Attrs.Get("filename"), "size", f.Size)
 		if *verbose {
 			adat, _ := json.Marshal(f.Attrs)
 			fmt.Printf("    %s\n", adat)
