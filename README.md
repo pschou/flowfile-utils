@@ -4,7 +4,7 @@ A set of FlowFile routines for working with NiFi feeds.  The utilities include:
 
 NiFi-Sender - take a file or directory and send them to a NiFi endpoint
 
-NiFi-Reciever - take a NiFi feed and save off files while doing checksums for validity
+NiFi-Receiver - take a NiFi feed and save off files while doing checksums for validity
 
 NiFi-Stager - take a NiFi feed and temporarily store them to disk for processing later
 
@@ -31,7 +31,7 @@ instance are:
 
 NiFi-Sender Usage:
 ```
-NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230206.1336)
+NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230206.1337)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote NiFi server for processing.
@@ -61,56 +61,13 @@ $ ./nifi-sender -url http://localhost:8080/contentListener file1.dat file2.dat m
 2023/02/06 08:43:26 done.
 ```
 
-## NiFi Reciever
+## NiFi Receiver
 
-NiFi Reciever listens on a port for NiFi flow files and then acts on them accordingly as they are streamed in.
+NiFi Receiver listens on a port for NiFi flow files and then acts on them accordingly as they are streamed in.
 
-![NiFi-Reciever](NiFi-Reciever.png)
+![NiFi-Receiver](NiFi-Receiver.png)
 
-NiFi-Reciever Usage:
-```
-NiFi Reciever (github.com/pschou/flowfile-utils, version: 0.1.20230206.1336)
-
-This utility is intended to listen for flow files on a NifI compatible port and
-then parse these files and drop them to disk for usage elsewhere.
-
-Usage: ./nifi-receiver [options]
-  -CA string
-    	A PEM eoncoded CA's certificate file. (default "someCertCAFile")
-  -cert string
-    	A PEM eoncoded certificate file. (default "someCertFile")
-  -debug
-    	Turn on debug
-  -init-script string
-    	Shell script to be called on start
-    	Used to manually setup the networking interfaces when this program is called from GRUB
-  -init-script-shell string
-    	Shell to be used for init script run (default "/bin/bash")
-  -key string
-    	A PEM encoded private key file. (default "someKeyFile")
-  -listen string
-    	Where to listen to incoming connections (example 1.2.3.4:8080) (default ":8080")
-  -listenPath string
-    	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
-  -path string
-    	Directory in which to place files recieved (default "./output/")
-  -rm
-    	Automatically remove file after script has finished
-  -script string
-    	Shell script to be called on successful post
-  -script-shell string
-    	Shell to be used for script run (default "/bin/bash")
-  -segment-max-size string
-    	Set a maximum size for partitioning files in sending
-  -tls
-    	Enable TLS for secure transport
-  -verbose
-    	Turn on verbosity
-  -watchdog duration
-    	Trigger a reboot if no connection is seen within this time window
-    	You'll neet to make sure you have the watchdog module enabled on the host and kernel.
-    	Default is disabled (-watchdog=0s)
-```
+NiFi-Receiver Usage:
 
 Example:
 ```
@@ -180,7 +137,7 @@ This tool enables files to be layed down to disk, to be replayed at a later time
 
 NiFi-Stager Usage:
 ```
-NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1336)
+NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1337)
 
 This utility is intended to take input over a NiFi compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
@@ -284,7 +241,7 @@ The purpose of the nifi-unstager is to replay the files layed to disk in the nif
 
 NiFi-Unstager Usage:
 ```
-NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1336)
+NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1337)
 
 This utility is intended to take a directory of NiFi flow files and ship them
 out to a listening NiFi endpoint while maintaining the same set of attribute
@@ -396,7 +353,7 @@ What are the pitfalls?
 
 NiFi-Diode Usage:
 ```
-NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230206.1336)
+NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230206.1337)
 
 This utility is intended to take input over a NiFi compatible port and pass all
 FlowFiles into another NiFi port while updating the attributes with the
