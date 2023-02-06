@@ -42,7 +42,7 @@ func main() {
 		loadTLS()
 	}
 
-	// Settings for the flow file reciever
+	// Settings for the flow file receiver
 	ffReciever := flowfile.NewHTTPReciever(post)
 	if *maxSize != "" {
 		if bs, err := bytesize.Parse(*maxSize); err != nil {
@@ -122,7 +122,7 @@ func post(rdr *flowfile.Scanner, r *http.Request) (err error) {
 		// Send the flowfile to the next NiFi port, if the send fails, it will come
 		// back with an error and this in turn will be passed back to the sender
 		// side.  All this is done without allowing any bytes to transfer from the
-		// reciever side to the sender side.
+		// receiver side to the sender side.
 		sendConfig := &flowfile.SendConfig{}
 		if xForwardFor := r.Header.Get("X-Forwarded-For"); xForwardFor != "" {
 			sendConfig.SetHeader("X-Forwarded-For", r.RemoteAddr+","+xForwardFor)

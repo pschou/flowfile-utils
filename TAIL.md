@@ -1,17 +1,17 @@
 
 # Usage
 
-Here are some examples of the nifi-sender and nifi-reciever in action.  To set things up, we need some fake data first:
+Here are some examples of the nifi-sender and nifi-receiver in action.  To set things up, we need some fake data first:
 
 ```
 source$ dd if=/dev/urandom of=infile_rnd.dat count=100000
 ```
 
-## Sender and reciever
+## Sender and receiver
 
-Setting up the NiFi reciever first:
+Setting up the NiFi receiver first:
 ```
-target$ ./nifi-reciever -path output/
+target$ ./nifi-receiver -path output/
 2023/02/02 14:49:49 Listening with HTTP on :8080 at /contentListener
 ```
 
@@ -23,7 +23,7 @@ source$ ./nifi-sender -url=http://localhost:8080/contentListener infile_rnd.dat
 2023/02/02 14:54:49 done.
 ```
 
-Back at the NiFi reciever side:
+Back at the NiFi receiver side:
 ```
 target$ ls output/
 infile_rnd.dat
@@ -31,11 +31,11 @@ infile_rnd.dat
 
 The file has been sent and dropped to the folder output
 
-## Sender, diode, and reciever
+## Sender, diode, and receiver
 
-Here we will look at tying 3 of these utilities together, in this order we setup the NiFi reciever first:
+Here we will look at tying 3 of these utilities together, in this order we setup the NiFi receiver first:
 ```
-target$ ./nifi-reciever -path output2
+target$ ./nifi-receiver -path output2
 2023/02/02 14:57:33 Listening with HTTP on :8080 at /contentListener
 ```
 

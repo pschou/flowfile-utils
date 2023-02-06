@@ -29,7 +29,7 @@ instance are:
 
 NiFi-Sender Usage:
 ```
-NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230206.1228)
+NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230206.1257)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote NiFi server for processing.
@@ -65,12 +65,12 @@ NiFi Reciever listens on a port for NiFi flow files and then acts on them accord
 
 NiFi-Reciever Usage:
 ```
-NiFi Reciever (github.com/pschou/flowfile-utils, version: 0.1.20230206.1228)
+NiFi Reciever (github.com/pschou/flowfile-utils, version: 0.1.20230206.1257)
 
 This utility is intended to listen for flow files on a NifI compatible port and
 then parse these files and drop them to disk for usage elsewhere.
 
-Usage: ./nifi-reciever [options]
+Usage: ./nifi-receiver [options]
   -CA string
     	A PEM eoncoded CA's certificate file. (default "someCertCAFile")
   -cert string
@@ -101,7 +101,7 @@ Usage: ./nifi-reciever [options]
 
 Example:
 ```
-$ ./nifi-reciever
+$ ./nifi-receiver
 Output set to ./output/
 2023/02/06 08:58:25 Listening with HTTP on :8080 at /contentListener
 2023/02/06 08:58:28   Recieving nifi file output/file1.dat size 18
@@ -118,7 +118,7 @@ $ cat script.sh
 #!/bin/bash
 echo In Script, doing something:
 sha256sum "$1"
-$ ./nifi-reciever -script script.sh -verbose
+$ ./nifi-receiver -script script.sh -verbose
 Output set to ./output/
 2023/02/06 08:59:38 Listening with HTTP on :8080 at /contentListener
 2023/02/06 08:59:40   Recieving nifi file output/file1.dat size 18
@@ -143,7 +143,7 @@ In Script, doing something:
 
 If one desires for the files to be removed after the script is ran:
 ```
-$ ./nifi-reciever -script script.sh -rm
+$ ./nifi-receiver -script script.sh -rm
 Output set to ./output/
 2023/02/06 09:06:18 Listening with HTTP on :8080 at /contentListener
 2023/02/06 09:06:20   Recieving nifi file output/file1.dat size 18
@@ -165,7 +165,7 @@ This tool enables files to be layed down to disk, to be replayed at a later time
 
 NiFi-Stager Usage:
 ```
-NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1228)
+NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1257)
 
 This utility is intended to take input over a NiFi compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
@@ -258,7 +258,7 @@ The purpose of the nifi-unstager is to replay the files layed to disk in the nif
 
 NiFi-Unstager Usage:
 ```
-NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1228)
+NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1257)
 
 This utility is intended to take a directory of NiFi flow files and ship them
 out to a listening NiFi endpoint while maintaining the same set of attribute
@@ -294,7 +294,7 @@ $ ./nifi-unstager -url http://localhost:8080/contentListener -path stager
 
 The remote side sees the files come in as if they were just sent out from a NiFi server.
 ```
-$ ./nifi-reciever
+$ ./nifi-receiver
 Output set to ./output/
 2023/02/06 12:22:09 Listening with HTTP on :8080 at /contentListener
 2023/02/06 12:22:10   Recieving nifi file output/file2.dat size 10
@@ -361,7 +361,7 @@ What are the pitfalls?
 
 NiFi-Diode Usage:
 ```
-NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230206.1228)
+NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230206.1257)
 
 This utility is intended to take input over a NiFi compatible port and pass all
 FlowFiles into another NiFi port while updating the attributes with the
@@ -396,17 +396,17 @@ Usage: ./nifi-diode [options]
 
 # Example:
 
-Here are some examples of the nifi-sender and nifi-reciever in action.  To set things up, we need some fake data first:
+Here are some examples of the nifi-sender and nifi-receiver in action.  To set things up, we need some fake data first:
 
 ```
 source$ dd if=/dev/urandom of=infile_rnd.dat count=100000
 ```
 
-## Sender and reciever
+## Sender and receiver
 
-Setting up the NiFi reciever first:
+Setting up the NiFi receiver first:
 ```
-target$ ./nifi-reciever -path output/
+target$ ./nifi-receiver -path output/
 2023/02/02 14:49:49 Listening with HTTP on :8080 at /contentListener
 ```
 
@@ -418,7 +418,7 @@ source$ ./nifi-sender -url=http://localhost:8080/contentListener infile_rnd.dat
 2023/02/02 14:54:49 done.
 ```
 
-Back at the NiFi reciever side:
+Back at the NiFi receiver side:
 ```
 target$ ls output/
 infile_rnd.dat
@@ -426,11 +426,11 @@ infile_rnd.dat
 
 The file has been sent and dropped to the folder output
 
-## Sender, diode, and reciever
+## Sender, diode, and receiver
 
-Here we will look at tying 3 of these utilities together, in this order we setup the NiFi reciever first:
+Here we will look at tying 3 of these utilities together, in this order we setup the NiFi receiver first:
 ```
-target$ ./nifi-reciever -path output2
+target$ ./nifi-receiver -path output2
 2023/02/02 14:57:33 Listening with HTTP on :8080 at /contentListener
 ```
 

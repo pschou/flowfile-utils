@@ -42,7 +42,7 @@ func main() {
 	fmt.Println("Output set to", *basePath)
 	os.MkdirAll(*basePath, 0755)
 
-	// Settings for the flow file reciever
+	// Settings for the flow file receiver
 	ffReciever := flowfile.NewHTTPReciever(post)
 	if *maxSize != "" {
 		if bs, err := bytesize.Parse(*maxSize); err != nil {
