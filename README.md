@@ -2,9 +2,9 @@
 
 A set of FlowFile routines for working with NiFi feeds.  The utilities include:
 
-NiFi-Reciever - take a NiFi feed and save off files while doing checksums for validity
-
 NiFi-Sender - take a file or directory and send them to a NiFi endpoint
+
+NiFi-Reciever - take a NiFi feed and save off files while doing checksums for validity
 
 NiFi-Stager - take a NiFi feed and temporarily store them to disk for processing later
 
@@ -100,6 +100,62 @@ Output set to ./output/
 $ ls output/
 $
 ```
+
+## NiFi Stager
+
+This tool enables files to be layed down to disk, to be replayed at a later time or different location into a flowfile feed.  Note that the binary payload that is layed down is FlowFile encoded and not parsed out for making sure the exact binary payload is replayed.
+
+Example:
+```
+$ ./nifi-stager
+Output set to stager
+2023/02/06 12:01:10 Listening with HTTP on :8080 at /contentListener
+  Recieving nifi file file1.dat size 18
+  Recieving nifi file file2.dat size 10
+```
+
+The sending side sends like this:
+```
+$ ./nifi-sender -url http://localhost:8080/contentListener file1.dat file2.dat
+2023/02/06 12:03:06 creating sender...
+2023/02/06 12:03:06   sending file1.dat ...
+2023/02/06 12:03:06   sending file2.dat ...
+2023/02/06 12:03:06 done.
+```
+
+Example with script triggered after a successful send:
+```
+$ cat stager_send.sh
+#!/bin/bash
+echo moving content "$1" to another folder /tmp
+mv "$1" /tmp
+
+$ ./nifi-stager  -script stager_send.sh -verbose -rm
+Output set to stager
+2023/02/06 12:03:00 Listening with HTTP on :8080 at /contentListener
+  Recieving nifi file file1.dat size 18
+    [{"Name":"path","Value":"./"},{"Name":"filename","Value":"file1.dat"},{"Name":"modtime","Value":"2023-02-06T08:47:47-05:00"},{"Name":"checksum-type","Value":"SHA256"},{"Name":"checksum","Value":"51fd71b1368a1b130b60cab1301b05bbef470cf4a21ef2956553def809edf4ec"},{"Name":"uuid","Value":"f0aa041f-3302-4358-acd1-136ba76078cf"}]
+2023/02/06 12:03:06   Calling script /bin/bash stager_send.sh stager/60af9b0c-7f23-48a6-bc0e-4f44879e9f3a.dat stager/60af9b0c-7f23-48a6-bc0e-4f44879e9f3a.json
+2023/02/06 12:03:06 ----- START stager_send.sh 60af9b0c-7f23-48a6-bc0e-4f44879e9f3a -----
+moving content stager/60af9b0c-7f23-48a6-bc0e-4f44879e9f3a.dat to another folder /tmp
+
+2023/02/06 12:03:06 ----- END stager_send.sh 60af9b0c-7f23-48a6-bc0e-4f44879e9f3a -----
+2023/02/06 12:03:06   Removed 60af9b0c-7f23-48a6-bc0e-4f44879e9f3a
+  Recieving nifi file file2.dat size 10
+    [{"Name":"path","Value":"./"},{"Name":"filename","Value":"file2.dat"},{"Name":"modtime","Value":"2023-02-06T08:47:53-05:00"},{"Name":"checksum-type","Value":"SHA256"},{"Name":"checksum","Value":"1e26ce5588db2ef5080a3df10385a731af2a4bfd0d2515f691d05d9dd900e18a"},{"Name":"uuid","Value":"794f5452-7aae-4748-8218-6892a9b0b4b5"}]
+2023/02/06 12:03:06   Calling script /bin/bash stager_send.sh stager/02b1ee5d-432a-478d-920b-0e3052dc2344.dat stager/02b1ee5d-432a-478d-920b-0e3052dc2344.json
+2023/02/06 12:03:06 ----- START stager_send.sh 02b1ee5d-432a-478d-920b-0e3052dc2344 -----
+moving content stager/02b1ee5d-432a-478d-920b-0e3052dc2344.dat to another folder /tmp
+
+2023/02/06 12:03:06 ----- END stager_send.sh 02b1ee5d-432a-478d-920b-0e3052dc2344 -----
+2023/02/06 12:03:06   Removed 02b1ee5d-432a-478d-920b-0e3052dc2344
+^C
+```
+
+Note the '-rm' makes sure any leftover artifacts are deleted (to prevent the
+staging directory to be cluttered with leftover FlowFiles).
+
+Using the '-rm-partial=false' will keep files from being deleted if they fail verifications.
 
 ## NiFi Diode
 
@@ -219,7 +275,7 @@ infile_rnd.dat
 
 ```
 # nifi-stager -h
-NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230206.0906)
+NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1208)
 
 This utility is intended to take input over a NiFi compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
@@ -238,6 +294,14 @@ Usage: ./nifi-stager [options]
     	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
   -path string
     	Directory in which stage FlowFiles (default "stager")
+  -rm
+    	Automatically remove file after script has finished
+  -rm-partial
+    	Automatically remove partial files (default true)
+  -script string
+    	Shell script to be called on successful post
+  -script-shell string
+    	Shell to be used for script run (default "/bin/bash")
   -segment-max-size string
     	Set a maximum size for partitioning files in sending
   -tls
@@ -248,7 +312,7 @@ Usage: ./nifi-stager [options]
 
 ```
 # nifi-sender -h
-NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230206.0906)
+NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230206.1208)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote NiFi server for processing.
@@ -270,7 +334,7 @@ Usage: ./nifi-sender [options] path1 path2...
 
 ```
 # nifi-unstager -h
-NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230206.0906)
+NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1208)
 
 This utility is intended to take a directory of NiFi flow files and ship them
 out to a listening NiFi endpoint while maintaining the same set of attribute
@@ -295,7 +359,7 @@ Usage: ./nifi-unstager [options]
 
 ```
 # nifi-reciever -h
-NiFi Reciever (github.com/pschou/flowfile-utils, version: 0.1.20230206.0906)
+NiFi Reciever (github.com/pschou/flowfile-utils, version: 0.1.20230206.1208)
 
 This utility is intended to listen for flow files on a NifI compatible port and
 then parse these files and drop them to disk for usage elsewhere.
@@ -331,7 +395,7 @@ Usage: ./nifi-reciever [options]
 
 ```
 # nifi-diode -h
-NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230206.0906)
+NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230206.1208)
 
 This utility is intended to take input over a NiFi compatible port and pass all
 FlowFiles into another NiFi port while updating the attributes with the

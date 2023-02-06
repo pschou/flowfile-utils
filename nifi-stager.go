@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path"
 
 	"github.com/google/uuid"
@@ -21,11 +22,15 @@ FlowFiles into directory along with associated attributes which can then be
 unstaged using the NiFi Unstager.`
 
 var (
-	basePath   = flag.String("path", "stager", "Directory in which stage FlowFiles")
-	listen     = flag.String("listen", ":8080", "Where to listen to incoming connections (example 1.2.3.4:8080)")
-	listenPath = flag.String("listenPath", "/contentListener", "Path in URL where to expect FlowFiles to be posted")
-	enableTLS  = flag.Bool("tls", false, "Enable TLS for secure transport")
-	maxSize    = flag.String("segment-max-size", "", "Set a maximum size for partitioning files in sending")
+	basePath         = flag.String("path", "stager", "Directory in which stage FlowFiles")
+	listen           = flag.String("listen", ":8080", "Where to listen to incoming connections (example 1.2.3.4:8080)")
+	listenPath       = flag.String("listenPath", "/contentListener", "Path in URL where to expect FlowFiles to be posted")
+	enableTLS        = flag.Bool("tls", false, "Enable TLS for secure transport")
+	maxSize          = flag.String("segment-max-size", "", "Set a maximum size for partitioning files in sending")
+	script           = flag.String("script", "", "Shell script to be called on successful post")
+	scriptShell      = flag.String("script-shell", "/bin/bash", "Shell to be used for script run")
+	remove           = flag.Bool("rm", false, "Automatically remove file after script has finished")
+	removeIncomplete = flag.Bool("rm-partial", true, "Automatically remove partial files")
 )
 
 func main() {
@@ -34,7 +39,7 @@ func main() {
 		loadTLS()
 	}
 
-	fmt.Println("output set to", *basePath)
+	fmt.Println("Output set to", *basePath)
 	os.MkdirAll(*basePath, 0755)
 
 	// Settings for the flow file reciever
@@ -102,13 +107,37 @@ func post(s *flowfile.Scanner, r *http.Request) (err error) {
 		if err = f.WriteTo(fh); err != nil {
 			return
 		}
-		switch t := f.Attrs.Get("kind"); t {
-		case "dir", "link":
-		default:
-			if err = f.Verify(); err != nil {
-				return
+
+		if err = f.Verify(); err != nil {
+			if *removeIncomplete {
+				os.Remove(outputDat)
+				os.Remove(outputAttrs)
+				log.Printf("  Removed %s (unverified)\n", uuid)
+			}
+			return
+		}
+
+		if *script != "" {
+			log.Println("  Calling script", *scriptShell, *script, outputDat, outputAttrs)
+			output, err := exec.Command(*scriptShell, *script, outputDat, outputAttrs).Output()
+			if *verbose {
+				log.Println("----- START", *script, uuid, "-----")
+				fmt.Println(string(output))
+				log.Println("----- END", *script, uuid, "-----")
+				if err != nil {
+					log.Printf("error %s", err)
+				}
+			}
+
+			if *remove {
+				os.Remove(outputDat)
+				os.Remove(outputAttrs)
+				//if *verbose {
+				log.Printf("  Removed %s\n", uuid)
+				//}
 			}
 		}
+
 		f.Attrs.Set("size", fmt.Sprintf("%d", f.Size))
 		attrSlice = append(attrSlice, f.Attrs)
 	}
