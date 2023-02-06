@@ -29,7 +29,7 @@ instance are:
 
 NiFi-Sender Usage:
 ```
-NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230206.1219)
+NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230206.1228)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote NiFi server for processing.
@@ -65,7 +65,7 @@ NiFi Reciever listens on a port for NiFi flow files and then acts on them accord
 
 NiFi-Reciever Usage:
 ```
-NiFi Reciever (github.com/pschou/flowfile-utils, version: 0.1.20230206.1219)
+NiFi Reciever (github.com/pschou/flowfile-utils, version: 0.1.20230206.1228)
 
 This utility is intended to listen for flow files on a NifI compatible port and
 then parse these files and drop them to disk for usage elsewhere.
@@ -165,7 +165,7 @@ This tool enables files to be layed down to disk, to be replayed at a later time
 
 NiFi-Stager Usage:
 ```
-NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1219)
+NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1228)
 
 This utility is intended to take input over a NiFi compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
@@ -252,6 +252,36 @@ staging directory to be cluttered with leftover FlowFiles).
 
 Using the '-rm-partial=false' will keep files from being deleted if they fail verifications.
 
+## NiFi Unstager
+
+The purpose of the nifi-unstager is to replay the files layed to disk in the nifi-stager operation.
+
+NiFi-Stager Usage:
+
+Example:
+
+The unstager listens to a directory and sends files to a remote url:
+```
+$ ./nifi-unstager -url http://localhost:8080/contentListener -path stager
+2023/02/06 12:22:10 Creating FlowFile sender to url http://localhost:8080/contentListener
+2023/02/06 12:22:10 Creating directory listener on stager
+  Unstaging file file2.dat
+  Unstaging file file1.dat
+```
+
+The remote side sees the files come in as if they were just sent out from a NiFi server.
+```
+$ ./nifi-reciever
+Output set to ./output/
+2023/02/06 12:22:09 Listening with HTTP on :8080 at /contentListener
+2023/02/06 12:22:10   Recieving nifi file output/file2.dat size 10
+2023/02/06 12:22:10   Verified file output/file2.dat
+2023/02/06 12:22:10   Recieving nifi file output/file1.dat size 18
+2023/02/06 12:22:10   Verified file output/file1.dat
+^C
+```
+
+
 ## NiFi Diode
 
 A simple NiFi Diode that does one thing, takes in data and passes it on to
@@ -308,7 +338,7 @@ What are the pitfalls?
 
 NiFi-Diode Usage:
 ```
-NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230206.1219)
+NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230206.1228)
 
 This utility is intended to take input over a NiFi compatible port and pass all
 FlowFiles into another NiFi port while updating the attributes with the
