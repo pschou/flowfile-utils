@@ -10,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/inhies/go-bytesize"
@@ -27,17 +28,21 @@ var (
 	listenPath = flag.String("listenPath", "/contentListener", "Path in URL where to expect FlowFiles to be posted")
 	enableTLS  = flag.Bool("tls", false, "Enable TLS for secure transport")
 	maxSize    = flag.String("segment-max-size", "", "Set a maximum size for partitioning files in sending")
+	debug      = flag.Bool("debug", false, "Turn on debug")
 )
 
 func main() {
 	flag.Parse()
+	if *debug {
+		flowfile.Debug = true
+	}
 	if *enableTLS {
 		loadTLS()
 	}
 	fmt.Println("output set to", *basePath)
 
 	// Settings for the flow file reciever
-	ffReciever := flowfile.HTTPReciever{Handler: post}
+	ffReciever := flowfile.NewHTTPFileReciever(post)
 	if *maxSize != "" {
 		if bs, err := bytesize.Parse(*maxSize); err != nil {
 			log.Fatal("Unable to parse max-size", err)
@@ -63,11 +68,19 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 	// the flowfile attributes.
 	dir := filepath.Clean(f.Attrs.Get("path"))
 	filename := f.Attrs.Get("filename")
-	fp := path.Join(dir, filename)
+	fp := path.Join(*basePath, dir, filename)
+	err = os.MkdirAll(path.Join(*basePath, dir), 0755)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if *debug {
+		fmt.Println("kind = ", f.Attrs.Get("kind"), "fp", fp)
+	}
 
 	switch kind := f.Attrs.Get("kind"); kind {
 	case "file", "":
-		fmt.Println("  Recieving nifi file", fp, "size", f.Size())
+		fmt.Println("  Recieving nifi file", fp, "size", f.Size)
 		if *verbose {
 			adat, _ := json.Marshal(f.Attrs)
 			fmt.Printf("    %s\n", adat)
@@ -84,7 +97,28 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 			}
 		}
 	case "dir":
-		os.MkdirAll(fp, 0755)
+		err = os.MkdirAll(fp, 0755)
+		if *debug {
+			fmt.Println("making directory", fp, err)
+		}
+	case "link":
+		if target := f.Attrs.Get("target"); target != "" && !strings.HasPrefix(target, "/") {
+			cleanedTarget := filepath.Clean(path.Join(dir, target))
+			if !strings.HasPrefix(cleanedTarget, "..") {
+				if *debug {
+					fmt.Println("making link", target, fp)
+				}
+				err = os.Symlink(target, fp)
+				if err != nil {
+					if *debug {
+						log.Println(err)
+					}
+					err = nil
+				}
+			} else if *debug {
+				fmt.Println("invalid relative link", target, fp)
+			}
+		}
 	default:
 		if *verbose {
 			log.Println("Cannot accept kind:", kind)

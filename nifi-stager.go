@@ -1,18 +1,15 @@
 package main
 
 import (
-	"encoding/binary"
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
 	"path"
-	"path/filepath"
-	"strings"
 
+	"github.com/google/uuid"
 	"github.com/inhies/go-bytesize"
 	"github.com/pschou/go-flowfile"
 )
@@ -38,9 +35,10 @@ func main() {
 	}
 
 	fmt.Println("output set to", *basePath)
+	os.MkdirAll(*basePath, 0755)
 
 	// Settings for the flow file reciever
-	ffReciever := flowfile.HTTPReciever{Handler: post}
+	ffReciever := flowfile.NewHTTPReciever(post)
 	if *maxSize != "" {
 		if bs, err := bytesize.Parse(*maxSize); err != nil {
 			log.Fatal("Unable to parse max-size", err)
@@ -61,47 +59,61 @@ func main() {
 	}
 }
 
-func post(f *flowfile.File, r *http.Request) (err error) {
-	dir := filepath.Clean(f.Attrs.Get("path"))
-	if strings.HasPrefix(dir, "..") {
-		return fmt.Errorf("Invalid path %q", dir)
-	}
-	dir = path.Join(*basePath, dir)
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			return err
-		}
-	}
+func post(s *flowfile.Scanner, r *http.Request) (err error) {
+	uuid := uuid.New().String()
+	output := path.Join(*basePath, uuid)
+	outputDat := output + ".dat"
+	outputTemp := output + ".inprogress"
+	outputAttrs := output + ".json"
 
-	filename := f.Attrs.Get("filename")
-	uuid := f.Attrs.Get("uuid")
-	output := path.Join(dir, uuid+"-"+filename)
-	outputTemp := path.Join(dir, uuid+".attrs_tmp")
-	outputAttrs := path.Join(dir, uuid+".attrs")
+	var attrSlice []flowfile.Attributes
 	var fh, fha *os.File
-	fmt.Println("  Recieving nifi file", filename, "size", f.Size(), "uuid", uuid)
-	if *verbose {
-		adat, _ := json.Marshal(f.Attrs)
-		fmt.Printf("    %s\n", adat)
-	}
+	defer func() {
+		if fha != nil {
+			fha.Close() // Make sure file is closed at the end of the function
+		}
+		if fh != nil {
+			fh.Close() // Make sure file is closed at the end of the function
+		}
+		if err == nil {
+			os.Rename(outputTemp, outputAttrs)
+		}
+	}()
 
-	if fh, err = os.Create(output); err != nil {
+	// Create file for writing to
+	if fh, err = os.Create(outputDat); err != nil {
 		return err
 	}
-	defer fh.Close() // Make sure file is closed at the end of the function
 	if fha, err = os.Create(outputTemp); err != nil {
 		return err
 	}
-	f.Attrs.Marshal(fha)
-	binary.Write(fha, binary.BigEndian, uint64(f.Size()))
-	fha.Close()
-	os.Rename(outputTemp, outputAttrs)
-	_, err = io.Copy(fh, f)
-	if err != nil {
-		return err
+
+	var f *flowfile.File
+	for s.Scan() {
+		if f, err = s.File(); err != nil {
+			return
+		}
+		fmt.Println("  Recieving nifi file", f.Attrs.Get("filename"), "size", f.Size)
+		if *verbose {
+			adat, _ := json.Marshal(f.Attrs)
+			fmt.Printf("    %s\n", adat)
+		}
+
+		if err = f.WriteTo(fh); err != nil {
+			return
+		}
+		switch t := f.Attrs.Get("kind"); t {
+		case "dir", "link":
+		default:
+			if err = f.Verify(); err != nil {
+				return
+			}
+		}
+		f.Attrs.Set("size", fmt.Sprintf("%d", f.Size))
+		attrSlice = append(attrSlice, f.Attrs)
 	}
-	if f.Attrs.Get("kind") == "dir" {
-		return nil
-	}
-	return f.Verify() // Return the verification of the checksum
+
+	enc := json.NewEncoder(fha)
+	err = enc.Encode(&attrSlice)
+	return
 }

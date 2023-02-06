@@ -33,7 +33,7 @@ var (
 	noChecksum = flag.Bool("no-checksums", false, "Ignore doing checksum checks")
 	//ecc        = flag.Float("ff-ecc", 0, "Set the amount of error correction to be sent (decimal percent)")
 
-	hs *flowfile.HTTPSender
+	hs *flowfile.HTTPSession
 )
 
 func main() {
@@ -43,7 +43,7 @@ func main() {
 	}
 
 	// Settings for the flow file reciever
-	ffReciever := flowfile.HTTPReciever{Handler: post}
+	ffReciever := flowfile.NewHTTPReciever(post)
 	if *maxSize != "" {
 		if bs, err := bytesize.Parse(*maxSize); err != nil {
 			log.Fatal("Unable to parse max-size", err)
@@ -56,7 +56,7 @@ func main() {
 	// Connect to the destination NiFi to prepare to send files
 	log.Println("creating sender...")
 	var err error
-	hs, err = flowfile.NewHTTPSender(*url, http.DefaultClient)
+	hs, err = flowfile.NewHTTPSession(*url, http.DefaultClient)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -83,64 +83,89 @@ func main() {
 }
 
 // Post handles every flowfile that is posted into the diode
-func post(f *flowfile.File, r *http.Request) (err error) {
-	// Quick sanity check that paths are not in a bad state
-	dir := filepath.Clean(f.Attrs.Get("path"))
-	if strings.HasPrefix(dir, "..") {
-		return fmt.Errorf("Invalid path %q", dir)
-	}
+func post(rdr *flowfile.Scanner, r *http.Request) (err error) {
+	var f *flowfile.File
 
-	if *enableTLS && *chain {
-		// Make sure the client certificate is added to the certificate chain, 1 being the closest
-		if err = updateChain(f, r); err != nil {
-			return err
+	httpWriter := hs.NewHTTPWriter(nil)
+	//httpWriter.Write(f)
+	defer func() {
+		httpWriter.Close()
+		if httpWriter.Response == nil {
+			err = fmt.Errorf("File did not send, no response")
+		} else if httpWriter.Response.StatusCode != 200 {
+			err = fmt.Errorf("File did not send successfully, code %d", httpWriter.Response.StatusCode)
 		}
-	}
-
-	// Send the flowfile to the next NiFi port, if the send fails, it will come
-	// back with an error and this in turn will be passed back to the sender
-	// side.  All this is done without allowing any bytes to transfer from the
-	// reciever side to the sender side.
-	sendConfig := &flowfile.SendConfig{}
-	if xForwardFor := r.Header.Get("X-Forwarded-For"); xForwardFor != "" {
-		sendConfig.SetHeader("X-Forwarded-For", r.RemoteAddr+","+xForwardFor)
-	} else {
-		sendConfig.SetHeader("X-Forwarded-For", r.RemoteAddr)
-	}
-	filename := f.Attrs.Get("filename")
-
-	if id := f.Attrs.Get("segment-index"); id != "" {
-		i, _ := strconv.Atoi(id)
-		fmt.Printf("  Dioding segment %d of %s of %s for %s\n", i+1,
-			f.Attrs.Get("segment-count"), path.Join(dir, filename), r.RemoteAddr)
-	} else {
-		fmt.Printf("  Dioding file %s for %s\n", path.Join(dir, filename), r.RemoteAddr)
-	}
-
-	if *verbose {
-		adat, _ := json.Marshal(f.Attrs)
-		fmt.Printf("    %s\n", adat)
-	}
-
-	err = hs.Send(f, sendConfig)
-
-	// Try a few more times before we give up
-	for i := 1; err != nil && i < *retries; i++ {
-		log.Println("  Upstream not accepting", filename, "retrying", i, "of", *retries)
-		time.Sleep(10 * time.Second)
-		err = hs.Handshake()
-		if err != nil {
-			err = hs.Send(f, nil)
+		if *verbose {
+			log.Println("err:", err)
 		}
-	}
-	if err == nil && !*noChecksum {
-		err = f.Verify()
-		if err == flowfile.ErrorChecksumMissing {
-			if *verbose {
-				log.Println("  No checksum found for", filename)
+	}()
+
+	// Loop over all the files in the post payload
+	for rdr.Scan() {
+		if f, err = rdr.File(); err != nil {
+			return
+		}
+		// Quick sanity check that paths are not in a bad state
+		dir := filepath.Clean(f.Attrs.Get("path"))
+		if strings.HasPrefix(dir, "..") {
+			err = fmt.Errorf("Invalid path %q", dir)
+			return
+		}
+
+		if *enableTLS && *chain {
+			// Make sure the client certificate is added to the certificate chain, 1 being the closest
+			if err = updateChain(f, r); err != nil {
+				return
 			}
-			err = nil
 		}
+
+		// Send the flowfile to the next NiFi port, if the send fails, it will come
+		// back with an error and this in turn will be passed back to the sender
+		// side.  All this is done without allowing any bytes to transfer from the
+		// reciever side to the sender side.
+		sendConfig := &flowfile.SendConfig{}
+		if xForwardFor := r.Header.Get("X-Forwarded-For"); xForwardFor != "" {
+			sendConfig.SetHeader("X-Forwarded-For", r.RemoteAddr+","+xForwardFor)
+		} else {
+			sendConfig.SetHeader("X-Forwarded-For", r.RemoteAddr)
+		}
+		filename := f.Attrs.Get("filename")
+
+		if id := f.Attrs.Get("segment-index"); id != "" {
+			i, _ := strconv.Atoi(id)
+			fmt.Printf("  Dioding segment %d of %s of %s for %s\n", i+1,
+				f.Attrs.Get("segment-count"), path.Join(dir, filename), r.RemoteAddr)
+		} else {
+			fmt.Printf("  Dioding file %s for %s\n", path.Join(dir, filename), r.RemoteAddr)
+		}
+
+		if *verbose {
+			adat, _ := json.Marshal(f.Attrs)
+			fmt.Printf("    %s\n", adat)
+		}
+
+		err = hs.Send(f, sendConfig)
+
+		// Try a few more times before we give up
+		for i := 1; err != nil && i < *retries; i++ {
+			log.Println("  Upstream not accepting", filename, "retrying", i, "of", *retries)
+			time.Sleep(10 * time.Second)
+			err = hs.Handshake()
+			if err == nil {
+				err = hs.Send(f, nil)
+			}
+		}
+		/*
+			if err == nil && !*noChecksum {
+				err = f.Verify()
+				if err == flowfile.ErrorChecksumMissing {
+					if *verbose && f.Size > 0 {
+						log.Println("  No checksum found for", filename)
+					}
+					err = nil
+				}
+			}
+		*/
 	}
-	return err
+	return
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/binary"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -9,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -27,14 +28,18 @@ var (
 	retries  = flag.Int("retries", 3, "Retries after failing to send a file")
 )
 
+var hs *flowfile.HTTPSession
+
 func main() {
 	flag.Parse()
 	if strings.HasPrefix(*url, "https") {
 		loadTLS()
 	}
+	//flowfile.Debug = true
 
 	log.Println("Creating FlowFile sender to url", *url)
-	hs, err := flowfile.NewHTTPSender(*url, http.DefaultClient)
+	var err error
+	hs, err = flowfile.NewHTTPSession(*url, http.DefaultClient)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -49,88 +54,83 @@ func main() {
 
 		for _, entry := range dirEntries {
 			// Loop over the files in the directory looking for .attrs files
-			filenamea := path.Join(*basePath, entry.Name())
-			if !strings.HasSuffix(filenamea, ".attrs") {
+			jsonFile := path.Join(*basePath, entry.Name())
+			if !strings.HasSuffix(jsonFile, ".json") {
 				continue
 			}
+			datFile := strings.TrimSuffix(jsonFile, ".json") + ".dat"
 
 			func() { // Break out the thread
-				var fh, fha *os.File
+				var f *flowfile.File
+				var fh *os.File
+
 				defer func() {
-					if fh != nil {
-						fh.Close()
+					fh.Close()
+					if *verbose {
+						log.Println("err:", err)
 					}
-					if fha != nil {
-						fha.Close()
+					if err == nil {
+						// Success!  Remove all the artifacts (clean things up)
+						os.Remove(jsonFile)
+						os.Remove(datFile)
 					}
 				}()
 
-				// Open the file and read the metadata
-				if fha, err = os.Open(filenamea); err != nil {
+				// Open the file
+				if fh, err = os.Open(datFile); err != nil {
 					log.Print("Error opening attribute file:", err)
 					return
 				}
+				defer fh.Close()
 
-				// Read in the FlowFile attributes
-				var a flowfile.Attributes
-				var size uint64
-				if err = a.Unmarshall(fha); err != nil {
-					log.Print("Error parsing attribute file:", err)
-					return
-				}
-				if err = binary.Read(fha, binary.BigEndian, &size); err != nil {
-					log.Print("Error parsing attribute file for size:", err)
-					return
-				}
-				fha.Close()
-				fha = nil
-
-				filename := strings.TrimSuffix(filenamea, ".attrs") + "-" + a.Get("filename")
-				fileInfo, err := os.Stat(filename)
-				if err != nil {
-					log.Println("could not stat file:", filename)
-					return
-				}
-
-				//fmt.Println("comparing sizes", int64(size), fileInfo.Size())
-				if int64(size) == fileInfo.Size() {
-					log.Println("  sending", a.Get("filename"), "...")
-					fh, err := os.Open(filename)
-					if err != nil {
-						log.Fatal(err)
+				// Read in the FlowFile
+				s := flowfile.NewScanner(fh)
+				for s.Scan() {
+					if f, err = s.File(); err != nil {
+						return
 					}
-					fileInfo, _ := fh.Stat()
-					f := flowfile.New(fh, fileInfo.Size())
-					f.Attrs = a
+					// Quick sanity check that paths are not in a bad state
+					dir := filepath.Clean(f.Attrs.Get("path"))
+					filename := f.Attrs.Get("filename")
+					if strings.HasPrefix(dir, "..") {
+						err = fmt.Errorf("Invalid path %q", dir)
+						return
+					}
+
+					if id := f.Attrs.Get("segment-index"); id != "" {
+						i, _ := strconv.Atoi(id)
+						fmt.Printf("  Unstaging segment %d of %s of %s\n", i+1,
+							f.Attrs.Get("segment-count"), path.Join(dir, filename))
+					} else {
+						fmt.Printf("  Unstaging file %s\n", path.Join(dir, filename))
+					}
+
 					if *verbose {
 						adat, _ := json.Marshal(f.Attrs)
 						fmt.Printf("    %s\n", adat)
 					}
 
-					err = hs.Send(f, nil)
-
-					// Try a few more times before we give up
-					for i := 1; err != nil && i < *retries; i++ {
-						time.Sleep(10 * time.Second)
-						err = hs.Handshake()
-						if err != nil {
-							err = hs.Send(f, nil)
-						}
-					}
-
-					if err != nil {
-						log.Println("Error sending file", err)
+					if err = sendWithRetries(f); err != nil {
 						return
 					}
-
-					// Success!  Remove all the artifacts (clean things up)
-					fh.Close()
-					fh = nil
-					os.Remove(filename)
-					os.Remove(filenamea)
 				}
+
 			}()
 		}
 	}
 	log.Println("done.")
+}
+
+func sendWithRetries(ff *flowfile.File) (err error) {
+	err = hs.Send(ff, nil)
+
+	// Try a few more times before we give up
+	for i := 1; err != nil && i < *retries; i++ {
+		log.Println(i, "Error sending:", err)
+		time.Sleep(10 * time.Second)
+		if err = hs.Handshake(); err == nil {
+			err = hs.Send(ff, nil)
+		}
+	}
+	return
 }

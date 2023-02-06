@@ -137,7 +137,7 @@ infile_rnd.dat
 
 ```
 # nifi-stager -h
-NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230203.2002)
+NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230206.0031)
 
 This utility is intended to take input over a NiFi compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
@@ -166,7 +166,7 @@ Usage: ./nifi-stager [options]
 
 ```
 # nifi-sender -h
-NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230203.2002)
+NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230206.0031)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote NiFi server for processing.
@@ -188,7 +188,7 @@ Usage: ./nifi-sender [options] path1 path2...
 
 ```
 # nifi-unstager -h
-NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230203.2002)
+NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230206.0031)
 
 This utility is intended to take a directory of NiFi flow files and ship them
 out to a listening NiFi endpoint while maintaining the same set of attribute
@@ -213,7 +213,7 @@ Usage: ./nifi-unstager [options]
 
 ```
 # nifi-reciever -h
-NiFi Reciever (github.com/pschou/flowfile-utils, version: 0.1.20230203.2002)
+NiFi Reciever (github.com/pschou/flowfile-utils, version: 0.1.20230206.0031)
 
 This utility is intended to listen for flow files on a NifI compatible port and
 then parse these files and drop them to disk for usage elsewhere.
@@ -223,6 +223,8 @@ Usage: ./nifi-reciever [options]
     	A PEM eoncoded CA's certificate file. (default "someCertCAFile")
   -cert string
     	A PEM eoncoded certificate file. (default "someCertFile")
+  -debug
+    	Turn on debug
   -key string
     	A PEM encoded private key file. (default "someKeyFile")
   -listen string
@@ -241,7 +243,7 @@ Usage: ./nifi-reciever [options]
 
 ```
 # nifi-diode -h
-NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230203.2002)
+NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230206.0031)
 
 This utility is intended to take input over a NiFi compatible port and pass all
 FlowFiles into another NiFi port while updating the attributes with the
