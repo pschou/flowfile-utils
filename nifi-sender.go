@@ -45,18 +45,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	//var entries []entry
+	// TODO: Rewrite this section to create a list of files to send.  Then use the HTTPBufferedPostWriter.
+
 	// Loop over the files sending them one at a time
 	for _, arg := range flag.Args() {
-		/*	var fileInfo os.FileInfo
-			if fileInfo, err = os.Lstat(arg); err != nil {
-				log.Fatal(err)
-			}
-			if err != nil {
-				log.Fatal(err)
-			} else if fileInfo.IsDir() {*/
-		// Walk the directory and send files
 
+		// Walk the directory args and send files
 		filepath.Walk(arg, func(filename string, fileInfo os.FileInfo, inerr error) (err error) {
 			if inerr != nil {
 				log.Fatal(inerr)
@@ -120,6 +114,7 @@ func main() {
 			//case mode&fs.ModeNamedPipe != 0:
 			//	fmt.Println("named pipe")
 			default:
+				log.Println("  skipping ", filename)
 				return
 			}
 			go sendWithRetries(f)

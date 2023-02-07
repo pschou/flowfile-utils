@@ -4,8 +4,8 @@ FLAGS := "-s -w -X main.version=${VERSION}"
 all: build readme
 
 build:
-	#go clean -modcache
-	#go mod tidy
+	go clean -modcache
+	go get github.com/pschou/go-flowfile
 	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o nifi-stager nifi-stager.go lib-*.go
 	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o nifi-sender nifi-sender.go lib-*.go
 	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o nifi-unstager nifi-unstager.go lib-*.go
