@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/inhies/go-bytesize"
 	"github.com/pschou/go-flowfile"
@@ -31,9 +30,8 @@ var (
 	maxSize    = flag.String("segment-max-size", "", "Set a maximum size for partitioning files in sending")
 	retries    = flag.Int("retries", 3, "Retries after failing to send a file")
 	noChecksum = flag.Bool("no-checksums", false, "Ignore doing checksum checks")
-	//ecc        = flag.Float("ff-ecc", 0, "Set the amount of error correction to be sent (decimal percent)")
 
-	hs *flowfile.HTTPSession
+	hs *flowfile.HTTPTransaction
 )
 
 func main() {
@@ -58,7 +56,7 @@ func main() {
 	// Connect to the destination NiFi to prepare to send files
 	log.Println("creating sender...")
 	var err error
-	hs, err = flowfile.NewHTTPSession(*url, http.DefaultClient)
+	hs, err = flowfile.NewHTTPTransaction(*url, http.DefaultClient)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -88,7 +86,7 @@ func main() {
 func post(rdr *flowfile.Scanner, r *http.Request) (err error) {
 	var f *flowfile.File
 
-	httpWriter := hs.NewHTTPWriter(nil)
+	httpWriter := hs.NewHTTPPostWriter(nil)
 	//httpWriter.Write(f)
 	defer func() {
 		httpWriter.Close()
@@ -148,26 +146,15 @@ func post(rdr *flowfile.Scanner, r *http.Request) (err error) {
 
 		err = hs.Send(f, sendConfig)
 
-		// Try a few more times before we give up
-		for i := 1; err != nil && i < *retries; i++ {
-			log.Println("  Upstream not accepting", filename, "retrying", i, "of", *retries)
-			time.Sleep(10 * time.Second)
-			err = hs.Handshake()
-			if err == nil {
-				err = hs.Send(f, nil)
+		if err == nil && !*noChecksum {
+			err = f.Verify()
+			if err == flowfile.ErrorChecksumMissing {
+				if *verbose && f.Size > 0 {
+					log.Println("  No checksum found for", filename)
+				}
+				err = nil
 			}
 		}
-		/*
-			if err == nil && !*noChecksum {
-				err = f.Verify()
-				if err == flowfile.ErrorChecksumMissing {
-					if *verbose && f.Size > 0 {
-						log.Println("  No checksum found for", filename)
-					}
-					err = nil
-				}
-			}
-		*/
 	}
 	return
 }

@@ -269,25 +269,40 @@ source$ dd if=/dev/urandom of=infile_rnd.dat count=100000
 
 Setting up the NiFi receiver first:
 ```
-target$ ./nifi-receiver -path output/
-2023/02/02 14:49:49 Listening with HTTP on :8080 at /contentListener
+target$ ./nifi-receiver
+Output set to ./output/
+2023/02/06 20:20:03 Listening with HTTP on :8080 at /contentListener
 ```
 
 We can now send a file:
 ```
-source$ ./nifi-sender -url=http://localhost:8080/contentListener infile_rnd.dat
-2023/02/02 14:54:48 creating sender...
-2023/02/02 14:54:48   sending infile_rnd.dat ...
-2023/02/02 14:54:49 done.
+source$ ./nifi-sender -url=http://localhost:8080/contentListener output2/
+2023/02/06 20:20:16 creating sender...
+2023/02/06 20:20:16   sending empty dir output2/a ...
+2023/02/06 20:20:16   sending empty dir output2/b ...
+2023/02/06 20:20:16   sending output2/infile.dat ...
+2023/02/06 20:20:16   sending output2/infile_rnd.dat ...
+2023/02/06 20:20:17   sending output2/output/infile_rnd.dat ...
+2023/02/06 20:20:18   sending output2/random ...
+2023/02/06 20:20:22 done.
 ```
 
 Back at the NiFi receiver side:
 ```
-target$ ls output/
-infile_rnd.dat
+target$ ./nifi-receiver
+Output set to ./output/
+2023/02/06 20:20:03 Listening with HTTP on :8080 at /contentListener
+2023/02/06 20:20:16   Receiving nifi flowfile output/output2/infile.dat size 512000
+2023/02/06 20:20:16   Verified file output/output2/infile.dat
+2023/02/06 20:20:16   Receiving nifi flowfile output/output2/infile_rnd.dat size 51200000
+2023/02/06 20:20:17   Verified file output/output2/infile_rnd.dat
+2023/02/06 20:20:18   Receiving nifi flowfile output/output2/output/infile_rnd.dat size 51200000
+2023/02/06 20:20:18   Verified file output/output2/output/infile_rnd.dat
+2023/02/06 20:20:20   Receiving nifi flowfile output/output2/random size 153600000
+2023/02/06 20:20:22   Verified file output/output2/random
 ```
 
-The file has been sent and dropped to the folder output
+The files have been sent and dropped to the folder output
 
 ## Sender, diode, and receiver
 

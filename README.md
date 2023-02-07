@@ -31,7 +31,7 @@ instance are:
 
 NiFi-Sender Usage:
 ```
-NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230206.1517)
+NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230206.2152)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote NiFi server for processing.
@@ -44,7 +44,7 @@ Usage: ./nifi-sender [options] path1 path2...
   -key string
     	A PEM encoded private key file. (default "someKeyFile")
   -retries int
-    	Retries after failing to send a file (default 3)
+    	Retries after failing to send a file (default 5)
   -url string
     	Where to send the files (default "http://localhost:8080/contentListener")
   -verbose
@@ -69,7 +69,7 @@ NiFi Receiver listens on a port for NiFi flow files and then acts on them accord
 
 NiFi-Receiver Usage:
 ```
-NiFi Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230206.1517)
+NiFi Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230206.2152)
 
 This utility is intended to listen for flow files on a NifI compatible port and
 then parse these files and drop them to disk for usage elsewhere.
@@ -180,7 +180,7 @@ This tool enables files to be layed down to disk, to be replayed at a later time
 
 NiFi-Stager Usage:
 ```
-NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1517)
+NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230206.2152)
 
 This utility is intended to take input over a NiFi compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
@@ -284,7 +284,7 @@ The purpose of the nifi-unstager is to replay the files layed to disk in the nif
 
 NiFi-Unstager Usage:
 ```
-NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230206.1517)
+NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230206.2152)
 
 This utility is intended to take a directory of NiFi flow files and ship them
 out to a listening NiFi endpoint while maintaining the same set of attribute
@@ -396,7 +396,7 @@ What are the pitfalls?
 
 NiFi-Diode Usage:
 ```
-NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230206.1517)
+NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230206.2152)
 
 This utility is intended to take input over a NiFi compatible port and pass all
 FlowFiles into another NiFi port while updating the attributes with the
@@ -450,25 +450,40 @@ source$ dd if=/dev/urandom of=infile_rnd.dat count=100000
 
 Setting up the NiFi receiver first:
 ```
-target$ ./nifi-receiver -path output/
-2023/02/02 14:49:49 Listening with HTTP on :8080 at /contentListener
+target$ ./nifi-receiver
+Output set to ./output/
+2023/02/06 20:20:03 Listening with HTTP on :8080 at /contentListener
 ```
 
 We can now send a file:
 ```
-source$ ./nifi-sender -url=http://localhost:8080/contentListener infile_rnd.dat
-2023/02/02 14:54:48 creating sender...
-2023/02/02 14:54:48   sending infile_rnd.dat ...
-2023/02/02 14:54:49 done.
+source$ ./nifi-sender -url=http://localhost:8080/contentListener output2/
+2023/02/06 20:20:16 creating sender...
+2023/02/06 20:20:16   sending empty dir output2/a ...
+2023/02/06 20:20:16   sending empty dir output2/b ...
+2023/02/06 20:20:16   sending output2/infile.dat ...
+2023/02/06 20:20:16   sending output2/infile_rnd.dat ...
+2023/02/06 20:20:17   sending output2/output/infile_rnd.dat ...
+2023/02/06 20:20:18   sending output2/random ...
+2023/02/06 20:20:22 done.
 ```
 
 Back at the NiFi receiver side:
 ```
-target$ ls output/
-infile_rnd.dat
+target$ ./nifi-receiver
+Output set to ./output/
+2023/02/06 20:20:03 Listening with HTTP on :8080 at /contentListener
+2023/02/06 20:20:16   Receiving nifi flowfile output/output2/infile.dat size 512000
+2023/02/06 20:20:16   Verified file output/output2/infile.dat
+2023/02/06 20:20:16   Receiving nifi flowfile output/output2/infile_rnd.dat size 51200000
+2023/02/06 20:20:17   Verified file output/output2/infile_rnd.dat
+2023/02/06 20:20:18   Receiving nifi flowfile output/output2/output/infile_rnd.dat size 51200000
+2023/02/06 20:20:18   Verified file output/output2/output/infile_rnd.dat
+2023/02/06 20:20:20   Receiving nifi flowfile output/output2/random size 153600000
+2023/02/06 20:20:22   Verified file output/output2/random
 ```
 
-The file has been sent and dropped to the folder output
+The files have been sent and dropped to the folder output
 
 ## Sender, diode, and receiver
 

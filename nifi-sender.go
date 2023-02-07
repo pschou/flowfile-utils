@@ -24,10 +24,10 @@ send them to a remote NiFi server for processing.`
 
 var (
 	url     = flag.String("url", "http://localhost:8080/contentListener", "Where to send the files")
-	retries = flag.Int("retries", 3, "Retries after failing to send a file")
+	retries = flag.Int("retries", 5, "Retries after failing to send a file")
 )
 
-var hs *flowfile.HTTPSession
+var hs *flowfile.HTTPTransaction
 var wd, _ = os.Getwd()
 
 func main() {
@@ -40,7 +40,7 @@ func main() {
 	// Connect to the NiFi server and establish a session
 	log.Println("creating sender...")
 	var err error
-	hs, err = flowfile.NewHTTPSession(*url, http.DefaultClient)
+	hs, err = flowfile.NewHTTPTransaction(*url, http.DefaultClient)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -102,9 +102,6 @@ func main() {
 					cur = path.Join(wd, cur)
 				}
 				target, _ := os.Readlink(filename)
-				if *verbose {
-					fmt.Println("symbolic link", filename, target)
-				}
 				if strings.HasPrefix(target, "/") {
 					if rel, err := filepath.Rel(cur, target); err == nil &&
 						!strings.HasPrefix(rel, "..") {
@@ -113,6 +110,7 @@ func main() {
 						log.Fatal("Symbolic link", target, "out of scope", err, rel)
 					}
 				}
+				log.Println("  sending symbolic link", filename, "->", target)
 				f.Attrs.Set("kind", "link")
 				f.Attrs.Set("target", target)
 				if *verbose {
@@ -160,6 +158,7 @@ func sendFile(filename string, fileInfo os.FileInfo) (err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer fh.Close()
 	f := flowfile.New(fh, fileInfo.Size())
 	f.Attrs.Set("path", dn)
 	f.Attrs.Set("filename", fn)
@@ -180,6 +179,7 @@ func sendFile(filename string, fileInfo os.FileInfo) (err error) {
 			fmt.Printf("  % 3d) %s\n", i, adat)
 		}
 		sendWithRetries(ff)
+		ff.Close()
 	}
 	return
 }
@@ -190,6 +190,9 @@ func sendWithRetries(ff *flowfile.File) (err error) {
 	// Try a few more times before we give up
 	for i := 1; err != nil && i < *retries; i++ {
 		log.Println(i, "Error sending:", err)
+		if err = ff.Reset(); err != nil {
+			return
+		}
 		time.Sleep(10 * time.Second)
 		if err = hs.Handshake(); err == nil {
 			err = hs.Send(ff, nil)

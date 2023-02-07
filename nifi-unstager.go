@@ -28,7 +28,7 @@ var (
 	retries  = flag.Int("retries", 3, "Retries after failing to send a file")
 )
 
-var hs *flowfile.HTTPSession
+var hs *flowfile.HTTPTransaction
 
 func main() {
 	service_flag()
@@ -41,7 +41,7 @@ func main() {
 
 	log.Println("Creating FlowFile sender to url", *url)
 	var err error
-	hs, err = flowfile.NewHTTPSession(*url, http.DefaultClient)
+	hs, err = flowfile.NewHTTPTransaction(*url, http.DefaultClient)
 	if err != nil {
 		log.Fatal(err)
 	}
