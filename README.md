@@ -31,7 +31,7 @@ instance are:
 
 NiFi-Sender Usage:
 ```
-NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230207.2250)
+NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230208.1212)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote NiFi server for processing.
@@ -71,7 +71,7 @@ NiFi Receiver listens on a port for NiFi flow files and then acts on them accord
 
 NiFi-Receiver Usage:
 ```
-NiFi Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230207.2250)
+NiFi Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230208.1212)
 
 This utility is intended to listen for flow files on a NifI compatible port and
 then parse these files and drop them to disk for usage elsewhere.
@@ -182,7 +182,7 @@ This tool enables files to be layed down to disk, to be replayed at a later time
 
 NiFi-Stager Usage:
 ```
-NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230207.2250)
+NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230208.1212)
 
 This utility is intended to take input over a NiFi compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
@@ -209,7 +209,8 @@ Usage: ./nifi-stager [options]
   -rm
     	Automatically remove file after script has finished
   -rm-partial
-    	Automatically remove partial files (default true)
+    	Automatically remove partial files
+    	To unset this default use -rm-partial=false . (default true)
   -script string
     	Shell script to be called on successful post
   -script-shell string
@@ -286,7 +287,7 @@ The purpose of the nifi-unstager is to replay the files layed to disk in the nif
 
 NiFi-Unstager Usage:
 ```
-NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230207.2250)
+NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230208.1212)
 
 This utility is intended to take a directory of NiFi flow files and ship them
 out to a listening NiFi endpoint while maintaining the same set of attribute
@@ -398,7 +399,7 @@ What are the pitfalls?
 
 NiFi-Diode Usage:
 ```
-NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230207.2250)
+NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230208.1212)
 
 This utility is intended to take input over a NiFi compatible port and pass all
 FlowFiles into another NiFi port while updating the attributes with the
@@ -427,7 +428,7 @@ Usage: ./nifi-diode [options]
   -tls
     	Enforce TLS for secure transport on incoming connections
   -update-chain
-    	Add the client certificate to the connection-chain-# header (default true)
+    	Update the connection chain (restlistener.chain.#.*) (default true)
   -url string
     	Where to send the files from staging (default "http://localhost:8080/contentListener")
   -verbose

@@ -26,7 +26,7 @@ var (
 	listenPath = flag.String("listenPath", "/contentListener", "Path in URL where to expect FlowFiles to be posted")
 	enableTLS  = flag.Bool("tls", false, "Enforce TLS for secure transport on incoming connections")
 	url        = flag.String("url", "http://localhost:8080/contentListener", "Where to send the files from staging")
-	chain      = flag.Bool("update-chain", true, "Add the client certificate to the connection-chain-# header")
+	chain      = flag.Bool("update-chain", true, "Update the connection chain (restlistener.chain.#.*)")
 	maxSize    = flag.String("segment-max-size", "", "Set a maximum size for partitioning files in sending")
 	noChecksum = flag.Bool("no-checksums", false, "Ignore doing checksum checks")
 
@@ -103,18 +103,13 @@ func post(rdr *flowfile.Scanner, r *http.Request) (err error) {
 		if f, err = rdr.File(); err != nil {
 			return
 		}
-		// Quick sanity check that paths are not in a bad state
-		dir := filepath.Clean(f.Attrs.Get("path"))
-		if strings.HasPrefix(dir, "..") {
-			err = fmt.Errorf("Invalid path %q", dir)
-			return
-		}
 
-		if *enableTLS && *chain {
-			// Make sure the client certificate is added to the certificate chain, 1 being the closest
-			if err = updateChain(f, r); err != nil {
-				return
-			}
+		// Flatten directory for ease of viewing
+		dir := filepath.Clean(f.Attrs.Get("path"))
+
+		// Make sure the client chain is added to attributes, 1 being the closest
+		if err = updateChain(f, r, *chain); err != nil {
+			return
 		}
 
 		// Send the flowfile to the next NiFi port, if the send fails, it will come
@@ -128,10 +123,10 @@ func post(rdr *flowfile.Scanner, r *http.Request) (err error) {
 		}
 		filename := f.Attrs.Get("filename")
 
-		if id := f.Attrs.Get("segment-index"); id != "" {
+		if id := f.Attrs.Get("fragment.index"); id != "" {
 			i, _ := strconv.Atoi(id)
-			fmt.Printf("  Dioding segment %d of %s of %s for %s\n", i+1,
-				f.Attrs.Get("segment-count"), path.Join(dir, filename), r.RemoteAddr)
+			fmt.Printf("  Dioding segment %d of %s of %s for %s\n", i,
+				f.Attrs.Get("fragment.count"), path.Join(dir, filename), r.RemoteAddr)
 		} else {
 			fmt.Printf("  Dioding file %s for %s\n", path.Join(dir, filename), r.RemoteAddr)
 		}

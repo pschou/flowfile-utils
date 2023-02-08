@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/djherbis/times"
 	"github.com/pschou/go-flowfile"
 )
 
@@ -70,7 +71,7 @@ func main() {
 			}
 			Attrs.Set("path", dn)
 			Attrs.Set("filename", fn)
-			Attrs.Set("modtime", fileInfo.ModTime().Format(time.RFC3339))
+			Attrs.Set("file.lastModifiedTime", fileInfo.ModTime().Format(time.RFC3339))
 			Attrs.GenerateUUID()
 
 			switch mode := fileInfo.Mode(); {
@@ -142,7 +143,6 @@ func main() {
 					adat, _ := json.Marshal(f.Attrs)
 					fmt.Printf("  %d) %s\n", i, adat)
 				}
-				pw.Write(f)
 				if _, err = pw.Write(f); err != nil {
 					log.Println(err)
 					return err
@@ -208,7 +208,11 @@ func sendFile(filename string, fileInfo os.FileInfo) (err error) {
 	f := flowfile.New(fh, fileInfo.Size())
 	f.Attrs.Set("path", dn)
 	f.Attrs.Set("filename", fn)
-	f.Attrs.Set("modtime", fileInfo.ModTime().Format(time.RFC3339))
+	f.Attrs.Set("file.lastModifiedTime", fileInfo.ModTime().Format(time.RFC3339))
+	f.Attrs.Set("file.creationTime", fileInfo.ModTime().Format(time.RFC3339))
+	if ts, err := times.Stat(filename); err == nil && ts.HasBirthTime() {
+		f.Attrs.Set("file.creationTime", ts.BirthTime().Format(time.RFC3339))
+	}
 	f.AddChecksum("SHA256")
 	f.Attrs.GenerateUUID()
 

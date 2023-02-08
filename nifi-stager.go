@@ -30,7 +30,7 @@ var (
 	script           = flag.String("script", "", "Shell script to be called on successful post")
 	scriptShell      = flag.String("script-shell", "/bin/bash", "Shell to be used for script run")
 	remove           = flag.Bool("rm", false, "Automatically remove file after script has finished")
-	removeIncomplete = flag.Bool("rm-partial", true, "Automatically remove partial files")
+	removeIncomplete = flag.Bool("rm-partial", true, "Automatically remove partial files\nTo unset this default use -rm-partial=false .")
 )
 
 func main() {

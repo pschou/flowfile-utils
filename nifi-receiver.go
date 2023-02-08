@@ -13,10 +13,10 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/inhies/go-bytesize"
 	"github.com/pschou/go-flowfile"
+	"github.com/relvacode/iso8601"
 )
 
 var about = `NiFi Receiver
@@ -96,11 +96,11 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 		// Safe off the file
 		_, err = f.Save(*basePath)
 		if err == nil {
-			if id := f.Attrs.Get("segment-index"); id != "" {
+			if id := f.Attrs.Get("fragment.index"); id != "" {
 				i, _ := strconv.Atoi(id)
-				count, _ := strconv.Atoi(f.Attrs.Get("segment-count"))
-				log.Printf("  Verified segment %d of %s of %s\n", i+1, f.Attrs.Get("segment-count"), fp)
-				if !updateIndexFile(f.Attrs.Get("parent-uuid"), fp+".progress", i, count) {
+				count, _ := strconv.Atoi(f.Attrs.Get("fragment.count"))
+				log.Printf("  Verified segment %d of %d of %s\n", i, count, fp)
+				if !updateIndexFile(f.Attrs.Get("fragment.identifier"), fp+".progress", i-1, count) {
 					// The file is not complete yet
 					return
 				}
@@ -110,9 +110,6 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 				}
 				log.Println("  Verified segmented file", fp)
 				os.Remove(fp + ".progress")
-				if f.Attrs.Get("modtime") == "" {
-					f.Attrs.Set("modtime", f.Attrs.Get("parent-modtime"))
-				}
 			} else {
 				log.Printf("  Verified file %s\n", fp)
 			}
@@ -171,8 +168,8 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 	}
 
 	// Update file time from sender
-	if mt := f.Attrs.Get("modtime"); mt != "" {
-		if fileTime, err := time.Parse(time.RFC3339, mt); err == nil {
+	if mt := f.Attrs.Get("file.lastModifiedTime"); mt != "" {
+		if fileTime, err := iso8601.ParseString(mt); err == nil {
 			os.Chtimes(fp, fileTime, fileTime)
 		}
 	}
@@ -214,10 +211,10 @@ func updateIndexFile(puuid, f string, idx, count int) bool {
 		return false
 	}
 
-	// Verify the parent uuid is the same, if not, start over
+	// Verify the original uuid is the same, if not, start over
 	if string(b[:len(puuid)]) != puuid {
 		if *verbose {
-			log.Println("  non matching puuid found", puuid)
+			log.Println("  non matching uuid found", puuid)
 		}
 		b = make([]byte, len(puuid)+count)
 		copy(b, []byte(puuid))
