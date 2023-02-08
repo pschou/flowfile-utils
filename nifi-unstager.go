@@ -55,14 +55,14 @@ func main() {
 		}
 
 		for _, entry := range dirEntries {
-			// Loop over the files in the directory looking for .attrs files
+			// Loop over the files in the directory looking for .json files
 			jsonFile := path.Join(*basePath, entry.Name())
 			if !strings.HasSuffix(jsonFile, ".json") {
 				continue
 			}
 			datFile := strings.TrimSuffix(jsonFile, ".json") + ".dat"
 
-			func() { // Break out the thread
+			processFile := func() (err error) { // Break out the thread
 				var f *flowfile.File
 				var fh *os.File
 
@@ -84,6 +84,9 @@ func main() {
 					return
 				}
 				defer fh.Close()
+
+				hw := hs.NewHTTPBufferedPostWriter()
+				defer hw.Close()
 
 				// Read in the FlowFile
 				s := flowfile.NewScanner(fh)
@@ -112,27 +115,24 @@ func main() {
 						fmt.Printf("    %s\n", adat)
 					}
 
-					if err = sendWithRetries(f); err != nil {
+					if _, err = hw.Write(f); err != nil {
 						return
 					}
 				}
+				return
+			}
 
-			}()
+			err = processFile()
+
+			// Try a few more times before we give up
+			for i := 1; err != nil && i < *retries; i++ {
+				log.Println(i, "Error sending:", err)
+				time.Sleep(10 * time.Second)
+				if err = hs.Handshake(); err == nil {
+					err = processFile()
+				}
+			}
 		}
 	}
 	log.Println("done.")
-}
-
-func sendWithRetries(ff *flowfile.File) (err error) {
-	err = hs.Send(ff, nil)
-
-	// Try a few more times before we give up
-	for i := 1; err != nil && i < *retries; i++ {
-		log.Println(i, "Error sending:", err)
-		time.Sleep(10 * time.Second)
-		if err = hs.Handshake(); err == nil {
-			err = hs.Send(ff, nil)
-		}
-	}
-	return
 }

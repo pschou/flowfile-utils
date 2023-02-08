@@ -31,16 +31,18 @@ instance are:
 
 NiFi-Sender Usage:
 ```
-NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230207.0917)
+NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230207.2250)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote NiFi server for processing.
 
 Usage: ./nifi-sender [options] path1 path2...
   -CA string
-    	A PEM eoncoded CA's certificate file. (default "someCertCAFile")
+    	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -cert string
-    	A PEM eoncoded certificate file. (default "someCertFile")
+    	A PEM encoded certificate file. (default "someCertFile")
+  -debug
+    	Turn on debug
   -key string
     	A PEM encoded private key file. (default "someKeyFile")
   -retries int
@@ -69,16 +71,16 @@ NiFi Receiver listens on a port for NiFi flow files and then acts on them accord
 
 NiFi-Receiver Usage:
 ```
-NiFi Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230207.0917)
+NiFi Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230207.2250)
 
 This utility is intended to listen for flow files on a NifI compatible port and
 then parse these files and drop them to disk for usage elsewhere.
 
 Usage: ./nifi-receiver [options]
   -CA string
-    	A PEM eoncoded CA's certificate file. (default "someCertCAFile")
+    	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -cert string
-    	A PEM eoncoded certificate file. (default "someCertFile")
+    	A PEM encoded certificate file. (default "someCertFile")
   -debug
     	Turn on debug
   -init-script string
@@ -180,7 +182,7 @@ This tool enables files to be layed down to disk, to be replayed at a later time
 
 NiFi-Stager Usage:
 ```
-NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230207.0917)
+NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230207.2250)
 
 This utility is intended to take input over a NiFi compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
@@ -188,9 +190,9 @@ unstaged using the NiFi Unstager.
 
 Usage: ./nifi-stager [options]
   -CA string
-    	A PEM eoncoded CA's certificate file. (default "someCertCAFile")
+    	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -cert string
-    	A PEM eoncoded certificate file. (default "someCertFile")
+    	A PEM encoded certificate file. (default "someCertFile")
   -init-script string
     	Shell script to be called on start
     	Used to manually setup the networking interfaces when this program is called from GRUB
@@ -284,7 +286,7 @@ The purpose of the nifi-unstager is to replay the files layed to disk in the nif
 
 NiFi-Unstager Usage:
 ```
-NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230207.0917)
+NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230207.2250)
 
 This utility is intended to take a directory of NiFi flow files and ship them
 out to a listening NiFi endpoint while maintaining the same set of attribute
@@ -292,9 +294,9 @@ headers.
 
 Usage: ./nifi-unstager [options]
   -CA string
-    	A PEM eoncoded CA's certificate file. (default "someCertCAFile")
+    	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -cert string
-    	A PEM eoncoded certificate file. (default "someCertFile")
+    	A PEM encoded certificate file. (default "someCertFile")
   -init-script string
     	Shell script to be called on start
     	Used to manually setup the networking interfaces when this program is called from GRUB
@@ -396,7 +398,7 @@ What are the pitfalls?
 
 NiFi-Diode Usage:
 ```
-NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230207.0917)
+NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230207.2250)
 
 This utility is intended to take input over a NiFi compatible port and pass all
 FlowFiles into another NiFi port while updating the attributes with the
@@ -404,9 +406,9 @@ certificate and chaining any previous certificates.
 
 Usage: ./nifi-diode [options]
   -CA string
-    	A PEM eoncoded CA's certificate file. (default "someCertCAFile")
+    	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -cert string
-    	A PEM eoncoded certificate file. (default "someCertFile")
+    	A PEM encoded certificate file. (default "someCertFile")
   -init-script string
     	Shell script to be called on start
     	Used to manually setup the networking interfaces when this program is called from GRUB
@@ -420,8 +422,6 @@ Usage: ./nifi-diode [options]
     	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
   -no-checksums
     	Ignore doing checksum checks
-  -retries int
-    	Retries after failing to send a file (default 3)
   -segment-max-size string
     	Set a maximum size for partitioning files in sending
   -tls

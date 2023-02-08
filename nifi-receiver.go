@@ -55,7 +55,7 @@ func main() {
 			log.Fatal("Unable to parse max-size", err)
 		} else {
 			log.Println("Setting max-size to", bs)
-			ffReceiver.MaxPartitionSize = int(uint64(bs))
+			ffReceiver.MaxPartitionSize = int64(uint64(bs))
 		}
 	}
 
@@ -84,14 +84,14 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 	if *debug {
 		fmt.Println("kind = ", f.Attrs.Get("kind"), "fp", fp)
 	}
+	if *verbose {
+		adat, _ := json.Marshal(f.Attrs)
+		fmt.Printf("  - %s\n", adat)
+	}
 
 	switch kind := f.Attrs.Get("kind"); kind {
 	case "file", "":
 		log.Println("  Receiving nifi flowfile", fp, "size", f.Size)
-		if *verbose {
-			adat, _ := json.Marshal(f.Attrs)
-			fmt.Printf("    %s\n", adat)
-		}
 
 		// Safe off the file
 		_, err = f.Save(*basePath)
@@ -100,7 +100,7 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 				i, _ := strconv.Atoi(id)
 				count, _ := strconv.Atoi(f.Attrs.Get("segment-count"))
 				log.Printf("  Verified segment %d of %s of %s\n", i+1, f.Attrs.Get("segment-count"), fp)
-				if !updateIndexFile(fp+".progress", i, count) {
+				if !updateIndexFile(f.Attrs.Get("parent-uuid"), fp+".progress", i, count) {
 					// The file is not complete yet
 					return
 				}
@@ -108,9 +108,16 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 					// Verification failed
 					return
 				}
+				log.Println("  Verified segmented file", fp)
+				os.Remove(fp + ".progress")
+				if f.Attrs.Get("modtime") == "" {
+					f.Attrs.Set("modtime", f.Attrs.Get("parent-modtime"))
+				}
 			} else {
 				log.Printf("  Verified file %s\n", fp)
 			}
+
+			// If a script file is provided, call it
 			if *script != "" {
 				log.Println("  Calling script", *scriptShell, *script, fp)
 				output, err := exec.Command(*scriptShell, *script, fp).Output()
@@ -123,12 +130,12 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 					}
 				}
 
+				// If the removal of the file is requested
 				if *remove {
-					os.Remove(fp + ".progress")
 					os.Remove(fp)
-					//if *verbose {
-					log.Printf("  Removed %s\n", fp)
-					//}
+					if *verbose {
+						log.Printf("  Removed %s\n", fp)
+					}
 				}
 			}
 		}
@@ -164,7 +171,7 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 	}
 
 	// Update file time from sender
-	if mt := f.Attrs.Get("modtime"); err == nil && mt != "" {
+	if mt := f.Attrs.Get("modtime"); mt != "" {
 		if fileTime, err := time.Parse(time.RFC3339, mt); err == nil {
 			os.Chtimes(fp, fileTime, fileTime)
 		}
@@ -175,7 +182,7 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 
 var updateIndexMutex sync.Mutex
 
-func updateIndexFile(f string, idx, count int) bool {
+func updateIndexFile(puuid, f string, idx, count int) bool {
 	if idx < 0 || idx >= count || count <= 1 {
 		return false
 	}
@@ -186,8 +193,9 @@ func updateIndexFile(f string, idx, count int) bool {
 	fh, err := os.OpenFile(f, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0666)
 	if err == nil {
 		defer fh.Close()
-		b := make([]byte, count)
+		b := make([]byte, len(puuid)+count)
 		b[idx] = 1
+		fh.Write([]byte(puuid))
 		fh.Write(b)
 		return false
 	}
@@ -199,19 +207,36 @@ func updateIndexFile(f string, idx, count int) bool {
 	}
 	defer fh.Close()
 
+	// Now read it all
+	b := make([]byte, len(puuid)+count)
+	n, err := fh.ReadAt(b, 0)
+	if n != len(puuid)+count || err != nil {
+		return false
+	}
+
+	// Verify the parent uuid is the same, if not, start over
+	if string(b[:len(puuid)]) != puuid {
+		if *verbose {
+			log.Println("  non matching puuid found", puuid)
+		}
+		b = make([]byte, len(puuid)+count)
+		copy(b, []byte(puuid))
+		fh.WriteAt(b, 0)
+	}
+
 	// Write what we just did
-	fh.WriteAt([]byte{1}, int64(idx))
+	fh.WriteAt([]byte{1}, int64(len(puuid)+idx))
 
 	// Now read it all
-	b := make([]byte, count)
-	n, err := fh.ReadAt(b, 0)
+	b = make([]byte, count)
+	n, err = fh.ReadAt(b, int64(len(puuid)))
 	if n != count || err != nil {
 		return false
 	}
 
-	if *verbose {
-		log.Println("  Parts seen:", b)
-	}
+	//if *verbose {
+	//	log.Println("  Parts seen:", b)
+	//}
 
 	// If anything is a zero, bail ship
 	for _, t := range b {

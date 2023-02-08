@@ -51,7 +51,7 @@ func main() {
 			log.Fatal("Unable to parse max-size", err)
 		} else {
 			log.Println("Setting max-size to", bs)
-			ffReceiver.MaxPartitionSize = int(uint64(bs))
+			ffReceiver.MaxPartitionSize = int64(uint64(bs))
 		}
 	}
 
@@ -106,7 +106,7 @@ func post(s *flowfile.Scanner, r *http.Request) (err error) {
 			fmt.Printf("    %s\n", adat)
 		}
 
-		if err = f.WriteTo(fh); err != nil {
+		if _, err = f.WriteFile(fh); err != nil {
 			return
 		}
 

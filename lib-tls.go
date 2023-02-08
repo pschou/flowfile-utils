@@ -15,9 +15,9 @@ import (
 )
 
 var (
-	certFile = flag.String("cert", "someCertFile", "A PEM eoncoded certificate file.")
+	certFile = flag.String("cert", "someCertFile", "A PEM encoded certificate file.")
 	keyFile  = flag.String("key", "someKeyFile", "A PEM encoded private key file.")
-	caFile   = flag.String("CA", "someCertCAFile", "A PEM eoncoded CA's certificate file.")
+	caFile   = flag.String("CA", "someCertCAFile", "A PEM encoded CA's certificate file.")
 )
 
 var tlsConfig *tls.Config
@@ -61,7 +61,6 @@ func loadTLS() {
 	}
 	tlsConfig.BuildNameToCertificate()
 	transport := &http.Transport{TLSClientConfig: tlsConfig}
-	http.DefaultClient = &http.Client{Transport: transport}
 	http.DefaultClient = &http.Client{
 		Transport: transport,
 		Timeout:   10 * time.Second,

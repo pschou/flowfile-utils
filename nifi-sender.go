@@ -25,6 +25,7 @@ send them to a remote NiFi server for processing.`
 var (
 	url     = flag.String("url", "http://localhost:8080/contentListener", "Where to send the files")
 	retries = flag.Int("retries", 5, "Retries after failing to send a file")
+	debug   = flag.Bool("debug", false, "Turn on debug")
 )
 
 var hs *flowfile.HTTPTransaction
@@ -33,19 +34,23 @@ var wd, _ = os.Getwd()
 func main() {
 	usage = "[options] path1 path2..."
 	flag.Parse()
+	if *debug {
+		flowfile.Debug = true
+	}
 	if strings.HasPrefix(*url, "https") {
 		loadTLS()
 	}
 
 	// Connect to the NiFi server and establish a session
-	log.Println("creating sender...")
+	log.Println("Creating list of files")
 	var err error
 	hs, err = flowfile.NewHTTPTransaction(*url, http.DefaultClient)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// TODO: Rewrite this section to create a list of files to send.  Then use the HTTPBufferedPostWriter.
+	var content []WorkUnit
+	var zeros []*flowfile.File
 
 	// Loop over the files sending them one at a time
 	for _, arg := range flag.Args() {
@@ -55,37 +60,36 @@ func main() {
 			if inerr != nil {
 				log.Fatal(inerr)
 			}
-			mode := fileInfo.Mode()
-			if mode.IsRegular() {
-				if *verbose {
-					fmt.Println("regular file")
-				}
-				if err = sendFile(filename, fileInfo); err != nil {
-					log.Fatal(err)
-				}
-				return
-			}
-
-			f := flowfile.New(strings.NewReader(""), 0)
+			//mode := fileInfo.Mode()
+			//f := flowfile.New(strings.NewReader(""), 0)
+			var Attrs flowfile.Attributes
+			Size := int64(0)
 			dn, fn := path.Split(filename)
 			if dn == "" {
 				dn = "./"
 			}
-			f.Attrs.Set("path", dn)
-			f.Attrs.Set("filename", fn)
-			f.Attrs.Set("modtime", fileInfo.ModTime().Format(time.RFC3339))
-			f.Attrs.GenerateUUID()
+			Attrs.Set("path", dn)
+			Attrs.Set("filename", fn)
+			Attrs.Set("modtime", fileInfo.ModTime().Format(time.RFC3339))
+			Attrs.GenerateUUID()
 
 			switch mode := fileInfo.Mode(); {
-			case mode.IsDir():
+			case mode.IsRegular():
 				if *verbose {
-					fmt.Println("directory")
+					log.Println("  file", filename)
 				}
+				Size = fileInfo.Size()
+				//if err = sendFile(filename, fileInfo); err != nil {
+				//	log.Fatal(err)
+				//}
+			case mode.IsDir():
 				if !isEmptyDir(filename) {
 					return
 				}
-				f.Attrs.Set("kind", "dir")
-				log.Println("  sending empty dir", filename, "...")
+				Attrs.Set("kind", "dir")
+				if *verbose {
+					log.Println("  empty dir", filename, "...")
+				}
 				/*if *verbose {
 					adat, _ := json.Marshal(f.Attrs)
 					fmt.Printf("  [dir] %s\n", adat)
@@ -104,32 +108,79 @@ func main() {
 						log.Fatal("Symbolic link", target, "out of scope", err, rel)
 					}
 				}
-				log.Println("  sending symbolic link", filename, "->", target)
-				f.Attrs.Set("kind", "link")
-				f.Attrs.Set("target", target)
 				if *verbose {
-					adat, _ := json.Marshal(f.Attrs)
-					fmt.Printf("  [link] %s\n", adat)
+					log.Println("  symbolic link", filename, "->", target)
 				}
+				Attrs.Set("kind", "link")
+				Attrs.Set("target", target)
 			//case mode&fs.ModeNamedPipe != 0:
 			//	fmt.Println("named pipe")
 			default:
-				log.Println("  skipping ", filename)
+				if *verbose {
+					log.Println("  skipping ", filename)
+				}
 				return
 			}
-			go sendWithRetries(f)
+			if Size == 0 {
+				ff := flowfile.New(strings.NewReader(""), 0)
+				ff.Attrs = Attrs
+				zeros = append(zeros, ff)
+			} else {
+				content = append(content, WorkUnit{filename: filename, fileInfo: fileInfo, Attrs: Attrs, Size: Size})
+			}
 			return
 		})
 	}
+
+	// Send off all the empty files and folders first
+	log.Println("Sending...")
+	{
+		sender := func() error {
+			pw := hs.NewHTTPBufferedPostWriter()
+			for i, f := range zeros {
+				if *verbose {
+					adat, _ := json.Marshal(f.Attrs)
+					fmt.Printf("  %d) %s\n", i, adat)
+				}
+				pw.Write(f)
+				if _, err = pw.Write(f); err != nil {
+					log.Println(err)
+					return err
+				}
+			}
+			pw.Close()
+			return nil
+		}
+
+		err = sender()
+		// Try a few more times before we give up
+		for i := 1; err != nil && i < *retries; i++ {
+			log.Println(i, "Error sending:", err)
+			time.Sleep(10 * time.Second)
+			if err = hs.Handshake(); err == nil {
+				err = sender()
+			}
+		}
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	for _, u := range content {
+		sendFile(u.filename, u.fileInfo)
+	}
+
 	hs.Close()
+
+	//log.Println("zeros:", zeros, "content:", content)
 	log.Println("done.")
 }
 
-type entry struct {
-	filename     string
-	fileInfo     os.FileInfo
-	lameChecksum [16]byte
-	size         int
+type WorkUnit struct {
+	filename string
+	fileInfo os.FileInfo
+	Attrs    flowfile.Attributes
+	Size     int64
 }
 
 func isEmptyDir(dir string) bool {
@@ -167,11 +218,11 @@ func sendFile(filename string, fileInfo os.FileInfo) (err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	for i, ff := range segments {
+	for _, ff := range segments {
 		ff.AddChecksum("SHA256")
 		if *verbose {
 			adat, _ := json.Marshal(ff.Attrs)
-			fmt.Printf("  % 3d) %s\n", i, adat)
+			fmt.Printf("  - %s %d\n", adat, ff.Size)
 		}
 		sendWithRetries(ff)
 		ff.Close()
@@ -180,7 +231,7 @@ func sendFile(filename string, fileInfo os.FileInfo) (err error) {
 }
 
 func sendWithRetries(ff *flowfile.File) (err error) {
-	err = hs.Send(ff, nil)
+	err = hs.Send(ff)
 
 	// Try a few more times before we give up
 	for i := 1; err != nil && i < *retries; i++ {
@@ -190,7 +241,7 @@ func sendWithRetries(ff *flowfile.File) (err error) {
 		}
 		time.Sleep(10 * time.Second)
 		if err = hs.Handshake(); err == nil {
-			err = hs.Send(ff, nil)
+			err = hs.Send(ff)
 		}
 	}
 	if err != nil {

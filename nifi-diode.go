@@ -28,7 +28,6 @@ var (
 	url        = flag.String("url", "http://localhost:8080/contentListener", "Where to send the files from staging")
 	chain      = flag.Bool("update-chain", true, "Add the client certificate to the connection-chain-# header")
 	maxSize    = flag.String("segment-max-size", "", "Set a maximum size for partitioning files in sending")
-	retries    = flag.Int("retries", 3, "Retries after failing to send a file")
 	noChecksum = flag.Bool("no-checksums", false, "Ignore doing checksum checks")
 
 	hs *flowfile.HTTPTransaction
@@ -49,7 +48,7 @@ func main() {
 			log.Fatal("Unable to parse max-size", err)
 		} else {
 			log.Println("Setting max-size to", bs)
-			ffReceiver.MaxPartitionSize = int(uint64(bs))
+			ffReceiver.MaxPartitionSize = int64(uint64(bs))
 		}
 	}
 
@@ -86,8 +85,7 @@ func main() {
 func post(rdr *flowfile.Scanner, r *http.Request) (err error) {
 	var f *flowfile.File
 
-	httpWriter := hs.NewHTTPPostWriter(nil)
-	//httpWriter.Write(f)
+	httpWriter := hs.NewHTTPPostWriter()
 	defer func() {
 		httpWriter.Close()
 		if httpWriter.Response == nil {
@@ -123,11 +121,10 @@ func post(rdr *flowfile.Scanner, r *http.Request) (err error) {
 		// back with an error and this in turn will be passed back to the sender
 		// side.  All this is done without allowing any bytes to transfer from the
 		// receiver side to the sender side.
-		sendConfig := &flowfile.SendConfig{}
 		if xForwardFor := r.Header.Get("X-Forwarded-For"); xForwardFor != "" {
-			sendConfig.SetHeader("X-Forwarded-For", r.RemoteAddr+","+xForwardFor)
+			httpWriter.Header.Set("X-Forwarded-For", r.RemoteAddr+","+xForwardFor)
 		} else {
-			sendConfig.SetHeader("X-Forwarded-For", r.RemoteAddr)
+			httpWriter.Header.Set("X-Forwarded-For", r.RemoteAddr)
 		}
 		filename := f.Attrs.Get("filename")
 
@@ -144,7 +141,7 @@ func post(rdr *flowfile.Scanner, r *http.Request) (err error) {
 			fmt.Printf("    %s\n", adat)
 		}
 
-		err = hs.Send(f, sendConfig)
+		_, err = httpWriter.Write(f)
 
 		if err == nil && !*noChecksum {
 			err = f.Verify()
