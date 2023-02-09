@@ -94,6 +94,10 @@ func main() {
 					if f, err = s.File(); err != nil {
 						return
 					}
+
+					// Make sure the client chain is added to attributes, 1 being the closest
+					updateChain(f, nil, "nifi-unstager")
+
 					// Quick sanity check that paths are not in a bad state
 					dir := filepath.Clean(f.Attrs.Get("path"))
 					filename := f.Attrs.Get("filename")

@@ -42,7 +42,6 @@ func main() {
 	}
 
 	fmt.Println("Output set to", *basePath)
-	os.MkdirAll(*basePath, 0755)
 
 	// Settings for the flow file receiver
 	ffReceiver := flowfile.NewHTTPReceiver(post)
@@ -67,6 +66,8 @@ func main() {
 }
 
 func post(s *flowfile.Scanner, r *http.Request) (err error) {
+	os.MkdirAll(*basePath, 0755)
+
 	uuid := uuid.New().String()
 	output := path.Join(*basePath, uuid)
 	outputDat := output + ".dat"
@@ -100,6 +101,10 @@ func post(s *flowfile.Scanner, r *http.Request) (err error) {
 		if f, err = s.File(); err != nil {
 			return
 		}
+
+		// Make sure the client chain is added to attributes, 1 being the closest
+		updateChain(f, r, "")
+
 		fmt.Println("  Receiving nifi file", f.Attrs.Get("filename"), "size", f.Size)
 		if *verbose {
 			adat, _ := json.Marshal(f.Attrs)
