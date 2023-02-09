@@ -105,7 +105,7 @@ func post(s *flowfile.Scanner, r *http.Request) (err error) {
 		}
 
 		// Make sure the client chain is added to attributes, 1 being the closest
-		updateChain(f, r, "TO-DISK")
+		updateChain(f, r, "STAGED")
 
 		fmt.Println("  Receiving nifi file", f.Attrs.Get("filename"), "size", f.Size)
 		if *verbose {

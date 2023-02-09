@@ -101,7 +101,7 @@ func main() {
 					}
 
 					// Make sure the client chain is added to attributes, 1 being the closest
-					updateChain(f, nil, "FROM-DISK")
+					updateChain(f, nil, "UNSTAGED")
 
 					// Quick sanity check that paths are not in a bad state
 					dir := filepath.Clean(f.Attrs.Get("path"))
