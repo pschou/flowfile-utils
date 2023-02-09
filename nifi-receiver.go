@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/inhies/go-bytesize"
 	"github.com/pschou/go-flowfile"
@@ -59,14 +60,21 @@ func main() {
 		}
 	}
 
+	server := &http.Server{
+		Addr:           *listen,
+		TLSConfig:      tlsConfig,
+		ReadTimeout:    10 * time.Hour,
+		WriteTimeout:   10 * time.Hour,
+		MaxHeaderBytes: 1 << 20,
+	}
 	http.Handle(*listenPath, ffReceiver)
+
 	if *enableTLS {
 		log.Println("Listening with HTTPS on", *listen, "at", *listenPath)
-		server := &http.Server{Addr: *listen, TLSConfig: tlsConfig}
 		log.Fatal(server.ListenAndServeTLS(*certFile, *keyFile))
 	} else {
 		log.Println("Listening with HTTP on", *listen, "at", *listenPath)
-		log.Fatal(http.ListenAndServe(*listen, nil))
+		log.Fatal(server.ListenAndServe())
 	}
 }
 
@@ -81,9 +89,6 @@ func post(f *flowfile.File, r *http.Request) (err error) {
 		log.Fatal(err)
 	}
 
-	if *debug {
-		fmt.Println("kind = ", f.Attrs.Get("kind"), "fp", fp)
-	}
 	if *verbose {
 		adat, _ := json.Marshal(f.Attrs)
 		fmt.Printf("  - %s\n", adat)

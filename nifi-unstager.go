@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -40,8 +39,9 @@ func main() {
 	//flowfile.Debug = true
 
 	log.Println("Creating FlowFile sender to url", *url)
+
 	var err error
-	hs, err = flowfile.NewHTTPTransaction(*url, http.DefaultClient)
+	hs, err = flowfile.NewHTTPTransaction(*url, tlsConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -68,7 +68,7 @@ func main() {
 
 				defer func() {
 					fh.Close()
-					if *verbose {
+					if *verbose && err != nil {
 						log.Println("err:", err)
 					}
 					if err == nil {

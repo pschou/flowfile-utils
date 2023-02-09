@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/fs"
 	"log"
-	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -43,9 +42,10 @@ func main() {
 	}
 
 	// Connect to the NiFi server and establish a session
-	log.Println("Creating list of files")
+	log.Println("Creating list of files...")
 	var err error
-	hs, err = flowfile.NewHTTPTransaction(*url, http.DefaultClient)
+
+	hs, err = flowfile.NewHTTPTransaction(*url, tlsConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -144,7 +144,7 @@ func main() {
 					fmt.Printf("  %d) %s\n", i, adat)
 				}
 				if _, err = pw.Write(f); err != nil {
-					log.Println(err)
+					fmt.Println("    ", err)
 					return err
 				}
 			}
@@ -155,7 +155,7 @@ func main() {
 		err = sender()
 		// Try a few more times before we give up
 		for i := 1; err != nil && i < *retries; i++ {
-			log.Println(i, "Error sending:", err)
+			log.Println("retry", i, ",", err)
 			time.Sleep(10 * time.Second)
 			if err = hs.Handshake(); err == nil {
 				err = sender()
@@ -170,7 +170,7 @@ func main() {
 		sendFile(u.filename, u.fileInfo)
 	}
 
-	hs.Close()
+	//hs.Close()
 
 	//log.Println("zeros:", zeros, "content:", content)
 	log.Println("done.")

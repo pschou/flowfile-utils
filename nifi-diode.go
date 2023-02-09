@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/inhies/go-bytesize"
 	"github.com/pschou/go-flowfile"
@@ -29,6 +30,7 @@ var (
 	chain      = flag.Bool("update-chain", true, "Update the connection chain (restlistener.chain.#.*)")
 	maxSize    = flag.String("segment-max-size", "", "Set a maximum size for partitioning files in sending")
 	noChecksum = flag.Bool("no-checksums", false, "Ignore doing checksum checks")
+	debug      = flag.Bool("debug", false, "Turn on debug")
 
 	hs *flowfile.HTTPTransaction
 )
@@ -37,6 +39,9 @@ func main() {
 	service_flag()
 	flag.Parse()
 	service_init()
+	if *debug {
+		flowfile.Debug = true
+	}
 	if *enableTLS || strings.HasPrefix(*url, "https") {
 		loadTLS()
 	}
@@ -53,9 +58,10 @@ func main() {
 	}
 
 	// Connect to the destination NiFi to prepare to send files
-	log.Println("creating sender...")
+	log.Println("Creating sender...")
+
 	var err error
-	hs, err = flowfile.NewHTTPTransaction(*url, http.DefaultClient)
+	hs, err = flowfile.NewHTTPTransaction(*url, tlsConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -69,15 +75,22 @@ func main() {
 		}
 	}
 
-	// Open the local port to listen for incoming connections
+	server := &http.Server{
+		Addr:           *listen,
+		TLSConfig:      tlsConfig,
+		ReadTimeout:    10 * time.Hour,
+		WriteTimeout:   10 * time.Hour,
+		MaxHeaderBytes: 1 << 20,
+	}
 	http.Handle(*listenPath, ffReceiver)
+
+	// Open the local port to listen for incoming connections
 	if *enableTLS {
 		log.Println("Listening with HTTPS on", *listen, "at", *listenPath)
-		server := &http.Server{Addr: *listen, TLSConfig: tlsConfig}
 		log.Fatal(server.ListenAndServeTLS(*certFile, *keyFile))
 	} else {
 		log.Println("Listening with HTTP on", *listen, "at", *listenPath)
-		log.Fatal(http.ListenAndServe(*listen, nil))
+		log.Fatal(server.ListenAndServe())
 	}
 }
 
@@ -86,15 +99,16 @@ func post(rdr *flowfile.Scanner, r *http.Request) (err error) {
 	var f *flowfile.File
 
 	httpWriter := hs.NewHTTPPostWriter()
+
 	defer func() {
 		httpWriter.Close()
+		if *debug && err != nil {
+			log.Println("err:", err)
+		}
 		if httpWriter.Response == nil {
 			err = fmt.Errorf("File did not send, no response")
 		} else if httpWriter.Response.StatusCode != 200 {
 			err = fmt.Errorf("File did not send successfully, code %d", httpWriter.Response.StatusCode)
-		}
-		if *verbose {
-			log.Println("err:", err)
 		}
 	}()
 
@@ -142,7 +156,7 @@ func post(rdr *flowfile.Scanner, r *http.Request) (err error) {
 			err = f.Verify()
 			if err == flowfile.ErrorChecksumMissing {
 				if *verbose && f.Size > 0 {
-					log.Println("  No checksum found for", filename)
+					log.Println("    No checksum found for", filename)
 				}
 				err = nil
 			}
