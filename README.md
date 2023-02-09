@@ -31,7 +31,7 @@ instance are:
 
 NiFi-Sender Usage:
 ```
-NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230209.0041)
+NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230209.1352)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote NiFi server for processing.
@@ -39,6 +39,8 @@ send them to a remote NiFi server for processing.
 Usage: ./nifi-sender [options] path1 path2...
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
+  -attributes string
+    	YML formatted additional attributes to add to flowfiles
   -cert string
     	A PEM encoded certificate file. (default "someCertFile")
   -debug
@@ -47,6 +49,9 @@ Usage: ./nifi-sender [options] path1 path2...
     	A PEM encoded private key file. (default "someKeyFile")
   -retries int
     	Retries after failing to send a file (default 5)
+  -update-chain
+    	Update the connection chain attributes: "custodyChain.#.*"
+    	To disable use -update-chain=false (default true)
   -url string
     	Where to send the files (default "http://localhost:8080/contentListener")
   -verbose
@@ -71,7 +76,7 @@ NiFi Receiver listens on a port for NiFi flow files and then acts on them accord
 
 NiFi-Receiver Usage:
 ```
-NiFi Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230209.0041)
+NiFi Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230209.1352)
 
 This utility is intended to listen for flow files on a NifI compatible port and
 then parse these files and drop them to disk for usage elsewhere.
@@ -106,6 +111,9 @@ Usage: ./nifi-receiver [options]
     	Set a maximum size for partitioning files in sending
   -tls
     	Enable TLS for secure transport
+  -update-chain
+    	Update the connection chain attributes: "custodyChain.#.*"
+    	To disable use -update-chain=false (default true)
   -verbose
     	Turn on verbosity
   -watchdog duration
@@ -182,7 +190,7 @@ This tool enables files to be layed down to disk, to be replayed at a later time
 
 NiFi-Stager Usage:
 ```
-NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230209.0041)
+NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230209.1352)
 
 This utility is intended to take input over a NiFi compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
@@ -191,6 +199,8 @@ unstaged using the NiFi Unstager.
 Usage: ./nifi-stager [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
+  -attributes string
+    	YML formatted additional attributes to add to flowfiles
   -cert string
     	A PEM encoded certificate file. (default "someCertFile")
   -init-script string
@@ -219,6 +229,9 @@ Usage: ./nifi-stager [options]
     	Set a maximum size for partitioning files in sending
   -tls
     	Enable TLS for secure transport
+  -update-chain
+    	Update the connection chain attributes: "custodyChain.#.*"
+    	To disable use -update-chain=false (default true)
   -verbose
     	Turn on verbosity
   -watchdog duration
@@ -287,7 +300,7 @@ The purpose of the nifi-unstager is to replay the files layed to disk in the nif
 
 NiFi-Unstager Usage:
 ```
-NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230209.0041)
+NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230209.1352)
 
 This utility is intended to take a directory of NiFi flow files and ship them
 out to a listening NiFi endpoint while maintaining the same set of attribute
@@ -296,6 +309,8 @@ headers.
 Usage: ./nifi-unstager [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
+  -attributes string
+    	YML formatted additional attributes to add to flowfiles
   -cert string
     	A PEM encoded certificate file. (default "someCertFile")
   -init-script string
@@ -309,6 +324,9 @@ Usage: ./nifi-unstager [options]
     	Directory which to scan for FlowFiles (default "stager")
   -retries int
     	Retries after failing to send a file (default 3)
+  -update-chain
+    	Update the connection chain attributes: "custodyChain.#.*"
+    	To disable use -update-chain=false (default true)
   -url string
     	Where to send the files from staging (default "http://localhost:8080/contentListener")
   -verbose
@@ -399,7 +417,7 @@ What are the pitfalls?
 
 NiFi-Diode Usage:
 ```
-NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230209.0041)
+NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230209.1352)
 
 This utility is intended to take input over a NiFi compatible port and pass all
 FlowFiles into another NiFi port while updating the attributes with the
@@ -408,6 +426,8 @@ certificate and chaining any previous certificates.
 Usage: ./nifi-diode [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
+  -attributes string
+    	YML formatted additional attributes to add to flowfiles
   -cert string
     	A PEM encoded certificate file. (default "someCertFile")
   -debug
@@ -429,6 +449,9 @@ Usage: ./nifi-diode [options]
     	Set a maximum size for partitioning files in sending
   -tls
     	Enforce TLS for secure transport on incoming connections
+  -update-chain
+    	Update the connection chain attributes: "custodyChain.#.*"
+    	To disable use -update-chain=false (default true)
   -url string
     	Where to send the files from staging (default "http://localhost:8080/contentListener")
   -verbose
@@ -522,59 +545,4 @@ a flow that went through two diodes, put to disk in a staging folder, and then
 sent to an additional two diodes.
 
 ```json
-[
-  { "Name": "path", "Value": "output2/" },
-  { "Name": "filename", "Value": "random" },
-  { "Name": "file.lastModifiedTime", "Value": "2023-02-05T19:46:38-05:00" },
-  { "Name": "file.creationTime", "Value": "2023-02-05T19:46:38-05:00" },
-  { "Name": "fragment.identifier", "Value": "a24f389d-9a11-40d2-9114-7b24f95515fe" },
-  { "Name": "segment.original.size", "Value": "153600000" },
-  { "Name": "segment.original.filename", "Value": "random" },
-  { "Name": "segment.original.checksumType", "Value": "SHA256" },
-  { "Name": "segment.original.checksum", "Value": "396abebff84e327ec40ca695e46d536467f746f6d2f129308702781cb64df95d" },
-  { "Name": "merge.reason", "Value": "MAX_BYTES_THRESHOLD_REACHED" },
-  { "Name": "fragment.offset", "Value": "104857600" },
-  { "Name": "fragment.index", "Value": "11" },
-  { "Name": "fragment.count", "Value": "15" },
-  { "Name": "uuid", "Value": "755ec155-7524-43da-b07e-d968cf0a1933" },
-  { "Name": "checksumType", "Value": "SHA256" },
-  { "Name": "checksum", "Value": "d0ec3030fa2a441b0ce977f80af54fb8275c27128de6661ef566fc2f68ced93b" },
-  { "Name": "restlistener.chain.5.source.host", "Value": "::1" },
-  { "Name": "restlistener.chain.5.issuer.dn", "Value": "CN=localhost,O=Test Security,C=US" },
-  { "Name": "restlistener.chain.5.user.dn", "Value": "CN=localhost,O=Global Security npe1,C=US" },
-  { "Name": "restlistener.chain.5.request.uri", "Value": "/contentListener" },
-  { "Name": "restlistener.chain.5.source.port", "Value": "48090" },
-  { "Name": "restlistener.chain.5.cipher", "Value": "TLS_AES_128_GCM_SHA256" },
-  { "Name": "restlistener.chain.5.time", "Value": "2023-02-09T00:31:38-05:00" },
-  { "Name": "restlistener.chain.4.source.host", "Value": "::1" },
-  { "Name": "restlistener.chain.4.issuer.dn", "Value": "CN=localhost,O=Test Security,C=US" },
-  { "Name": "restlistener.chain.4.user.dn", "Value": "CN=localhost,O=Global Security npe1,C=US" },
-  { "Name": "restlistener.chain.4.request.uri", "Value": "/contentListener" },
-  { "Name": "restlistener.chain.4.source.port", "Value": "37460" },
-  { "Name": "restlistener.chain.4.cipher", "Value": "TLS_AES_128_GCM_SHA256" },
-  { "Name": "restlistener.chain.4.time", "Value": "2023-02-09T00:31:38-05:00" },
-  { "Name": "restlistener.chain.3.source.host", "Value": "::1" },
-  { "Name": "restlistener.chain.3.issuer.dn", "Value": "CN=localhost,O=Test Security,C=US" },
-  { "Name": "restlistener.chain.3.user.dn", "Value": "CN=localhost,O=Global Security npe1,C=US" },
-  { "Name": "restlistener.chain.3.request.uri", "Value": "/contentListener" },
-  { "Name": "restlistener.chain.3.source.port", "Value": "44826" },
-  { "Name": "restlistener.chain.3.cipher", "Value": "TLS_AES_128_GCM_SHA256" },
-  { "Name": "restlistener.chain.3.time", "Value": "2023-02-09T00:31:38-05:00" },
-  { "Name": "restlistener.chain.2.time", "Value": "2023-02-09T00:33:45-05:00" },
-  { "Name": "restlistener.chain.2.source", "Value": "nifi-unstager" },
-  { "Name": "restlistener.chain.1.source.host", "Value": "::1" },
-  { "Name": "restlistener.chain.1.issuer.dn", "Value": "CN=localhost,O=Test Security,C=US" },
-  { "Name": "restlistener.chain.1.user.dn", "Value": "CN=localhost,O=Global Security npe1,C=US" },
-  { "Name": "restlistener.chain.1.request.uri", "Value": "/contentListener" },
-  { "Name": "restlistener.chain.1.source.port", "Value": "48194" },
-  { "Name": "restlistener.chain.1.cipher", "Value": "TLS_AES_128_GCM_SHA256" },
-  { "Name": "restlistener.chain.1.time", "Value": "2023-02-09T00:33:45-05:00" },
-  { "Name": "restlistener.chain.0.time", "Value": "2023-02-09T00:33:45-05:00" },
-  { "Name": "restlistener.chain.0.user.dn", "Value": "CN=localhost,O=Global Security npe1,C=US" },
-  { "Name": "restlistener.chain.0.issuer.dn", "Value": "CN=localhost,O=Test Security,C=US" },
-  { "Name": "restlistener.chain.0.request.uri", "Value": "/contentListener" },
-  { "Name": "restlistener.chain.0.source.host", "Value": "::1" },
-  { "Name": "restlistener.chain.0.source.port", "Value": "37562" },
-  { "Name": "restlistener.chain.0.cipher", "Value": "TLS_AES_128_GCM_SHA256" }
-]
 ```

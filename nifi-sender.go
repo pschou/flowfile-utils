@@ -23,9 +23,11 @@ This utility is intended to capture a set of files or directory of files and
 send them to a remote NiFi server for processing.`
 
 var (
-	url     = flag.String("url", "http://localhost:8080/contentListener", "Where to send the files")
-	retries = flag.Int("retries", 5, "Retries after failing to send a file")
-	debug   = flag.Bool("debug", false, "Turn on debug")
+	url        = flag.String("url", "http://localhost:8080/contentListener", "Where to send the files")
+	retries    = flag.Int("retries", 5, "Retries after failing to send a file")
+	attributes = flag.String("attributes", "", "YML formatted additional attributes to add to flowfiles")
+	debug      = flag.Bool("debug", false, "Turn on debug")
+	listen     = new(string)
 )
 
 var hs *flowfile.HTTPTransaction
@@ -34,6 +36,11 @@ var wd, _ = os.Getwd()
 func main() {
 	usage = "[options] path1 path2..."
 	flag.Parse()
+	loadAttributes(*attributes)
+	if len(flag.Args()) == 0 {
+		flag.Usage()
+		return
+	}
 	if *debug {
 		flowfile.Debug = true
 	}
@@ -125,6 +132,10 @@ func main() {
 			if Size == 0 {
 				ff := flowfile.New(strings.NewReader(""), 0)
 				ff.Attrs = Attrs
+
+				// Make sure the client chain is added to attributes, 1 being the closest
+				updateChain(ff, nil, "SENDER")
+
 				zeros = append(zeros, ff)
 			} else {
 				content = append(content, WorkUnit{filename: filename, fileInfo: fileInfo, Attrs: Attrs, Size: Size})
@@ -214,6 +225,10 @@ func sendFile(filename string, fileInfo os.FileInfo) (err error) {
 		f.Attrs.Set("file.creationTime", ts.BirthTime().Format(time.RFC3339))
 	}
 	f.AddChecksum("SHA256")
+
+	// Make sure the client chain is added to attributes, 1 being the closest
+	updateChain(f, nil, "SENDER")
+
 	f.Attrs.GenerateUUID()
 
 	//fmt.Printf("hs = %#v\n", hs)

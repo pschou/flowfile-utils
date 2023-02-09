@@ -22,9 +22,11 @@ out to a listening NiFi endpoint while maintaining the same set of attribute
 headers.`
 
 var (
-	basePath = flag.String("path", "stager", "Directory which to scan for FlowFiles")
-	url      = flag.String("url", "http://localhost:8080/contentListener", "Where to send the files from staging")
-	retries  = flag.Int("retries", 3, "Retries after failing to send a file")
+	basePath   = flag.String("path", "stager", "Directory which to scan for FlowFiles")
+	url        = flag.String("url", "http://localhost:8080/contentListener", "Where to send the files from staging")
+	retries    = flag.Int("retries", 3, "Retries after failing to send a file")
+	listen     = new(string)
+	attributes = flag.String("attributes", "", "YML formatted additional attributes to add to flowfiles")
 )
 
 var hs *flowfile.HTTPTransaction
@@ -32,6 +34,7 @@ var hs *flowfile.HTTPTransaction
 func main() {
 	service_flag()
 	flag.Parse()
+	loadAttributes(*attributes)
 	service_init()
 	if strings.HasPrefix(*url, "https") {
 		loadTLS()
@@ -66,7 +69,12 @@ func main() {
 				var f *flowfile.File
 				var fh *os.File
 
+				hw := hs.NewHTTPBufferedPostWriter()
+
 				defer func() {
+					if hwerr := hw.Close(); err == nil {
+						err = hwerr
+					}
 					fh.Close()
 					if *verbose && err != nil {
 						log.Println("err:", err)
@@ -80,13 +88,10 @@ func main() {
 
 				// Open the file
 				if fh, err = os.Open(datFile); err != nil {
-					log.Print("Error opening attribute file:", err)
+					err = fmt.Errorf("Error opening staged file:", err)
 					return
 				}
 				defer fh.Close()
-
-				hw := hs.NewHTTPBufferedPostWriter()
-				defer hw.Close()
 
 				// Read in the FlowFile
 				s := flowfile.NewScanner(fh)
@@ -96,7 +101,7 @@ func main() {
 					}
 
 					// Make sure the client chain is added to attributes, 1 being the closest
-					updateChain(f, nil, "nifi-unstager")
+					updateChain(f, nil, "FROM-DISK")
 
 					// Quick sanity check that paths are not in a bad state
 					dir := filepath.Clean(f.Attrs.Get("path"))
@@ -132,7 +137,7 @@ func main() {
 			for i := 1; err != nil && i < *retries; i++ {
 				log.Println(i, "Error sending:", err)
 				time.Sleep(10 * time.Second)
-				if err = hs.Handshake(); err == nil {
+				if hserr := hs.Handshake(); hserr == nil {
 					err = processFile()
 				}
 			}

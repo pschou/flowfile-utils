@@ -18,3 +18,6 @@ build:
 
 readme:
 	./readme.sh
+
+clean:
+	rm nifi-diode nifi-receiver nifi-sender nifi-stager nifi-unstager

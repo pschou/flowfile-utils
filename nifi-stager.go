@@ -31,12 +31,14 @@ var (
 	scriptShell      = flag.String("script-shell", "/bin/bash", "Shell to be used for script run")
 	remove           = flag.Bool("rm", false, "Automatically remove file after script has finished")
 	removeIncomplete = flag.Bool("rm-partial", true, "Automatically remove partial files\nTo unset this default use -rm-partial=false .")
+	attributes       = flag.String("attributes", "", "YML formatted additional attributes to add to flowfiles")
 )
 
 func main() {
 	service_flag()
 	flag.Parse()
 	service_init()
+	loadAttributes(*attributes)
 	if *enableTLS {
 		loadTLS()
 	}
@@ -103,7 +105,7 @@ func post(s *flowfile.Scanner, r *http.Request) (err error) {
 		}
 
 		// Make sure the client chain is added to attributes, 1 being the closest
-		updateChain(f, r, "")
+		updateChain(f, r, "TO-DISK")
 
 		fmt.Println("  Receiving nifi file", f.Attrs.Get("filename"), "size", f.Size)
 		if *verbose {

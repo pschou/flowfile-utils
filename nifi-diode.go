@@ -27,10 +27,10 @@ var (
 	listenPath = flag.String("listenPath", "/contentListener", "Path in URL where to expect FlowFiles to be posted")
 	enableTLS  = flag.Bool("tls", false, "Enforce TLS for secure transport on incoming connections")
 	url        = flag.String("url", "http://localhost:8080/contentListener", "Where to send the files from staging")
-	//chain      = flag.Bool("update-chain", true, "Update the connection chain (restlistener.chain.#.*)")
 	maxSize    = flag.String("segment-max-size", "", "Set a maximum size for partitioning files in sending")
 	noChecksum = flag.Bool("no-checksums", false, "Ignore doing checksum checks")
 	debug      = flag.Bool("debug", false, "Turn on debug")
+	attributes = flag.String("attributes", "", "YML formatted additional attributes to add to flowfiles")
 
 	hs *flowfile.HTTPTransaction
 )
@@ -39,6 +39,7 @@ func main() {
 	service_flag()
 	flag.Parse()
 	service_init()
+	loadAttributes(*attributes)
 	if *debug {
 		flowfile.Debug = true
 	}
@@ -122,7 +123,7 @@ func post(rdr *flowfile.Scanner, r *http.Request) (err error) {
 		dir := filepath.Clean(f.Attrs.Get("path"))
 
 		// Make sure the client chain is added to attributes, 1 being the closest
-		updateChain(f, r, "")
+		updateChain(f, r, "DIODE")
 
 		// Send the flowfile to the next NiFi port, if the send fails, it will come
 		// back with an error and this in turn will be passed back to the sender

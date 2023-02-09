@@ -1,0 +1,4 @@
+# Some attributes example, this is one-per-line and "key: value" format
+MY_poc:     dan
+MY_sidecar: 123
+MY_group:   TeamA
