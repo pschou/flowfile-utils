@@ -50,6 +50,8 @@ func main() {
 	}
 
 	log.Println("Creating directory listener on", *basePath)
+
+	// infinite loop for scanning the directory
 	for ; true; time.Sleep(3 * time.Second) {
 		dirEntries, err := os.ReadDir(*basePath)
 		if err != nil {
@@ -69,12 +71,14 @@ func main() {
 				var f *flowfile.File
 				var fh *os.File
 
-				hw := hs.NewHTTPBufferedPostWriter()
+				// Open the file
+				if fh, err = os.Open(datFile); err != nil {
+					err = fmt.Errorf("Error opening staged file:", err)
+					return
+				}
 
+				hw := hs.NewHTTPBufferedPostWriter()
 				defer func() {
-					if hwerr := hw.Close(); err == nil {
-						err = hwerr
-					}
 					fh.Close()
 					if *verbose && err != nil {
 						log.Println("err:", err)
@@ -86,13 +90,6 @@ func main() {
 					}
 				}()
 
-				// Open the file
-				if fh, err = os.Open(datFile); err != nil {
-					err = fmt.Errorf("Error opening staged file:", err)
-					return
-				}
-				defer fh.Close()
-
 				// Read in the FlowFile
 				s := flowfile.NewScanner(fh)
 				for s.Scan() {
@@ -101,7 +98,7 @@ func main() {
 					}
 
 					// Make sure the client chain is added to attributes, 1 being the closest
-					updateChain(f, nil, "UNSTAGED")
+					updateChain(f, nil, "FROM-DISK")
 
 					// Quick sanity check that paths are not in a bad state
 					dir := filepath.Clean(f.Attrs.Get("path"))
@@ -128,10 +125,14 @@ func main() {
 						return
 					}
 				}
+				if hwerr := hw.Close(); err == nil {
+					err = hwerr
+				}
 				return
 			}
 
 			err = processFile()
+			fmt.Println("processFile", err)
 
 			// Try a few more times before we give up
 			for i := 1; err != nil && i < *retries; i++ {
@@ -140,6 +141,10 @@ func main() {
 				if hserr := hs.Handshake(); hserr == nil {
 					err = processFile()
 				}
+			}
+
+			if err != nil {
+				log.Fatal(err)
 			}
 		}
 	}
