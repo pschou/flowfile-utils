@@ -31,7 +31,7 @@ instance are:
 
 NiFi-Sender Usage:
 ```
-NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230209.1401)
+NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230209.1402)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote NiFi server for processing.
@@ -76,7 +76,7 @@ NiFi Receiver listens on a port for NiFi flow files and then acts on them accord
 
 NiFi-Receiver Usage:
 ```
-NiFi Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230209.1401)
+NiFi Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230209.1402)
 
 This utility is intended to listen for flow files on a NifI compatible port and
 then parse these files and drop them to disk for usage elsewhere.
@@ -190,7 +190,7 @@ This tool enables files to be layed down to disk, to be replayed at a later time
 
 NiFi-Stager Usage:
 ```
-NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230209.1401)
+NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230209.1402)
 
 This utility is intended to take input over a NiFi compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
@@ -300,7 +300,7 @@ The purpose of the nifi-unstager is to replay the files layed to disk in the nif
 
 NiFi-Unstager Usage:
 ```
-NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230209.1401)
+NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230209.1402)
 
 This utility is intended to take a directory of NiFi flow files and ship them
 out to a listening NiFi endpoint while maintaining the same set of attribute
@@ -417,7 +417,7 @@ What are the pitfalls?
 
 NiFi-Diode Usage:
 ```
-NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230209.1401)
+NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230209.1402)
 
 This utility is intended to take input over a NiFi compatible port and pass all
 FlowFiles into another NiFi port while updating the attributes with the
@@ -599,7 +599,7 @@ sent to an additional two diodes.
   {"Name":"custodyChain.3.tls.cipher","Value":"TLS_AES_128_GCM_SHA256"},
   {"Name":"custodyChain.3.tls.host","Value":"localhost"},
   {"Name":"custodyChain.3.tls.version","Value":"1.3"},
-  {"Name":"custodyChain.2.action","Value":"TO-DISK"},
+  {"Name":"custodyChain.2.action","Value":"STAGED"},
   {"Name":"custodyChain.2.time","Value":"2023-02-09T13:46:46-05:00"},
   {"Name":"custodyChain.2.local.hostname","Value":"centos7.schou.me"},
   {"Name":"custodyChain.2.user.dn","Value":"CN=localhost,O=Global Security npe2,C=US"},
@@ -612,7 +612,7 @@ sent to an additional two diodes.
   {"Name":"custodyChain.2.tls.cipher","Value":"TLS_AES_128_GCM_SHA256"},
   {"Name":"custodyChain.2.tls.host","Value":"localhost"},
   {"Name":"custodyChain.2.tls.version","Value":"1.3"},
-  {"Name":"custodyChain.1.action","Value":"FROM-DISK"},
+  {"Name":"custodyChain.1.action","Value":"UNSTAGED"},
   {"Name":"custodyChain.1.time","Value":"2023-02-09T13:50:31-05:00"},
   {"Name":"custodyChain.1.local.hostname","Value":"centos7.schou.me"},
   {"Name":"custodyChain.0.action","Value":"DIODE"},
