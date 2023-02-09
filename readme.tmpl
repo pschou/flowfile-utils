@@ -314,7 +314,7 @@ target$ ./nifi-receiver -path output2
 
 Setup the diode to make the connections in-between:
 ```
-diode$ ./nifi-diode -segment-max-size 10MB
+diode$ ./nifi-diode -segment-max-size 10MB -url=http://localhost:8080/contentListener -listen :8082
 2023/02/02 14:58:28 creating sender...
 2023/02/02 14:58:28 Listening with HTTP on :8082 at /contentListener
 ```
