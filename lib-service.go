@@ -12,15 +12,40 @@ import (
 	"github.com/mdlayher/watchdog"
 )
 
-var watchdog_max *time.Duration
-var initScript, initScriptShell *string
+var (
+	watchdog_max, retryTimeout  *time.Duration
+	initScript, initScriptShell *string
+	url                         = new(string)
+	attributes                  = new(string)
+	listen                      = new(string)
+	listenPath                  = new(string)
+	retries                     *int
+	isService                   bool
+	maxSize                     = new(string)
+)
 
-func service_flag() {
+func sender_flags() {
+	url = flag.String("url", "http://localhost:8080/contentListener", "Where to send the files")
+	attributes = flag.String("attributes", "", "File with additional attributes to add to FlowFiles")
+}
+func origin_flags() {
+	retries = flag.Int("retries", 5, "Retries after failing to send a file to NiFi listening point")
+	retryTimeout = flag.Duration("retry-timeout", 10*time.Second, "Time between retries")
+}
+func listen_flags() {
+	enableTLS = flag.Bool("tls", false, "Enforce TLS secure transport on incoming connections")
+	maxSize = flag.String("segment-max-size", "", "Set a maximum size for partitioning files in sending")
+	listen = flag.String("listen", ":8080", "Where to listen to incoming connections (example 1.2.3.4:8080)")
+	listenPath = flag.String("listenPath", "/contentListener", "Path in URL where to expect FlowFiles to be posted")
+}
+
+func service_flags() {
+	isService = true
 	watchdog_max = flag.Duration("watchdog", time.Duration(0), "Trigger a reboot if no connection is seen within this time window\nYou'll neet to make sure you have the watchdog module enabled on the host and kernel.\nDefault is disabled (-watchdog=0s)")
 	initScript = flag.String("init-script", "", "Shell script to be called on start\nUsed to manually setup the networking interfaces when this program is called from GRUB")
 	initScriptShell = flag.String("init-script-shell", "/bin/bash", "Shell to be used for init script run")
-
 }
+
 func service_init() {
 	if *initScript != "" {
 		log.Println("  Calling init script", *initScriptShell, *initScript)

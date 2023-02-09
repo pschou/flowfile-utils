@@ -9,43 +9,28 @@ import (
 	"path"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/inhies/go-bytesize"
 	"github.com/pschou/go-flowfile"
 )
 
-var about = `NiFi Diode
+var (
+	about = `NiFi Diode
 
 This utility is intended to take input over a NiFi compatible port and pass all
 FlowFiles into another NiFi port while updating the attributes with the
 certificate and chaining any previous certificates.`
 
-var (
-	listen     = flag.String("listen", ":8082", "Where to listen to incoming connections (example 1.2.3.4:8080)")
-	listenPath = flag.String("listenPath", "/contentListener", "Path in URL where to expect FlowFiles to be posted")
-	enableTLS  = flag.Bool("tls", false, "Enforce TLS for secure transport on incoming connections")
-	url        = flag.String("url", "http://localhost:8080/contentListener", "Where to send the files from staging")
-	maxSize    = flag.String("segment-max-size", "", "Set a maximum size for partitioning files in sending")
 	noChecksum = flag.Bool("no-checksums", false, "Ignore doing checksum checks")
-	debug      = flag.Bool("debug", false, "Turn on debug")
-	attributes = flag.String("attributes", "", "YML formatted additional attributes to add to flowfiles")
-
-	hs *flowfile.HTTPTransaction
+	hs         *flowfile.HTTPTransaction
 )
 
 func main() {
-	service_flag()
-	flag.Parse()
-	service_init()
-	loadAttributes(*attributes)
-	if *debug {
-		flowfile.Debug = true
-	}
-	if *enableTLS || strings.HasPrefix(*url, "https") {
-		loadTLS()
-	}
+	service_flags()
+	listen_flags()
+	sender_flags()
+	parse()
 
 	// Settings for the flow file receiver
 	ffReceiver := flowfile.NewHTTPReceiver(post)
@@ -66,15 +51,22 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if hs.MaxPartitionSize > 0 || ffReceiver.MaxPartitionSize > 0 {
-		if ffReceiver.MaxPartitionSize == 0 ||
-			(hs.MaxPartitionSize > 0 && hs.MaxPartitionSize < ffReceiver.MaxPartitionSize) {
-			log.Println("Setting max-size to", hs.MaxPartitionSize)
-			ffReceiver.MaxPartitionSize = hs.MaxPartitionSize
-		} else {
-			log.Println("Keeping max-size at", ffReceiver.MaxPartitionSize)
+
+	go func() {
+		for {
+			if hs.MaxPartitionSize > 0 || ffReceiver.MaxPartitionSize > 0 {
+				if ffReceiver.MaxPartitionSize == 0 ||
+					(hs.MaxPartitionSize > 0 && hs.MaxPartitionSize < ffReceiver.MaxPartitionSize) {
+					log.Println("Setting max-size to", hs.MaxPartitionSize)
+					ffReceiver.MaxPartitionSize = hs.MaxPartitionSize
+				} else {
+					log.Println("Keeping max-size at", ffReceiver.MaxPartitionSize)
+				}
+			}
+			time.Sleep(10 * time.Minute)
+			hs.Handshake()
 		}
-	}
+	}()
 
 	server := &http.Server{
 		Addr:           *listen,

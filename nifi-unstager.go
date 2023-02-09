@@ -22,24 +22,16 @@ out to a listening NiFi endpoint while maintaining the same set of attribute
 headers.`
 
 var (
-	basePath   = flag.String("path", "stager", "Directory which to scan for FlowFiles")
-	url        = flag.String("url", "http://localhost:8080/contentListener", "Where to send the files from staging")
-	retries    = flag.Int("retries", 3, "Retries after failing to send a file")
-	listen     = new(string)
-	attributes = flag.String("attributes", "", "YML formatted additional attributes to add to flowfiles")
+	basePath = flag.String("path", "stager", "Directory which to scan for FlowFiles")
 )
 
 var hs *flowfile.HTTPTransaction
 
 func main() {
-	service_flag()
-	flag.Parse()
-	loadAttributes(*attributes)
-	service_init()
-	if strings.HasPrefix(*url, "https") {
-		loadTLS()
-	}
-	//flowfile.Debug = true
+	service_flags()
+	origin_flags()
+	sender_flags()
+	parse()
 
 	log.Println("Creating FlowFile sender to url", *url)
 
@@ -137,7 +129,7 @@ func main() {
 			// Try a few more times before we give up
 			for i := 1; err != nil && i < *retries; i++ {
 				log.Println(i, "Error sending:", err)
-				time.Sleep(10 * time.Second)
+				time.Sleep(*retryTimeout)
 				if hserr := hs.Handshake(); hserr == nil {
 					err = processFile()
 				}

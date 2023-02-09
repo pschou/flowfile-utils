@@ -31,7 +31,7 @@ instance are:
 
 NiFi-Sender Usage:
 ```
-NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230209.1419)
+NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230209.1520)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote NiFi server for processing.
@@ -40,15 +40,17 @@ Usage: ./nifi-sender [options] path1 path2...
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -attributes string
-    	YML formatted additional attributes to add to flowfiles
+    	File with additional attributes to add to FlowFiles
   -cert string
     	A PEM encoded certificate file. (default "someCertFile")
   -debug
-    	Turn on debug
+    	Turn on debug in FlowFile library
   -key string
     	A PEM encoded private key file. (default "someKeyFile")
   -retries int
-    	Retries after failing to send a file (default 5)
+    	Retries after failing to send a file to NiFi listening point (default 5)
+  -retry-timeout duration
+    	Time between retries (default 10s)
   -update-chain
     	Update the connection chain attributes: "custodyChain.#.*"
     	To disable use -update-chain=false (default true)
@@ -76,7 +78,7 @@ NiFi Receiver listens on a port for NiFi flow files and then acts on them accord
 
 NiFi-Receiver Usage:
 ```
-NiFi Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230209.1419)
+NiFi Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230209.1520)
 
 This utility is intended to listen for flow files on a NifI compatible port and
 then parse these files and drop them to disk for usage elsewhere.
@@ -87,7 +89,7 @@ Usage: ./nifi-receiver [options]
   -cert string
     	A PEM encoded certificate file. (default "someCertFile")
   -debug
-    	Turn on debug
+    	Turn on debug in FlowFile library
   -init-script string
     	Shell script to be called on start
     	Used to manually setup the networking interfaces when this program is called from GRUB
@@ -110,7 +112,7 @@ Usage: ./nifi-receiver [options]
   -segment-max-size string
     	Set a maximum size for partitioning files in sending
   -tls
-    	Enable TLS for secure transport
+    	Enforce TLS secure transport on incoming connections
   -update-chain
     	Update the connection chain attributes: "custodyChain.#.*"
     	To disable use -update-chain=false (default true)
@@ -190,7 +192,7 @@ This tool enables files to be layed down to disk, to be replayed at a later time
 
 NiFi-Stager Usage:
 ```
-NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230209.1419)
+NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230209.1520)
 
 This utility is intended to take input over a NiFi compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
@@ -199,10 +201,10 @@ unstaged using the NiFi Unstager.
 Usage: ./nifi-stager [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
-  -attributes string
-    	YML formatted additional attributes to add to flowfiles
   -cert string
     	A PEM encoded certificate file. (default "someCertFile")
+  -debug
+    	Turn on debug in FlowFile library
   -init-script string
     	Shell script to be called on start
     	Used to manually setup the networking interfaces when this program is called from GRUB
@@ -228,7 +230,7 @@ Usage: ./nifi-stager [options]
   -segment-max-size string
     	Set a maximum size for partitioning files in sending
   -tls
-    	Enable TLS for secure transport
+    	Enforce TLS secure transport on incoming connections
   -update-chain
     	Update the connection chain attributes: "custodyChain.#.*"
     	To disable use -update-chain=false (default true)
@@ -300,7 +302,7 @@ The purpose of the nifi-unstager is to replay the files layed to disk in the nif
 
 NiFi-Unstager Usage:
 ```
-NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230209.1419)
+NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230209.1520)
 
 This utility is intended to take a directory of NiFi flow files and ship them
 out to a listening NiFi endpoint while maintaining the same set of attribute
@@ -310,9 +312,11 @@ Usage: ./nifi-unstager [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -attributes string
-    	YML formatted additional attributes to add to flowfiles
+    	File with additional attributes to add to FlowFiles
   -cert string
     	A PEM encoded certificate file. (default "someCertFile")
+  -debug
+    	Turn on debug in FlowFile library
   -init-script string
     	Shell script to be called on start
     	Used to manually setup the networking interfaces when this program is called from GRUB
@@ -323,12 +327,14 @@ Usage: ./nifi-unstager [options]
   -path string
     	Directory which to scan for FlowFiles (default "stager")
   -retries int
-    	Retries after failing to send a file (default 3)
+    	Retries after failing to send a file to NiFi listening point (default 5)
+  -retry-timeout duration
+    	Time between retries (default 10s)
   -update-chain
     	Update the connection chain attributes: "custodyChain.#.*"
     	To disable use -update-chain=false (default true)
   -url string
-    	Where to send the files from staging (default "http://localhost:8080/contentListener")
+    	Where to send the files (default "http://localhost:8080/contentListener")
   -verbose
     	Turn on verbosity
   -watchdog duration
@@ -417,7 +423,7 @@ What are the pitfalls?
 
 NiFi-Diode Usage:
 ```
-NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230209.1419)
+NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230209.1520)
 
 This utility is intended to take input over a NiFi compatible port and pass all
 FlowFiles into another NiFi port while updating the attributes with the
@@ -427,11 +433,11 @@ Usage: ./nifi-diode [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -attributes string
-    	YML formatted additional attributes to add to flowfiles
+    	File with additional attributes to add to FlowFiles
   -cert string
     	A PEM encoded certificate file. (default "someCertFile")
   -debug
-    	Turn on debug
+    	Turn on debug in FlowFile library
   -init-script string
     	Shell script to be called on start
     	Used to manually setup the networking interfaces when this program is called from GRUB
@@ -440,7 +446,7 @@ Usage: ./nifi-diode [options]
   -key string
     	A PEM encoded private key file. (default "someKeyFile")
   -listen string
-    	Where to listen to incoming connections (example 1.2.3.4:8080) (default ":8082")
+    	Where to listen to incoming connections (example 1.2.3.4:8080) (default ":8080")
   -listenPath string
     	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
   -no-checksums
@@ -448,12 +454,12 @@ Usage: ./nifi-diode [options]
   -segment-max-size string
     	Set a maximum size for partitioning files in sending
   -tls
-    	Enforce TLS for secure transport on incoming connections
+    	Enforce TLS secure transport on incoming connections
   -update-chain
     	Update the connection chain attributes: "custodyChain.#.*"
     	To disable use -update-chain=false (default true)
   -url string
-    	Where to send the files from staging (default "http://localhost:8080/contentListener")
+    	Where to send the files (default "http://localhost:8080/contentListener")
   -verbose
     	Turn on verbosity
   -watchdog duration
@@ -599,7 +605,7 @@ sent to an additional two diodes.
   {"Name":"custodyChain.3.tls.cipher","Value":"TLS_AES_128_GCM_SHA256"},
   {"Name":"custodyChain.3.tls.host","Value":"localhost"},
   {"Name":"custodyChain.3.tls.version","Value":"1.3"},
-  {"Name":"custodyChain.2.action","Value":"STAGED"},
+  {"Name":"custodyChain.2.action","Value":"TO-DISK"},
   {"Name":"custodyChain.2.time","Value":"2023-02-09T13:46:46-05:00"},
   {"Name":"custodyChain.2.local.hostname","Value":"centos7.schou.me"},
   {"Name":"custodyChain.2.user.dn","Value":"CN=localhost,O=Global Security npe2,C=US"},
@@ -612,7 +618,7 @@ sent to an additional two diodes.
   {"Name":"custodyChain.2.tls.cipher","Value":"TLS_AES_128_GCM_SHA256"},
   {"Name":"custodyChain.2.tls.host","Value":"localhost"},
   {"Name":"custodyChain.2.tls.version","Value":"1.3"},
-  {"Name":"custodyChain.1.action","Value":"UNSTAGED"},
+  {"Name":"custodyChain.1.action","Value":"FROM-DISK"},
   {"Name":"custodyChain.1.time","Value":"2023-02-09T13:50:31-05:00"},
   {"Name":"custodyChain.1.local.hostname","Value":"centos7.schou.me"},
   {"Name":"custodyChain.0.action","Value":"DIODE"},

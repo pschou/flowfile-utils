@@ -22,21 +22,15 @@ var about = `NiFi Sender
 This utility is intended to capture a set of files or directory of files and
 send them to a remote NiFi server for processing.`
 
-var (
-	url        = flag.String("url", "http://localhost:8080/contentListener", "Where to send the files")
-	retries    = flag.Int("retries", 5, "Retries after failing to send a file")
-	attributes = flag.String("attributes", "", "YML formatted additional attributes to add to flowfiles")
-	debug      = flag.Bool("debug", false, "Turn on debug")
-	listen     = new(string)
-)
-
 var hs *flowfile.HTTPTransaction
 var wd, _ = os.Getwd()
 
 func main() {
 	usage = "[options] path1 path2..."
-	flag.Parse()
-	loadAttributes(*attributes)
+	sender_flags()
+	origin_flags()
+	parse()
+
 	if len(flag.Args()) == 0 {
 		flag.Usage()
 		return
@@ -167,7 +161,7 @@ func main() {
 		// Try a few more times before we give up
 		for i := 1; err != nil && i < *retries; i++ {
 			log.Println("retry", i, ",", err)
-			time.Sleep(10 * time.Second)
+			time.Sleep(*retryTimeout)
 			if err = hs.Handshake(); err == nil {
 				err = sender()
 			}
@@ -258,7 +252,7 @@ func sendWithRetries(ff *flowfile.File) (err error) {
 		if err = ff.Reset(); err != nil {
 			return
 		}
-		time.Sleep(10 * time.Second)
+		time.Sleep(*retryTimeout)
 		if err = hs.Handshake(); err == nil {
 			err = hs.Send(ff)
 		}

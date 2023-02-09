@@ -27,26 +27,16 @@ then parse these files and drop them to disk for usage elsewhere.`
 
 var (
 	basePath    = flag.String("path", "./output/", "Directory in which to place files received")
-	listen      = flag.String("listen", ":8080", "Where to listen to incoming connections (example 1.2.3.4:8080)")
-	listenPath  = flag.String("listenPath", "/contentListener", "Path in URL where to expect FlowFiles to be posted")
-	enableTLS   = flag.Bool("tls", false, "Enable TLS for secure transport")
-	maxSize     = flag.String("segment-max-size", "", "Set a maximum size for partitioning files in sending")
-	debug       = flag.Bool("debug", false, "Turn on debug")
 	script      = flag.String("script", "", "Shell script to be called on successful post")
 	scriptShell = flag.String("script-shell", "/bin/bash", "Shell to be used for script run")
 	remove      = flag.Bool("rm", false, "Automatically remove file after script has finished")
 )
 
 func main() {
-	service_flag()
-	flag.Parse()
-	service_init()
-	if *debug {
-		flowfile.Debug = true
-	}
-	if *enableTLS {
-		loadTLS()
-	}
+	service_flags()
+	listen_flags()
+	parse()
+
 	fmt.Println("Output set to", *basePath)
 
 	// Settings for the flow file receiver
