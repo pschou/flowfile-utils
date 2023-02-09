@@ -31,7 +31,7 @@ instance are:
 
 NiFi-Sender Usage:
 ```
-NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230209.1352)
+NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230209.1357)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote NiFi server for processing.
@@ -76,7 +76,7 @@ NiFi Receiver listens on a port for NiFi flow files and then acts on them accord
 
 NiFi-Receiver Usage:
 ```
-NiFi Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230209.1352)
+NiFi Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230209.1357)
 
 This utility is intended to listen for flow files on a NifI compatible port and
 then parse these files and drop them to disk for usage elsewhere.
@@ -190,7 +190,7 @@ This tool enables files to be layed down to disk, to be replayed at a later time
 
 NiFi-Stager Usage:
 ```
-NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230209.1352)
+NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230209.1357)
 
 This utility is intended to take input over a NiFi compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
@@ -300,7 +300,7 @@ The purpose of the nifi-unstager is to replay the files layed to disk in the nif
 
 NiFi-Unstager Usage:
 ```
-NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230209.1352)
+NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230209.1357)
 
 This utility is intended to take a directory of NiFi flow files and ship them
 out to a listening NiFi endpoint while maintaining the same set of attribute
@@ -417,7 +417,7 @@ What are the pitfalls?
 
 NiFi-Diode Usage:
 ```
-NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230209.1352)
+NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230209.1357)
 
 This utility is intended to take input over a NiFi compatible port and pass all
 FlowFiles into another NiFi port while updating the attributes with the
@@ -537,6 +537,24 @@ target$ ls output2/
 infile_rnd.dat
 ```
 
+## Restrict size throughput
+
+```bash
+$ ./nifi-diode -segment-max-size 10MB -url https://localhost:8080/contentListener -listen :8082 -tls
+```
+
+## Add Additional Custom Attributes
+
+```bash
+$ cat example_attributes.yml
+# Some attributes example, this is one-per-line and "key: value" format
+MY_poc:     dan
+MY_sidecar: 123
+MY_group:   TeamA
+
+$ ./nifi-diode -segment-max-size 10MB -CA test/ca_cert_DONOTUSE.pem -key test/npe2_key_DONOTUSE.pem -cert test/npe2_cert_DONOTUSE.pem  -url https://localhost:8080/contentListener -listen :8082 -tls -attributes example_attributes.yml
+```
+
 ## Chain of Custody
 
 When using these flowfile-util tools, the attributes are updated to include
@@ -545,4 +563,70 @@ a flow that went through two diodes, put to disk in a staging folder, and then
 sent to an additional two diodes.
 
 ```json
+[
+  {"Name":"path","Value":"output2/"},
+  {"Name":"filename","Value":"infile_rnd.dat"},
+  {"Name":"file.lastModifiedTime","Value":"2023-02-03T12:17:36-05:00"},
+  {"Name":"file.creationTime","Value":"2023-02-03T12:17:36-05:00"},
+  {"Name":"custodyChain.4.action","Value":"SENDER"},
+  {"Name":"custodyChain.4.time","Value":"2023-02-09T13:46:46-05:00"},
+  {"Name":"custodyChain.4.local.hostname","Value":"centos7.schou.me"},
+  {"Name":"fragment.identifier","Value":"4416fe67-7138-43a1-b6c3-05db0a91a080"},
+  {"Name":"segment.original.size","Value":"51200000"},
+  {"Name":"segment.original.filename","Value":"infile_rnd.dat"},
+  {"Name":"segment.original.checksumType","Value":"SHA256"},
+  {"Name":"segment.original.checksum","Value":"3663d5284cc37ffcafc21b9425a231389c7661d569adf4e18835998c18463f7d"},
+  {"Name":"merge.reason","Value":"MAX_BYTES_THRESHOLD_REACHED"},
+  {"Name":"fragment.offset","Value":"10485760"},
+  {"Name":"fragment.index","Value":"2"},
+  {"Name":"fragment.count","Value":"5"},
+  {"Name":"uuid","Value":"866c54c4-c045-4fba-8939-39e7f50d6e19"},
+  {"Name":"checksumType","Value":"SHA256"},
+  {"Name":"checksum","Value":"7509c1318832ae0f69b373db94315b81c59b18d596af4a31429e66c16f63565a"},
+  {"Name":"MY_poc","Value":"dan"},
+  {"Name":"MY_sidecar","Value":"123"},
+  {"Name":"MY_group","Value":"TeamA"},
+  {"Name":"custodyChain.3.action","Value":"DIODE"},
+  {"Name":"custodyChain.3.time","Value":"2023-02-09T13:46:46-05:00"},
+  {"Name":"custodyChain.3.local.hostname","Value":"centos7.schou.me"},
+  {"Name":"custodyChain.3.user.dn","Value":"CN=localhost,O=Global Security npe4,C=US"},
+  {"Name":"custodyChain.3.issuer.dn","Value":"CN=localhost,O=Test Security,C=US"},
+  {"Name":"custodyChain.3.request.uri","Value":"/contentListener"},
+  {"Name":"custodyChain.3.source.host","Value":"::1"},
+  {"Name":"custodyChain.3.source.port","Value":"45822"},
+  {"Name":"custodyChain.3.local.port","Value":"8082"},
+  {"Name":"custodyChain.3.protocol","Value":"HTTPS"},
+  {"Name":"custodyChain.3.tls.cipher","Value":"TLS_AES_128_GCM_SHA256"},
+  {"Name":"custodyChain.3.tls.host","Value":"localhost"},
+  {"Name":"custodyChain.3.tls.version","Value":"1.3"},
+  {"Name":"custodyChain.2.action","Value":"TO-DISK"},
+  {"Name":"custodyChain.2.time","Value":"2023-02-09T13:46:46-05:00"},
+  {"Name":"custodyChain.2.local.hostname","Value":"centos7.schou.me"},
+  {"Name":"custodyChain.2.user.dn","Value":"CN=localhost,O=Global Security npe2,C=US"},
+  {"Name":"custodyChain.2.issuer.dn","Value":"CN=localhost,O=Test Security,C=US"},
+  {"Name":"custodyChain.2.request.uri","Value":"/contentListener"},
+  {"Name":"custodyChain.2.source.host","Value":"::1"},
+  {"Name":"custodyChain.2.source.port","Value":"53180"},
+  {"Name":"custodyChain.2.local.port","Value":"8080"},
+  {"Name":"custodyChain.2.protocol","Value":"HTTPS"},
+  {"Name":"custodyChain.2.tls.cipher","Value":"TLS_AES_128_GCM_SHA256"},
+  {"Name":"custodyChain.2.tls.host","Value":"localhost"},
+  {"Name":"custodyChain.2.tls.version","Value":"1.3"},
+  {"Name":"custodyChain.1.action","Value":"FROM-DISK"},
+  {"Name":"custodyChain.1.time","Value":"2023-02-09T13:50:31-05:00"},
+  {"Name":"custodyChain.1.local.hostname","Value":"centos7.schou.me"},
+  {"Name":"custodyChain.0.action","Value":"DIODE"},
+  {"Name":"custodyChain.0.time","Value":"2023-02-09T13:50:31-05:00"},
+  {"Name":"custodyChain.0.local.hostname","Value":"centos7.schou.me"},
+  {"Name":"custodyChain.0.user.dn","Value":"CN=localhost,O=Global Security npe4,C=US"},
+  {"Name":"custodyChain.0.issuer.dn","Value":"CN=localhost,O=Test Security,C=US"},
+  {"Name":"custodyChain.0.request.uri","Value":"/contentListener"},
+  {"Name":"custodyChain.0.source.host","Value":"::1"},
+  {"Name":"custodyChain.0.source.port","Value":"45850"},
+  {"Name":"custodyChain.0.local.port","Value":"8082"},
+  {"Name":"custodyChain.0.protocol","Value":"HTTPS"},
+  {"Name":"custodyChain.0.tls.cipher","Value":"TLS_AES_128_GCM_SHA256"},
+  {"Name":"custodyChain.0.tls.host","Value":"localhost"},
+  {"Name":"custodyChain.0.tls.version","Value":"1.3"}
+]
 ```
