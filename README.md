@@ -27,7 +27,7 @@ instance are:
 
 - Enables segmenting, so an upstream stream handler with limited capabilities can get segments instead of a whole file
 
-![NiFi-Sender](/images/NiFiSender.png)
+![NiFi-Sender](files/images/NiFiSender.png)
 
 NiFi-Sender Usage:
 ```
@@ -76,7 +76,7 @@ $ ./nifi-sender -url http://localhost:8080/contentListener file1.dat file2.dat m
 
 NiFi Receiver listens on a port for NiFi flow files and then acts on them accordingly as they are streamed in.
 
-![NiFi-Receiver](/images/NiFiReceiver.png)
+![NiFi-Receiver](files/images/NiFiReceiver.png)
 
 NiFi-Receiver Usage:
 ```
@@ -190,7 +190,7 @@ $
 
 This tool enables files to be layed down to disk, to be replayed at a later time or different location into a flowfile feed.  Note that the binary payload that is layed down is FlowFile encoded and not parsed out for making sure the exact binary payload is replayed.
 
-![NiFi-Stager](/images/NiFiStager.png)
+![NiFi-Stager](files/images/NiFiStager.png)
 
 NiFi-Stager Usage:
 ```
@@ -300,7 +300,7 @@ Using the '-rm-partial=false' will keep files from being deleted if they fail ve
 
 The purpose of the nifi-unstager is to replay the files layed to disk in the nifi-stager operation.
 
-![NiFi-Unstager](/images/NiFiUnstager.png)
+![NiFi-Unstager](files/images/NiFiUnstager.png)
 
 NiFi-Unstager Usage:
 ```
@@ -396,7 +396,7 @@ multiple NiFi diode servers are stacked one upon another, the X-Forwarded-For
 will have a complete list of source IP addresses seperated by commas.
 
 
-![NiFi-Diode diagram showing a NiFi box on the left, and arrow representing a TCP flow pointing to a NiFi Diode in the middle, and another arrow to the right going to a NiFi box on the right, again representing a TCP flow](/images/NiFiDiode.png)
+![NiFi-Diode diagram showing a NiFi box on the left, and arrow representing a TCP flow pointing to a NiFi Diode in the middle, and another arrow to the right going to a NiFi box on the right, again representing a TCP flow](files/images/NiFiDiode.png)
 
 ### Why do I need this?
 
