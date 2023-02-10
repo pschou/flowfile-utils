@@ -85,9 +85,7 @@ func main() {
 				// Read in the FlowFile
 				s := flowfile.NewScanner(fh)
 				for s.Scan() {
-					if f, err = s.File(); err != nil {
-						return
-					}
+					f = s.File()
 
 					// Make sure the client chain is added to attributes, 1 being the closest
 					updateChain(f, nil, "FROM-DISK")

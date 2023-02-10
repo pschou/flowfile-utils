@@ -68,15 +68,25 @@ func main() {
 	}
 }
 
-func post(f *flowfile.File, r *http.Request) (err error) {
+func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) {
+	defer func() {
+		if err != nil {
+			log.Println(err)
+		}
+	}()
+
 	// Save the flowfile into the base path with the file structure defined by
 	// the flowfile attributes.
 	dir := filepath.Clean(f.Attrs.Get("path"))
+	if strings.HasPrefix(dir, "..") {
+		err = fmt.Errorf("Unclean path in FlowFile %q", f.Attrs.Get("path"))
+		return
+	}
 	filename := f.Attrs.Get("filename")
 	fp := path.Join(*basePath, dir, filename)
 	err = os.MkdirAll(path.Join(*basePath, dir), 0755)
 	if err != nil {
-		log.Fatal(err)
+		return
 	}
 
 	if *verbose {

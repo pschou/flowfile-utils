@@ -63,7 +63,7 @@ func main() {
 	}
 }
 
-func post(s *flowfile.Scanner, r *http.Request) (err error) {
+func post(s *flowfile.Scanner, w http.ResponseWriter, r *http.Request) {
 	os.MkdirAll(*basePath, 0755)
 
 	uuid := uuid.New().String()
@@ -72,6 +72,7 @@ func post(s *flowfile.Scanner, r *http.Request) (err error) {
 	outputTemp := output + ".inprogress"
 	outputAttrs := output + ".json"
 
+	var err error
 	var attrSlice []flowfile.Attributes
 	var fh, fha *os.File
 	defer func() {
@@ -83,22 +84,24 @@ func post(s *flowfile.Scanner, r *http.Request) (err error) {
 		}
 		if err == nil {
 			os.Rename(outputTemp, outputAttrs)
+			w.WriteHeader(http.StatusOK)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 	}()
 
 	// Create file for writing to
 	if fh, err = os.Create(outputDat); err != nil {
-		return err
+		return
 	}
+	enc := flowfile.NewWriter(fh)
 	if fha, err = os.Create(outputTemp); err != nil {
-		return err
+		return
 	}
 
 	var f *flowfile.File
 	for s.Scan() {
-		if f, err = s.File(); err != nil {
-			return
-		}
+		f = s.File()
 
 		// Make sure the client chain is added to attributes, 1 being the closest
 		updateChain(f, r, "TO-DISK")
@@ -109,7 +112,7 @@ func post(s *flowfile.Scanner, r *http.Request) (err error) {
 			fmt.Printf("    %s\n", adat)
 		}
 
-		if _, err = f.WriteFile(fh); err != nil {
+		if _, err = enc.Write(f); err != nil {
 			return
 		}
 
@@ -147,7 +150,9 @@ func post(s *flowfile.Scanner, r *http.Request) (err error) {
 		attrSlice = append(attrSlice, f.Attrs)
 	}
 
-	enc := json.NewEncoder(fha)
-	err = enc.Encode(&attrSlice)
+	{ // Write out JSON file with attributes
+		enc := json.NewEncoder(fha)
+		err = enc.Encode(&attrSlice)
+	}
 	return
 }

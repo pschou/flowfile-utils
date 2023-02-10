@@ -88,28 +88,34 @@ func main() {
 }
 
 // Post handles every flowfile that is posted into the diode
-func post(rdr *flowfile.Scanner, r *http.Request) (err error) {
+func post(rdr *flowfile.Scanner, w http.ResponseWriter, r *http.Request) {
+	var err error
 	var f *flowfile.File
 
 	httpWriter := hs.NewHTTPPostWriter()
 
 	defer func() {
-		httpWriter.Close()
-		if *debug && err != nil {
+		if err != nil {
 			log.Println("err:", err)
-		}
-		if httpWriter.Response == nil {
-			err = fmt.Errorf("File did not send, no response")
-		} else if httpWriter.Response.StatusCode != 200 {
-			err = fmt.Errorf("File did not send successfully, code %d", httpWriter.Response.StatusCode)
+			httpWriter.Terminate()
+			w.WriteHeader(http.StatusInternalServerError)
+		} else {
+			httpWriter.Close()
+			if httpWriter.Response == nil {
+				err = fmt.Errorf("File did not send, no response")
+				w.WriteHeader(http.StatusInternalServerError)
+			} else if httpWriter.Response.StatusCode != 200 {
+				err = fmt.Errorf("File did not send successfully, Server replied: %s", httpWriter.Response.Status)
+				w.WriteHeader(http.StatusInternalServerError)
+			} else {
+				w.WriteHeader(http.StatusOK)
+			}
 		}
 	}()
 
 	// Loop over all the files in the post payload
 	for rdr.Scan() {
-		if f, err = rdr.File(); err != nil {
-			return
-		}
+		f = rdr.File()
 
 		// Flatten directory for ease of viewing
 		dir := filepath.Clean(f.Attrs.Get("path"))
@@ -152,6 +158,9 @@ func post(rdr *flowfile.Scanner, r *http.Request) (err error) {
 				err = nil
 			}
 		}
+		if err != nil {
+			return
+		}
 	}
-	return
+	err = rdr.Err() // Pick up any reader errors
 }
