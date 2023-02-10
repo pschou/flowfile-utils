@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/fs"
 	"log"
 	"os"
 	"path"
@@ -13,17 +12,22 @@ import (
 	"strings"
 	"time"
 
-	"github.com/djherbis/times"
+	"github.com/docker/go-units"
 	"github.com/pschou/go-flowfile"
 )
 
-var about = `NiFi Sender
+var (
+	about = `NiFi Sender
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote NiFi server for processing.`
 
-var hs *flowfile.HTTPTransaction
-var wd, _ = os.Getwd()
+	hs            *flowfile.HTTPTransaction
+	wd, _         = os.Getwd()
+	seenChecksums = make(map[string]string)
+
+	dedup = flag.Bool("no-dedup", true, "Deduplication by checksums")
+)
 
 func main() {
 	usage = "[options] path1 path2..."
@@ -51,8 +55,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var content []WorkUnit
-	var zeros []*flowfile.File
+	var zeros, content []*flowfile.File
 
 	// Loop over the files sending them one at a time
 	for _, arg := range flag.Args() {
@@ -62,130 +65,127 @@ func main() {
 			if inerr != nil {
 				log.Fatal(inerr)
 			}
-			//mode := fileInfo.Mode()
-			//f := flowfile.New(strings.NewReader(""), 0)
-			var Attrs flowfile.Attributes
-			Size := int64(0)
-			dn, fn := path.Split(filename)
-			if dn == "" {
-				dn = "./"
-			}
-			Attrs.Set("path", dn)
-			Attrs.Set("filename", fn)
-			Attrs.Set("file.lastModifiedTime", fileInfo.ModTime().Format(time.RFC3339))
-			Attrs.GenerateUUID()
 
-			switch mode := fileInfo.Mode(); {
-			case mode.IsRegular():
-				if *verbose {
-					log.Println("  file", filename)
-				}
-				Size = fileInfo.Size()
-				//if err = sendFile(filename, fileInfo); err != nil {
-				//	log.Fatal(err)
-				//}
-			case mode.IsDir():
-				if !isEmptyDir(filename) {
-					return
-				}
-				Attrs.Set("kind", "dir")
-				if *verbose {
-					log.Println("  empty dir", filename, "...")
-				}
-				/*if *verbose {
-					adat, _ := json.Marshal(f.Attrs)
-					fmt.Printf("  [dir] %s\n", adat)
-				}*/
-			case mode&fs.ModeSymlink != 0:
-				cur := dn
-				if !strings.HasPrefix(cur, "/") {
-					cur = path.Join(wd, cur)
-				}
-				target, _ := os.Readlink(filename)
-				if strings.HasPrefix(target, "/") {
-					if rel, err := filepath.Rel(cur, target); err == nil &&
-						!strings.HasPrefix(rel, "..") {
-						target = rel
-					} else {
-						log.Fatal("Symbolic link", target, "out of scope", err, rel)
-					}
-				}
-				if *verbose {
-					log.Println("  symbolic link", filename, "->", target)
-				}
-				Attrs.Set("kind", "link")
-				Attrs.Set("target", target)
-			//case mode&fs.ModeNamedPipe != 0:
-			//	fmt.Println("named pipe")
-			default:
-				if *verbose {
-					log.Println("  skipping ", filename)
-				}
+			if fileInfo.Mode().IsDir() && !isEmptyDir(filename) {
+				// Skip sending details about non-empty directories
 				return
 			}
-			if Size == 0 {
-				ff := flowfile.New(strings.NewReader(""), 0)
-				ff.Attrs = Attrs
 
-				// Make sure the client chain is added to attributes, 1 being the closest
-				updateChain(ff, nil, "SENDER")
+			var f *flowfile.File
+			if f, err = flowfile.NewFromDisk(filename); err != nil {
+				log.Fatal(err)
+			}
 
-				zeros = append(zeros, ff)
+			updateChain(f, nil, "SENDER")
+
+			if f.Size == 0 {
+				switch kind := f.Attrs.Get("kind"); kind {
+				default:
+					fmt.Printf("  [%s] %s\n", kind, filename)
+				case "link":
+					fmt.Printf("  [%s] %s -> %s\n", kind, filename, f.Attrs.Get("target"))
+				}
+				zeros = append(zeros, f)
 			} else {
-				content = append(content, WorkUnit{filename: filename, fileInfo: fileInfo, Attrs: Attrs, Size: Size})
+				fmt.Printf("  [file] %s (%s)\n", filename, units.HumanSize(float64(f.Size)))
+				content = append(content, f)
 			}
 			return
 		})
 	}
 
 	// Send off all the empty files and folders first
-	log.Println("Sending...")
-	{
-		sender := func() error {
-			pw := hs.NewHTTPBufferedPostWriter()
-			for i, f := range zeros {
-				if *verbose {
-					adat, _ := json.Marshal(f.Attrs)
-					fmt.Printf("  %d) %s\n", i, adat)
-				}
-				if _, err = pw.Write(f); err != nil {
-					fmt.Println("    ", err)
-					return err
-				}
-			}
-			pw.Close()
-			return nil
+	log.Println("Sending meta data...")
+	for try := 0; try == 0 || err != nil && try < *retries; try++ {
+		if try > 0 {
+			log.Println("retry", try, ",", err)
 		}
 
-		err = sender()
-		// Try a few more times before we give up
-		for i := 1; err != nil && i < *retries; i++ {
-			log.Println("retry", i, ",", err)
-			time.Sleep(*retryTimeout)
-			if err = hs.Handshake(); err == nil {
-				err = sender()
+		// do the work
+		if err = hs.SendAll(zeros); err == nil {
+			break
+		}
+
+		// hold off, handshake, and retry
+		time.Sleep(*retryTimeout)
+		err = hs.Handshake()
+	}
+
+	// Tried enough times with this single POST
+	if err != nil {
+		log.Fatal("Giving up,", err)
+	}
+
+	// Send off the regular files
+	log.Println("Sending content...")
+	for _, c := range content {
+		filename := c.FilePath()
+		log.Printf(" sending %s (%s)", filename, units.HumanSize(float64(c.Size)))
+
+		c.AddChecksum("SHA256")
+
+		if *dedup {
+			ckval := fmt.Sprintf("%q%q%d", c.Attrs.Get("checksumType"), c.Attrs.Get("checksum"), c.Size)
+			if tgt, ok := seenChecksums[ckval]; ok {
+				dn, _ := path.Split(filename)
+				if fp, err := filepath.Rel(dn, tgt); err == nil {
+					log.Println("  file matched previous content, sending link instead")
+					c.Attrs.Set("kind", "link")
+					c.Attrs.Set("target", fp)
+					c.Size = 0
+				}
+			} else {
+				seenChecksums[ckval] = filename
 			}
 		}
+
+		segments, err := flowfile.SegmentBySize(c, int64(hs.MaxPartitionSize))
 		if err != nil {
 			log.Fatal(err)
 		}
+		for _, f := range segments {
+			if *verbose {
+				if f.Attrs.Get("kind") == "link" {
+					log.Printf("  [link] %s -> %s\n", filename, f.Attrs.Get("target"))
+				} else if ct := f.Attrs.Get("fragment.count"); ct == "" {
+					log.Printf("  [file] %s (%s)\n", filename, units.HumanSize(float64(f.Size)))
+				} else {
+					log.Printf("  [seg %s of %s] %s (%s)\n", f.Attrs.Get("fragment.index"),
+						ct, filename, units.HumanSize(float64(f.Size)))
+				}
+				if *debug {
+					adat, _ := json.Marshal(f.Attrs)
+					fmt.Printf("  %s\n", adat)
+				}
+			}
+
+			f.AddChecksum("SHA256")
+
+			for try := 0; try == 0 || err != nil && try < *retries; try++ {
+				if try > 0 {
+					f.Reset()
+					log.Println("retry", try, ",", err)
+				}
+
+				// do the work
+				if err = hs.Send(f); err == nil {
+					break
+				}
+
+				// hold off, handshake, and retry
+				time.Sleep(*retryTimeout)
+				err = hs.Handshake()
+			}
+
+			// Tried enough times with this single POST
+			if err != nil {
+				log.Fatal("Giving up,", err)
+			}
+
+		}
 	}
 
-	for _, u := range content {
-		sendFile(u.filename, u.fileInfo)
-	}
-
-	//hs.Close()
-
-	//log.Println("zeros:", zeros, "content:", content)
 	log.Println("done.")
-}
-
-type WorkUnit struct {
-	filename string
-	fileInfo os.FileInfo
-	Attrs    flowfile.Attributes
-	Size     int64
 }
 
 func isEmptyDir(dir string) bool {
@@ -196,70 +196,4 @@ func isEmptyDir(dir string) bool {
 	defer f.Close()
 	_, err = f.Readdirnames(1) // Or f.Readdir(1)
 	return err == io.EOF
-}
-
-func sendFile(filename string, fileInfo os.FileInfo) (err error) {
-	dn, fn := path.Split(filename)
-	if dn == "" {
-		dn = "./"
-	}
-	log.Println("  sending", filename, "...")
-	var fh *os.File
-	fh, err = os.Open(filename)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer fh.Close()
-	f := flowfile.New(fh, fileInfo.Size())
-	f.Attrs.Set("path", dn)
-	f.Attrs.Set("filename", fn)
-	f.Attrs.Set("file.lastModifiedTime", fileInfo.ModTime().Format(time.RFC3339))
-	f.Attrs.Set("file.creationTime", fileInfo.ModTime().Format(time.RFC3339))
-	if ts, err := times.Stat(filename); err == nil && ts.HasBirthTime() {
-		f.Attrs.Set("file.creationTime", ts.BirthTime().Format(time.RFC3339))
-	}
-	f.AddChecksum("SHA256")
-
-	// Make sure the client chain is added to attributes, 1 being the closest
-	updateChain(f, nil, "SENDER")
-
-	f.Attrs.GenerateUUID()
-
-	//fmt.Printf("hs = %#v\n", hs)
-
-	segments, err := flowfile.SegmentBySize(f, int64(hs.MaxPartitionSize))
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, ff := range segments {
-		ff.AddChecksum("SHA256")
-		if *verbose {
-			adat, _ := json.Marshal(ff.Attrs)
-			fmt.Printf("  - %s %d\n", adat, ff.Size)
-		}
-		sendWithRetries(ff)
-		ff.Close()
-	}
-	return
-}
-
-func sendWithRetries(ff *flowfile.File) (err error) {
-	err = hs.Send(ff)
-
-	// Try a few more times before we give up
-	for i := 1; err != nil && i < *retries; i++ {
-		log.Println(i, "Error sending:", err)
-		if err = ff.Reset(); err != nil {
-			return
-		}
-		time.Sleep(*retryTimeout)
-		if err = hs.Handshake(); err == nil {
-			err = hs.Send(ff)
-		}
-	}
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return
 }
