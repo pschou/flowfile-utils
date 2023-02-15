@@ -88,6 +88,8 @@ $ ./nifi-sender -url http://localhost:8080/contentListener file1.dat file2.dat m
 NiFi to UDP listens on a NiFi endpoint and forwards all NiFi connections to an
 array of UDP ports.
 
+![NiFi-to-UDP](images/NiFi-to-UDP.png)
+
 NiFi-to-UDP Usage:
 ```
 NiFi -to-> UDP (github.com/pschou/flowfile-utils, version: 0.1.20230215.1403)
@@ -173,6 +175,8 @@ $ ./nifi-to-udp -listen :8082 -throttle 167us -throttle-gap 67ns -segment-max-si
 
 UDP to NiFi listens on an array of UDP endpoint and forwards all flowfiles to a
 NiFi connection after doing consistency checks.
+
+![UDP-to-NiFi](images/UDP-to-NiFi.png)
 
 UDP-to-NiFi Usage:
 ```
