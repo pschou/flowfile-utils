@@ -4,6 +4,14 @@ A set of FlowFile routines for working with NiFi feeds.  The utilities include:
 
 NiFi-Sender - take a file or directory and send them to a NiFi endpoint
 
+NiFi-to-UDP - takes a NiFi feed and sends it to a UDP endpoint
+
+UDP-to-NiFi - listens for a UDP feed and sends it to a NiFi endpoint
+
+NiFi-Sink - a listener that listens and accepts flowfiles and does nothing
+
+NiFi-Flood - a sender which sends a continuous stream of NiFi flowfiles
+
 NiFi-Receiver - take a NiFi feed and save off files while doing checksums for validity
 
 NiFi-Stager - take a NiFi feed and temporarily store them to disk for processing later
@@ -11,14 +19,6 @@ NiFi-Stager - take a NiFi feed and temporarily store them to disk for processing
 NiFi-Unstager - take a directory of staged files and send them to a NiFi endpoint
 
 NiFi-Diode - takes a NiFi feed and forwards the FlowFiles to another NiFi (assures one direction)
-
-NiFi-to-UDP - takes a NiFi feed and sends it to a UDP endpoint
-
-UDP-to-NiFi - listens for a UDP feed and sends it to a NiFi endpoint
-
-NiFi-Flood - a sender which sends a continuous stream of NiFi flowfiles
-
-NiFi-Sink - a listener that listens and accepts flowfiles and does nothing
 
 
 For more documentation about the go-flowfile library: https://pkg.go.dev/github.com/pschou/go-flowfile .
