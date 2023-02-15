@@ -12,12 +12,14 @@ import (
 var (
 	version   = ""
 	usage     = "[options]"
-	verbose   = flag.Bool("verbose", false, "Turn on verbosity")
+	verbose   = new(bool)
 	debug     = flag.Bool("debug", false, "Turn on debug in FlowFile library")
 	enableTLS = new(bool)
 )
 
 func init() {
+	flag.BoolVar(verbose, "verbose", false, "Turn on verbose")
+	flag.BoolVar(verbose, "v", false, "Turn on verbose (shorthand)")
 	flag.Usage = func() {
 		lines := strings.SplitN(about, "\n", 2)
 		fmt.Fprintf(os.Stderr, "%s (github.com/pschou/flowfile-utils, version: %s)\n%s\n\nUsage: %s %s\n",

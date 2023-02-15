@@ -9,9 +9,9 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"time"
 
 	"github.com/google/uuid"
-	"github.com/inhies/go-bytesize"
 	"github.com/pschou/go-flowfile"
 )
 
@@ -27,39 +27,38 @@ var (
 	scriptShell      = flag.String("script-shell", "/bin/bash", "Shell to be used for script run")
 	remove           = flag.Bool("rm", false, "Automatically remove file after script has finished")
 	removeIncomplete = flag.Bool("rm-partial", true, "Automatically remove partial files\nTo unset this default use -rm-partial=false .")
+	hs               *flowfile.HTTPTransaction
 )
 
 func main() {
 	service_flags()
 	listen_flags()
 	parse()
-
-	loadAttributes(*attributes)
-	if *enableTLS {
-		loadTLS()
-	}
-
 	fmt.Println("Output set to", *basePath)
 
-	// Settings for the flow file receiver
-	ffReceiver := flowfile.NewHTTPReceiver(post)
-	if *maxSize != "" {
-		if bs, err := bytesize.Parse(*maxSize); err != nil {
-			log.Fatal("Unable to parse max-size", err)
-		} else {
-			log.Println("Setting max-size to", bs)
-			ffReceiver.MaxPartitionSize = int64(uint64(bs))
-		}
+	// Configure the go HTTP server
+	server := &http.Server{
+		Addr:           *listen,
+		TLSConfig:      tlsConfig,
+		ReadTimeout:    10 * time.Hour,
+		WriteTimeout:   10 * time.Hour,
+		MaxHeaderBytes: 1 << 20,
 	}
 
+	// Setting up the flow file receiver
+	ffReceiver := flowfile.NewHTTPReceiver(post)
 	http.Handle(*listenPath, ffReceiver)
+
+	// Setup a timer to update the maximums and minimums for the sender
+	handshaker(nil, ffReceiver)
+
+	// Open the local port to listen for incoming connections
 	if *enableTLS {
 		log.Println("Listening with HTTPS on", *listen, "at", *listenPath)
-		server := &http.Server{Addr: *listen, TLSConfig: tlsConfig}
 		log.Fatal(server.ListenAndServeTLS(*certFile, *keyFile))
 	} else {
 		log.Println("Listening with HTTP on", *listen, "at", *listenPath)
-		log.Fatal(http.ListenAndServe(*listen, nil))
+		log.Fatal(server.ListenAndServe())
 	}
 }
 

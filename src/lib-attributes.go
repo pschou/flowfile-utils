@@ -2,17 +2,13 @@ package main
 
 import (
 	"bufio"
-	"crypto/tls"
-	"crypto/x509"
 	"flag"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/pschou/go-flowfile"
 )
@@ -44,54 +40,45 @@ func loadAttributes(file string) {
 			fmt.Println("Loaded", len(AdditionalAttributes), "attributes.")
 		}
 	}
-
 }
 
 func updateChain(f *flowfile.File, r *http.Request, label string) {
-	var cert *x509.Certificate
+	/*var cert *x509.Certificate
 
 	if r != nil && r.TLS != nil {
 		if len(r.TLS.PeerCertificates) > 0 {
 			cert = r.TLS.PeerCertificates[0]
 		}
-	}
+	}*/
 
-	var updated []flowfile.Attribute
 	for _, a := range AdditionalAttributes {
 		f.Attrs.Set(a.Name, a.Value)
 	}
 
 	// Shift the current chain:
-	for _, kv := range []flowfile.Attribute(f.Attrs) {
-		if strings.HasPrefix(kv.Name, "custodyChain.") {
-			parts := strings.SplitN(strings.TrimPrefix(kv.Name, "custodyChain."), ".", 2)
-			if v, err := strconv.Atoi(parts[0]); err == nil {
-				if len(parts) == 2 {
-					kv.Name = fmt.Sprintf("custodyChain.%d.%s", v+1, parts[1])
-				} else {
-					kv.Name = fmt.Sprintf("custodyChain.%d", v+1)
-				}
-				updated = append(updated, kv)
-			}
-		} else {
-			updated = append(updated, kv)
-		}
-	}
-	f.Attrs = updated
+	f.Attrs.CustodyChainShift()
 
 	if label != "" {
 		f.Attrs.Set("custodyChain.0.action", label)
 	}
-	// Set the current chain link
-	f.Attrs.Set("custodyChain.0.time", time.Now().Format(time.RFC3339))
 
 	if !*chain {
 		return
 	}
+
 	if hn, err := os.Hostname(); err == nil {
 		f.Attrs.Set("custodyChain.0.local.hostname", hn)
 	}
-	if cert != nil {
+	if r != nil {
+		f.Attrs.CustodyChainAddHTTP(r)
+		if host, port, err := net.SplitHostPort(*listen); err == nil {
+			if host != "" {
+				f.Attrs.Set("custodyChain.0.local.host", host)
+			}
+			f.Attrs.Set("custodyChain.0.local.port", port)
+		}
+	}
+	/*if cert != nil {
 		//f.Attrs.Set("custody.remote.user.dn", certPKIXString(cert.Subject, ","))
 		//f.Attrs.Set("custody.remote.issuer.dn", certPKIXString(cert.Issuer, ","))
 		f.Attrs.Set("custodyChain.0.user.dn", certPKIXString(cert.Subject, ","))
@@ -105,13 +92,6 @@ func updateChain(f *flowfile.File, r *http.Request, label string) {
 			//f.Attrs.Set("custody.remote.source.host", host)
 			f.Attrs.Set("custodyChain.0.source.host", host)
 			f.Attrs.Set("custodyChain.0.source.port", port)
-		}
-		if host, port, err := net.SplitHostPort(*listen); err == nil {
-			//f.Attrs.Set("custody.remote.source.host", host)
-			if host != "" {
-				f.Attrs.Set("custodyChain.0.local.host", host)
-			}
-			f.Attrs.Set("custodyChain.0.local.port", port)
 		}
 		if r.TLS != nil {
 			f.Attrs.Set("custodyChain.0.protocol", "HTTPS")
@@ -134,5 +114,5 @@ func updateChain(f *flowfile.File, r *http.Request, label string) {
 		} else {
 			f.Attrs.Set("custodyChain.0.protocol", "HTTP")
 		}
-	}
+	}*/
 }

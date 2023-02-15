@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
 )
 
 var (
@@ -73,7 +72,7 @@ func loadTLS() {
 
 	http.DefaultClient = &http.Client{
 		Transport: &http.Transport{TLSClientConfig: tlsConfig},
-		Timeout:   10 * time.Second,
+		//Timeout:   60 * time.Second,
 	}
 
 }

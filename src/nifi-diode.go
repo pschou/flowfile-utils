@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/inhies/go-bytesize"
 	"github.com/pschou/go-flowfile"
 )
 
@@ -31,43 +30,17 @@ func main() {
 	listen_flags()
 	sender_flags()
 	parse()
-
-	// Settings for the flow file receiver
-	ffReceiver := flowfile.NewHTTPReceiver(post)
-	if *maxSize != "" {
-		if bs, err := bytesize.Parse(*maxSize); err != nil {
-			log.Fatal("Unable to parse max-size", err)
-		} else {
-			log.Println("Setting max-size to", bs)
-			ffReceiver.MaxPartitionSize = int64(uint64(bs))
-		}
-	}
+	var err error
 
 	// Connect to the destination NiFi to prepare to send files
-	log.Println("Creating sender...")
+	log.Println("Creating sender,", *url)
 
-	var err error
-	hs, err = flowfile.NewHTTPTransaction(*url, tlsConfig)
-	if err != nil {
+	// Create a HTTP Transaction with target URL
+	if hs, err = flowfile.NewHTTPTransaction(*url, tlsConfig); err != nil {
 		log.Fatal(err)
 	}
 
-	go func() {
-		for {
-			if hs.MaxPartitionSize > 0 || ffReceiver.MaxPartitionSize > 0 {
-				if ffReceiver.MaxPartitionSize == 0 ||
-					(hs.MaxPartitionSize > 0 && hs.MaxPartitionSize < ffReceiver.MaxPartitionSize) {
-					log.Println("Setting max-size to", hs.MaxPartitionSize)
-					ffReceiver.MaxPartitionSize = hs.MaxPartitionSize
-				} else {
-					log.Println("Keeping max-size at", ffReceiver.MaxPartitionSize)
-				}
-			}
-			time.Sleep(10 * time.Minute)
-			hs.Handshake()
-		}
-	}()
-
+	// Configure the go HTTP server
 	server := &http.Server{
 		Addr:           *listen,
 		TLSConfig:      tlsConfig,
@@ -75,7 +48,13 @@ func main() {
 		WriteTimeout:   10 * time.Hour,
 		MaxHeaderBytes: 1 << 20,
 	}
+
+	// Setting up the flow file receiver
+	ffReceiver := flowfile.NewHTTPReceiver(post)
 	http.Handle(*listenPath, ffReceiver)
+
+	// Setup a timer to update the maximums and minimums for the sender
+	handshaker(hs, ffReceiver)
 
 	// Open the local port to listen for incoming connections
 	if *enableTLS {

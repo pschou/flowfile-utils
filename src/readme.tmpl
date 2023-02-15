@@ -12,8 +12,18 @@ NiFi-Unstager - take a directory of staged files and send them to a NiFi endpoin
 
 NiFi-Diode - takes a NiFi feed and forwards the FlowFiles to another NiFi (assures one direction)
 
+NiFi-to-UDP - takes a NiFi feed and sends it to a UDP endpoint
+
+UDP-to-NiFi - listens for a UDP feed and sends it to a NiFi endpoint
+
+NiFi-Flood - a sender which sends a continuous stream of NiFi flowfiles
+
+NiFi-Sink - a listener that listens and accepts flowfiles and does nothing
+
 
 For more documentation about the go-flowfile library: https://pkg.go.dev/github.com/pschou/go-flowfile .
+
+
 
 ## NiFi Sender
 
@@ -29,6 +39,11 @@ instance are:
 
 ![NiFi-Sender](images/NiFi-Sender.png)
 
+## NiFi to UDP
+
+NiFi to UDP listens on a NiFi endpoint and forwards all NiFi connections to an
+array of UDP ports.
+
 NiFi-Sender Usage:
 
 Example:
@@ -40,6 +55,44 @@ $ ./nifi-sender -url http://localhost:8080/contentListener file1.dat file2.dat m
 2023/02/06 08:43:26   sending empty dir myDir/ ...
 2023/02/06 08:43:26 done.
 ```
+
+## NiFi to UDP
+
+UDP to NiFi listens on an array of UDP endpoint and forwards all flowfiles to a
+NiFi connection after doing consistency checks.
+
+NiFi-to-UDP Usage:
+
+Example:
+```
+$ ./nifi-to-udp -listen :8082 -throttle 167us -throttle-gap 67ns -segment-max-size 10MB
+2023/02/15 12:40:01 Creating senders for UDP from: 10.12.128.249:3100-3200
+2023/02/15 12:40:01 Creating destinations for UDP: 10.12.128.249:2100-2200
+2023/02/15 12:40:01 Creating listener on: :8082
+2023/02/15 12:40:01 Setting max-size to 10.00MB
+2023/02/15 12:40:01 Listening with HTTP on :8082 at /contentListener
+```
+
+UDP-to-NiFi Usage:
+
+Example:
+```
+$ ../udp-to-nifi
+2023/02/15 12:41:13 Creating NiFi sender, http://localhost:8080/contentListener
+2023/02/15 12:41:13 Listening on UDP :2100-2200
+```
+
+## NiFi Sink
+
+NiFi listens on a NiFi endpoint and accepts every packet.
+
+NiFi-Sink Usage:
+
+## NiFi Sink
+
+NiFi Flood sends empty files to a NiFi endpoint.
+
+NiFi-Flood Usage:
 
 ## NiFi Receiver
 

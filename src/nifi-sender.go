@@ -9,8 +9,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
-	"time"
 
 	"github.com/docker/go-units"
 	"github.com/pschou/go-flowfile"
@@ -38,12 +36,6 @@ func main() {
 	if len(flag.Args()) == 0 {
 		flag.Usage()
 		return
-	}
-	if *debug {
-		flowfile.Debug = true
-	}
-	if strings.HasPrefix(*url, "https") {
-		loadTLS()
 	}
 
 	// Connect to the NiFi server and establish a session
@@ -94,26 +86,18 @@ func main() {
 		})
 	}
 
-	// Send off all the empty files and folders first
-	log.Println("Sending meta data...")
-	for try := 0; try == 0 || err != nil && try < *retries; try++ {
-		if try > 0 {
-			log.Println("retry", try, ",", err)
-		}
-
-		// do the work
-		if err = hs.SendAll(zeros); err == nil {
-			break
-		}
-
-		// hold off, handshake, and retry
-		time.Sleep(*retryTimeout)
-		err = hs.Handshake()
+	hs.RetryCount = *retries
+	hs.RetryDelay = *retryTimeout
+	hs.OnRetry = func(ff []*flowfile.File, retry int, err error) {
+		log.Println("   Retrying", retry, "due to", err)
 	}
 
-	// Tried enough times with this single POST
-	if err != nil {
-		log.Fatal("Giving up,", err)
+	// Send off all the empty files and folders first
+	log.Println("Sending meta data...")
+
+	// do the work
+	if err = hs.Send(zeros...); err != nil {
+		log.Fatal("Failed to send, ", err)
 	}
 
 	// Send off the regular files
@@ -122,6 +106,9 @@ func main() {
 		filename := c.FilePath()
 		log.Printf(" sending %s (%s)", filename, units.HumanSize(float64(c.Size)))
 
+		if *debug {
+			log.Println("   Doing checksum...")
+		}
 		c.AddChecksum("SHA256")
 
 		if *dedup {
@@ -161,27 +148,10 @@ func main() {
 
 			f.AddChecksum("SHA256")
 
-			for try := 0; try == 0 || err != nil && try < *retries; try++ {
-				if try > 0 {
-					f.Reset()
-					log.Println("retry", try, ",", err)
-				}
-
-				// do the work
-				if err = hs.Send(f); err == nil {
-					break
-				}
-
-				// hold off, handshake, and retry
-				time.Sleep(*retryTimeout)
-				err = hs.Handshake()
+			// do the work
+			if err = hs.Send(f); err != nil {
+				log.Fatal("Failed to send", filename, err)
 			}
-
-			// Tried enough times with this single POST
-			if err != nil {
-				log.Fatal("Giving up,", err)
-			}
-
 		}
 	}
 

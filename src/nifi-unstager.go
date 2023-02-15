@@ -33,7 +33,7 @@ func main() {
 	sender_flags()
 	parse()
 
-	log.Println("Creating FlowFile sender to url", *url)
+	log.Println("Creating sender,", *url)
 
 	var err error
 	hs, err = flowfile.NewHTTPTransaction(*url, tlsConfig)
@@ -98,10 +98,10 @@ func main() {
 						return
 					}
 
-					if id := f.Attrs.Get("segment-index"); id != "" {
+					if id := f.Attrs.Get("fragment.index"); id != "" {
 						i, _ := strconv.Atoi(id)
 						fmt.Printf("  Unstaging segment %d of %s of %s\n", i+1,
-							f.Attrs.Get("segment-count"), path.Join(dir, filename))
+							f.Attrs.Get("fragment.count"), path.Join(dir, filename))
 					} else {
 						fmt.Printf("  Unstaging file %s\n", path.Join(dir, filename))
 					}
@@ -117,6 +117,10 @@ func main() {
 				}
 				if hwerr := hw.Close(); err == nil {
 					err = hwerr
+				}
+
+				if scanErr := s.Err(); scanErr != nil {
+					log.Println("Error reading file from disk:", scanErr)
 				}
 				return
 			}

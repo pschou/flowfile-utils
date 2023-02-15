@@ -15,7 +15,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/inhies/go-bytesize"
 	"github.com/pschou/go-flowfile"
 	"github.com/relvacode/iso8601"
 )
@@ -30,6 +29,7 @@ var (
 	script      = flag.String("script", "", "Shell script to be called on successful post")
 	scriptShell = flag.String("script-shell", "/bin/bash", "Shell to be used for script run")
 	remove      = flag.Bool("rm", false, "Automatically remove file after script has finished")
+	hs          *flowfile.HTTPTransaction
 )
 
 func main() {
@@ -39,17 +39,7 @@ func main() {
 
 	fmt.Println("Output set to", *basePath)
 
-	// Settings for the flow file receiver
-	ffReceiver := flowfile.NewHTTPFileReceiver(post)
-	if *maxSize != "" {
-		if bs, err := bytesize.Parse(*maxSize); err != nil {
-			log.Fatal("Unable to parse max-size", err)
-		} else {
-			log.Println("Setting max-size to", bs)
-			ffReceiver.MaxPartitionSize = int64(uint64(bs))
-		}
-	}
-
+	// Configure the go HTTP server
 	server := &http.Server{
 		Addr:           *listen,
 		TLSConfig:      tlsConfig,
@@ -57,8 +47,15 @@ func main() {
 		WriteTimeout:   10 * time.Hour,
 		MaxHeaderBytes: 1 << 20,
 	}
+
+	// Setting up the flow file receiver
+	ffReceiver := flowfile.NewHTTPFileReceiver(post)
 	http.Handle(*listenPath, ffReceiver)
 
+	// Setup a timer to update the maximums and minimums for the sender
+	handshaker(hs, ffReceiver)
+
+	// Open the local port to listen for incoming connections
 	if *enableTLS {
 		log.Println("Listening with HTTPS on", *listen, "at", *listenPath)
 		log.Fatal(server.ListenAndServeTLS(*certFile, *keyFile))

@@ -12,8 +12,18 @@ NiFi-Unstager - take a directory of staged files and send them to a NiFi endpoin
 
 NiFi-Diode - takes a NiFi feed and forwards the FlowFiles to another NiFi (assures one direction)
 
+NiFi-to-UDP - takes a NiFi feed and sends it to a UDP endpoint
+
+UDP-to-NiFi - listens for a UDP feed and sends it to a NiFi endpoint
+
+NiFi-Flood - a sender which sends a continuous stream of NiFi flowfiles
+
+NiFi-Sink - a listener that listens and accepts flowfiles and does nothing
+
 
 For more documentation about the go-flowfile library: https://pkg.go.dev/github.com/pschou/go-flowfile .
+
+
 
 ## NiFi Sender
 
@@ -29,14 +39,19 @@ instance are:
 
 ![NiFi-Sender](images/NiFi-Sender.png)
 
+## NiFi to UDP
+
+NiFi to UDP listens on a NiFi endpoint and forwards all NiFi connections to an
+array of UDP ports.
+
 NiFi-Sender Usage:
 ```
-NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230210.1314)
+NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230215.1255)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote NiFi server for processing.
 
-Usage: ./nifi-sender [options] path1 path2...
+Usage: ../nifi-sender [options] path1 path2...
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -attributes string
@@ -58,8 +73,9 @@ Usage: ./nifi-sender [options] path1 path2...
     	To disable use -update-chain=false (default true)
   -url string
     	Where to send the files (default "http://localhost:8080/contentListener")
+  -v	Turn on verbose (shorthand)
   -verbose
-    	Turn on verbosity
+    	Turn on verbose
 ```
 
 Example:
@@ -72,6 +88,219 @@ $ ./nifi-sender -url http://localhost:8080/contentListener file1.dat file2.dat m
 2023/02/06 08:43:26 done.
 ```
 
+## NiFi to UDP
+
+UDP to NiFi listens on an array of UDP endpoint and forwards all flowfiles to a
+NiFi connection after doing consistency checks.
+
+NiFi-to-UDP Usage:
+```
+NiFi -to-> UDP (github.com/pschou/flowfile-utils, version: 0.1.20230215.1255)
+
+This utility is intended to take input over a NiFi compatible port and pass all
+FlowFiles to a UDP endpoint after verifying checksums.  A chain of custody is
+maintained by adding an action field with "NIFI-UDP" value.
+
+Note: The port range used in the source UDP address directly affect the number
+of concurrent sessions, and as payloads are buffered in memory (to do the
+checksum) the memory bloat can be upwards on the order of NUM_PORTS *
+MAX_PAYLOAD.  Please choose wisely.
+
+The resend-delay will add latency (by delaying new connections until second
+send is complete) but will add error resilience in the transfer.  In other
+words, shortening the delay will likely mean more errors, while increaing will
+slow down the number of accepted HTTP connections upstream.
+
+Usage: ../nifi-to-udp [options]
+  -CA string
+    	A PEM encoded CA's certificate file. (default "someCertCAFile")
+  -cert string
+    	A PEM encoded certificate file. (default "someCertFile")
+  -debug
+    	Turn on debug in FlowFile library
+  -init-script string
+    	Shell script to be called on start
+    	Used to manually setup the networking interfaces when this program is called from GRUB
+  -init-script-shell string
+    	Shell to be used for init script run (default "/bin/bash")
+  -key string
+    	A PEM encoded private key file. (default "someKeyFile")
+  -listen string
+    	Where to listen to incoming connections (example 1.2.3.4:8080) (default ":8080")
+  -listenPath string
+    	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
+  -max-http-sessions int
+    	Limit the number of allowed incoming HTTP connections (default 20)
+  -mtu int
+    	Maximum transmit unit (default 1200)
+  -resend-delay duration
+    	Time between first transmit and second, set to 0s to disable. (default 1s)
+  -segment-max-size string
+    	Set a maximum size for partitioning files in sending
+  -throttle duration
+    	Additional seconds per frame
+    	This scales up with concurrent connections (set to 0s to disable) (default 600ns)
+  -throttle-gap duration
+    	Inter-packet gap
+    	This is the time added after all packet (set to 0s to disable) (default 60ns)
+  -tls
+    	Enforce TLS secure transport on incoming connections
+  -udp-dst-addr string
+    	Target IP:PORT for UDP packet (default "10.12.128.249:2100-2200")
+  -udp-src-addr string
+    	Source IP:PORT for UDP packet (default "10.12.128.249:3100-3200")
+  -update-chain
+    	Update the connection chain attributes: "custodyChain.#.*"
+    	To disable use -update-chain=false (default true)
+  -v	Turn on verbose (shorthand)
+  -verbose
+    	Turn on verbose
+  -watchdog duration
+    	Trigger a reboot if no connection is seen within this time window
+    	You'll neet to make sure you have the watchdog module enabled on the host and kernel.
+    	Default is disabled (-watchdog=0s)
+```
+
+Example:
+```
+$ ./nifi-to-udp -listen :8082 -throttle 167us -throttle-gap 67ns -segment-max-size 10MB
+2023/02/15 12:40:01 Creating senders for UDP from: 10.12.128.249:3100-3200
+2023/02/15 12:40:01 Creating destinations for UDP: 10.12.128.249:2100-2200
+2023/02/15 12:40:01 Creating listener on: :8082
+2023/02/15 12:40:01 Setting max-size to 10.00MB
+2023/02/15 12:40:01 Listening with HTTP on :8082 at /contentListener
+```
+
+UDP-to-NiFi Usage:
+```
+UDP -to-> NiFi (github.com/pschou/flowfile-utils, version: 0.1.20230215.1255)
+
+This utility is intended to take input via UDP pass all FlowFiles to a UDP
+endpoint after verifying checksums.  A chain of custody is maintained by adding
+an action field with "UDP-NIFI" value.
+
+Usage: ../udp-to-nifi [options]
+  -CA string
+    	A PEM encoded CA's certificate file. (default "someCertCAFile")
+  -attributes string
+    	File with additional attributes to add to FlowFiles
+  -cert string
+    	A PEM encoded certificate file. (default "someCertFile")
+  -debug
+    	Turn on debug in FlowFile library
+  -init-script string
+    	Shell script to be called on start
+    	Used to manually setup the networking interfaces when this program is called from GRUB
+  -init-script-shell string
+    	Shell to be used for init script run (default "/bin/bash")
+  -key string
+    	A PEM encoded private key file. (default "someKeyFile")
+  -mtu int
+    	MTU payload size for pre-allocating memory (default 1400)
+  -no-checksums
+    	Ignore doing checksum checks
+  -udp-dst-ip string
+    	Local target IP:PORT for UDP packet (default ":2100-2200")
+  -update-chain
+    	Update the connection chain attributes: "custodyChain.#.*"
+    	To disable use -update-chain=false (default true)
+  -url string
+    	Where to send the files (default "http://localhost:8080/contentListener")
+  -v	Turn on verbose (shorthand)
+  -verbose
+    	Turn on verbose
+  -watchdog duration
+    	Trigger a reboot if no connection is seen within this time window
+    	You'll neet to make sure you have the watchdog module enabled on the host and kernel.
+    	Default is disabled (-watchdog=0s)
+```
+
+Example:
+```
+$ ../udp-to-nifi
+2023/02/15 12:41:13 Creating NiFi sender, http://localhost:8080/contentListener
+2023/02/15 12:41:13 Listening on UDP :2100-2200
+```
+
+## NiFi Sink
+
+NiFi listens on a NiFi endpoint and accepts every packet.
+
+NiFi-Sink Usage:
+```
+NiFi Sink (github.com/pschou/flowfile-utils, version: 0.1.20230215.1255)
+
+This utility is intended to listen for flow files on a NifI compatible port and
+drop them as fast as they come in
+
+Usage: ../nifi-sink [options]
+  -CA string
+    	A PEM encoded CA's certificate file. (default "someCertCAFile")
+  -cert string
+    	A PEM encoded certificate file. (default "someCertFile")
+  -debug
+    	Turn on debug in FlowFile library
+  -init-script string
+    	Shell script to be called on start
+    	Used to manually setup the networking interfaces when this program is called from GRUB
+  -init-script-shell string
+    	Shell to be used for init script run (default "/bin/bash")
+  -key string
+    	A PEM encoded private key file. (default "someKeyFile")
+  -listen string
+    	Where to listen to incoming connections (example 1.2.3.4:8080) (default ":8080")
+  -listenPath string
+    	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
+  -segment-max-size string
+    	Set a maximum size for partitioning files in sending
+  -tls
+    	Enforce TLS secure transport on incoming connections
+  -update-chain
+    	Update the connection chain attributes: "custodyChain.#.*"
+    	To disable use -update-chain=false (default true)
+  -v	Turn on verbose (shorthand)
+  -verbose
+    	Turn on verbose
+  -watchdog duration
+    	Trigger a reboot if no connection is seen within this time window
+    	You'll neet to make sure you have the watchdog module enabled on the host and kernel.
+    	Default is disabled (-watchdog=0s)
+```
+
+## NiFi Sink
+
+NiFi Flood sends empty files to a NiFi endpoint.
+
+NiFi-Flood Usage:
+```
+NiFi Flood (github.com/pschou/flowfile-utils, version: 0.1.20230215.1255)
+
+This utility is intended to saturate the bandwidth of a NiFi endpoint for
+load testing.
+
+Usage: ../nifi-flood [options]
+  -CA string
+    	A PEM encoded CA's certificate file. (default "someCertCAFile")
+  -attributes string
+    	File with additional attributes to add to FlowFiles
+  -cert string
+    	A PEM encoded certificate file. (default "someCertFile")
+  -debug
+    	Turn on debug in FlowFile library
+  -key string
+    	A PEM encoded private key file. (default "someKeyFile")
+  -payload int
+    	Payload size for upload (default 20971520)
+  -update-chain
+    	Update the connection chain attributes: "custodyChain.#.*"
+    	To disable use -update-chain=false (default true)
+  -url string
+    	Where to send the files (default "http://localhost:8080/contentListener")
+  -v	Turn on verbose (shorthand)
+  -verbose
+    	Turn on verbose
+```
+
 ## NiFi Receiver
 
 NiFi Receiver listens on a port for NiFi flow files and then acts on them accordingly as they are streamed in.
@@ -80,12 +309,12 @@ NiFi Receiver listens on a port for NiFi flow files and then acts on them accord
 
 NiFi-Receiver Usage:
 ```
-NiFi Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230210.1314)
+NiFi Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230215.1255)
 
 This utility is intended to listen for flow files on a NifI compatible port and
 then parse these files and drop them to disk for usage elsewhere.
 
-Usage: ./nifi-receiver [options]
+Usage: ../nifi-receiver [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -cert string
@@ -118,8 +347,9 @@ Usage: ./nifi-receiver [options]
   -update-chain
     	Update the connection chain attributes: "custodyChain.#.*"
     	To disable use -update-chain=false (default true)
+  -v	Turn on verbose (shorthand)
   -verbose
-    	Turn on verbosity
+    	Turn on verbose
   -watchdog duration
     	Trigger a reboot if no connection is seen within this time window
     	You'll neet to make sure you have the watchdog module enabled on the host and kernel.
@@ -194,13 +424,13 @@ This tool enables files to be layed down to disk, to be replayed at a later time
 
 NiFi-Stager Usage:
 ```
-NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230210.1314)
+NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230215.1255)
 
 This utility is intended to take input over a NiFi compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
 unstaged using the NiFi Unstager.
 
-Usage: ./nifi-stager [options]
+Usage: ../nifi-stager [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -cert string
@@ -236,8 +466,9 @@ Usage: ./nifi-stager [options]
   -update-chain
     	Update the connection chain attributes: "custodyChain.#.*"
     	To disable use -update-chain=false (default true)
+  -v	Turn on verbose (shorthand)
   -verbose
-    	Turn on verbosity
+    	Turn on verbose
   -watchdog duration
     	Trigger a reboot if no connection is seen within this time window
     	You'll neet to make sure you have the watchdog module enabled on the host and kernel.
@@ -304,13 +535,13 @@ The purpose of the nifi-unstager is to replay the files layed to disk in the nif
 
 NiFi-Unstager Usage:
 ```
-NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230210.1314)
+NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230215.1255)
 
 This utility is intended to take a directory of NiFi flow files and ship them
 out to a listening NiFi endpoint while maintaining the same set of attribute
 headers.
 
-Usage: ./nifi-unstager [options]
+Usage: ../nifi-unstager [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -attributes string
@@ -337,8 +568,9 @@ Usage: ./nifi-unstager [options]
     	To disable use -update-chain=false (default true)
   -url string
     	Where to send the files (default "http://localhost:8080/contentListener")
+  -v	Turn on verbose (shorthand)
   -verbose
-    	Turn on verbosity
+    	Turn on verbose
   -watchdog duration
     	Trigger a reboot if no connection is seen within this time window
     	You'll neet to make sure you have the watchdog module enabled on the host and kernel.
@@ -425,13 +657,13 @@ What are the pitfalls?
 
 NiFi-Diode Usage:
 ```
-NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230210.1314)
+NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230215.1255)
 
 This utility is intended to take input over a NiFi compatible port and pass all
 FlowFiles into another NiFi port while updating the attributes with the
 certificate and chaining any previous certificates.
 
-Usage: ./nifi-diode [options]
+Usage: ../nifi-diode [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -attributes string
@@ -462,8 +694,9 @@ Usage: ./nifi-diode [options]
     	To disable use -update-chain=false (default true)
   -url string
     	Where to send the files (default "http://localhost:8080/contentListener")
+  -v	Turn on verbose (shorthand)
   -verbose
-    	Turn on verbosity
+    	Turn on verbose
   -watchdog duration
     	Trigger a reboot if no connection is seen within this time window
     	You'll neet to make sure you have the watchdog module enabled on the host and kernel.
