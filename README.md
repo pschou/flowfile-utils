@@ -16,7 +16,7 @@ NiFi-Receiver - take a NiFi feed and save off files while doing checksums for va
 
 NiFi-Stager - take a NiFi feed and temporarily store them to disk for processing later
 
-NiFi-Unstager - take a directory of staged files and send them to a NiFi endpoint
+NiFi-Unstager - listens to a directory of staged files and send them to a NiFi endpoint
 
 NiFi-Diode - takes a NiFi feed and forwards the FlowFiles to another NiFi (assures one direction)
 
@@ -41,7 +41,7 @@ instance are:
 
 NiFi-Sender Usage:
 ```
-NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230215.1332)
+NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230215.1403)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote NiFi server for processing.
@@ -90,7 +90,7 @@ array of UDP ports.
 
 NiFi-to-UDP Usage:
 ```
-NiFi -to-> UDP (github.com/pschou/flowfile-utils, version: 0.1.20230215.1332)
+NiFi -to-> UDP (github.com/pschou/flowfile-utils, version: 0.1.20230215.1403)
 
 This utility is intended to take input over a NiFi compatible port and pass all
 FlowFiles to a UDP endpoint after verifying checksums.  A chain of custody is
@@ -176,7 +176,7 @@ NiFi connection after doing consistency checks.
 
 UDP-to-NiFi Usage:
 ```
-UDP -to-> NiFi (github.com/pschou/flowfile-utils, version: 0.1.20230215.1332)
+UDP -to-> NiFi (github.com/pschou/flowfile-utils, version: 0.1.20230215.1403)
 
 This utility is intended to take input via UDP pass all FlowFiles to a UDP
 endpoint after verifying checksums.  A chain of custody is maintained by adding
@@ -231,7 +231,7 @@ NiFi listens on a NiFi endpoint and accepts every packet.
 
 NiFi-Sink Usage:
 ```
-NiFi Sink (github.com/pschou/flowfile-utils, version: 0.1.20230215.1332)
+NiFi Sink (github.com/pschou/flowfile-utils, version: 0.1.20230215.1403)
 
 This utility is intended to listen for flow files on a NifI compatible port and
 drop them as fast as they come in
@@ -276,7 +276,7 @@ NiFi Flood sends empty files to a NiFi endpoint.
 
 NiFi-Flood Usage:
 ```
-NiFi Flood (github.com/pschou/flowfile-utils, version: 0.1.20230215.1332)
+NiFi Flood (github.com/pschou/flowfile-utils, version: 0.1.20230215.1403)
 
 This utility is intended to saturate the bandwidth of a NiFi endpoint for
 load testing.
@@ -312,7 +312,7 @@ NiFi Receiver listens on a port for NiFi flow files and then acts on them accord
 
 NiFi-Receiver Usage:
 ```
-NiFi Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230215.1332)
+NiFi Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230215.1403)
 
 This utility is intended to listen for flow files on a NifI compatible port and
 then parse these files and drop them to disk for usage elsewhere.
@@ -427,7 +427,7 @@ This tool enables files to be layed down to disk, to be replayed at a later time
 
 NiFi-Stager Usage:
 ```
-NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230215.1332)
+NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230215.1403)
 
 This utility is intended to take input over a NiFi compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
@@ -538,7 +538,7 @@ The purpose of the nifi-unstager is to replay the files layed to disk in the nif
 
 NiFi-Unstager Usage:
 ```
-NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230215.1332)
+NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230215.1403)
 
 This utility is intended to take a directory of NiFi flow files and ship them
 out to a listening NiFi endpoint while maintaining the same set of attribute
@@ -660,7 +660,7 @@ What are the pitfalls?
 
 NiFi-Diode Usage:
 ```
-NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230215.1332)
+NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230215.1403)
 
 This utility is intended to take input over a NiFi compatible port and pass all
 FlowFiles into another NiFi port while updating the attributes with the
