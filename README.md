@@ -268,7 +268,7 @@ Usage: ../nifi-sink [options]
     	Default is disabled (-watchdog=0s)
 ```
 
-## NiFi Sink
+## NiFi Flood
 
 NiFi Flood sends empty files to a NiFi endpoint.
 
