@@ -78,6 +78,7 @@ func throttleCalc(inc int64) {
 func main() {
 	service_flags()
 	listen_flags()
+	attributes = flag.String("attributes", "", "File with additional attributes to add to FlowFiles")
 	parse()
 
 	maxPayloadSize = *mtu - 28 // IPv4 Header
