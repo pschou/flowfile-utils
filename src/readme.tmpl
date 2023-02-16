@@ -286,12 +286,12 @@ Output set to ./output/
 
 ## NiFi to KCP
 
-NiFi to KCP tool will take a TCP FlowFile session and add forward error
-correction and stream it to a KCP listening server for reducing latency over
-long distances.  As the sets of flow files are handled as a continuous block,
-and the success or failure is sent back, it is preferred to send batches of
-many flow files instead of one at a time, but not too big so as to have
-to restart if the connection gets lost.
+NiFi to KCP tool will take a TCP FlowFile session, add forward error
+correction, and stream it to a KCP listening server to reduce the latency over
+long distances. As the sets of flow files are handled as a continuous block,
+and the entire block determines the success or failure-- one should send
+batches of many flow files instead of one at a time, but not too many, to not
+have to restart if the connection gets lost.
 
 NiFi-to-KCP Usage:
 
