@@ -24,8 +24,12 @@ into a NiFi compatible port for speeding up throughput over long distances.`
 
 	noChecksum   = flag.Bool("no-checksums", false, "Ignore doing checksum checks")
 	kcpListen    = flag.String("kcp", ":2112", "Listen port for KCP connections")
-	dataShards   = flag.Int("kcp-data", 5, "Number of data packets to send in a FEC grouping")
-	parityShards = flag.Int("kcp-parity", 2, "Number of parity packets to send in a FEC grouping")
+	dataShards   = flag.Int("kcp-data", 10, "Number of data packets to send in a FEC grouping")
+	parityShards = flag.Int("kcp-parity", 3, "Number of parity packets to send in a FEC grouping")
+
+	mtu    = flag.Int("mtu", 1350, "set maximum transmission unit for UDP packets")
+	sndwnd = flag.Int("sndwnd", 128, "set send window size(num of packets)")
+	rcvwnd = flag.Int("rcvwnd", 1024, "set receive window size(num of packets)")
 
 	hs *flowfile.HTTPTransaction
 )
@@ -54,36 +58,55 @@ func main() {
 			if conn, err := listener.AcceptKCP(); err != nil {
 				log.Printf("Error accepting connection:", err)
 			} else {
-				go post(conn)
+				go func() {
+					conn.SetStreamMode(false)
+					conn.SetWriteDelay(false)
+					conn.SetNoDelay(1, 10, 2, 1)
+					//conn.SetNoDelay(config.NoDelay, config.Interval, config.Resend, config.NoCongestion)
+					conn.SetWindowSize(*sndwnd, *rcvwnd)
+					conn.SetMtu(*mtu)
+					conn.SetACKNoDelay(false)
+
+					var err error
+					for err == nil { // reuse connections as long as nothing is broken
+						post(conn)
+					}
+				}()
 			}
 		}
 	}
 }
 
 // Post handles every flowfile that is posted into the diode
-func post(conn *kcp.UDPSession) {
-	var err error
+func post(conn *kcp.UDPSession) (err error) {
 	var f *flowfile.File
-
-	httpWriter := hs.NewHTTPPostWriter()
+	var httpWriter *flowfile.HTTPPostWriter
+	conn.SetACKNoDelay(false) // Flush slowly
 
 	defer func() {
 		conn.SetACKNoDelay(true) // Flush quickly
 		if err != nil {
 			log.Println("err:", err)
-			httpWriter.Terminate()
+			if httpWriter != nil {
+				httpWriter.Terminate()
+			}
 			conn.Write([]byte("FAIL"))
+			conn.Close()
 		} else {
-			httpWriter.Close()
+			if httpWriter != nil {
+				httpWriter.Close()
+			}
 			conn.Write([]byte("OKAY"))
 		}
-		conn.Close()
 	}()
 
 	rdr := flowfile.NewScanner(conn)
 
 	// Loop over all the files in the post payload
 	for rdr.Scan() {
+		if httpWriter == nil { // Make sure a connection is open
+			httpWriter = hs.NewHTTPPostWriter()
+		}
 		f = rdr.File()
 
 		// Flatten directory for ease of viewing
@@ -138,5 +161,8 @@ func post(conn *kcp.UDPSession) {
 			fmt.Println("  file sent!")
 		}
 	}
-	err = rdr.Err() // Pick up any reader errors
+	if rdr != nil {
+		err = rdr.Err() // Pick up any reader errors
+	}
+	return
 }

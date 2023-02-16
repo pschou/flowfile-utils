@@ -24,8 +24,19 @@ FlowFiles into KCP endpoint for speeding up throughput over long distances.`
 
 	noChecksum   = flag.Bool("no-checksums", false, "Ignore doing checksum checks")
 	kcpTarget    = flag.String("kcp", "10.12.128.249:2112", "Target KCP server to send flowfiles")
-	dataShards   = flag.Int("kcp-data", 5, "Number of data packets to send in a FEC grouping")
-	parityShards = flag.Int("kcp-parity", 2, "Number of parity packets to send in a FEC grouping")
+	dataShards   = flag.Int("kcp-data", 10, "Number of data packets to send in a FEC grouping")
+	parityShards = flag.Int("kcp-parity", 3, "Number of parity packets to send in a FEC grouping")
+	sndwnd       = flag.Int("sndwnd", 1024, "set send window size(num of packets)")
+	rcvwnd       = flag.Int("rcvwnd", 128, "set receive window size(num of packets)")
+	readbuf      = flag.Int("readbuf", 4194304, "per-socket read buffer in bytes")
+	writebuf     = flag.Int("writebuf", 16777217, "per-socket write buffer in bytes")
+	streambuf    = flag.Int("streambuf", 2097152, "per stream receive buffer in bytes")
+	dscp         = flag.Int("dscp", 46, "set DSCP(6bit)")
+	mtu          = flag.Int("mtu", 1350, "set maximum transmission unit for UDP packets")
+	threads      = flag.Int("threads", 40, "Parallel concurrent uploads")
+
+	connBuf   chan *kcp.UDPSession
+	connCount int
 )
 
 func main() {
@@ -35,6 +46,16 @@ func main() {
 
 	// Connect to the destination NiFi to prepare to send files
 	log.Println("Creating sender,", *url)
+
+	connBuf = make(chan *kcp.UDPSession, *threads)
+	for i := 0; i < *threads; i++ {
+		// Create a KCP Transaction with target
+		if err := Dial(); err != nil {
+			log.Fatal(err)
+		} else {
+			connCount++
+		}
+	}
 
 	// Configure the go HTTP server
 	server := &http.Server{
@@ -62,33 +83,38 @@ func main() {
 	}
 }
 
+func Dial() (err error) {
+	var conn *kcp.UDPSession
+	// Create a KCP Transaction with target
+	if conn, err = kcp.DialWithOptions(*kcpTarget, nil, *dataShards, *parityShards); err != nil {
+		return
+	}
+	conn.SetStreamMode(false)
+	conn.SetWriteDelay(false)
+	conn.SetNoDelay(1, 10, 2, 1)
+	//conn.SetNoDelay(config.NoDelay, config.Interval, config.Resend, config.NoCongestion)
+	conn.SetWindowSize(*sndwnd, *rcvwnd)
+	conn.SetMtu(*mtu)
+	conn.SetACKNoDelay(false)
+
+	if err = conn.SetDSCP(0); err != nil {
+		log.Println("SetDSCP:", err)
+	}
+	if err = conn.SetReadBuffer(*readbuf); err != nil {
+		log.Println("SetReadBuffer:", err)
+	}
+	if err = conn.SetWriteBuffer(*writebuf); err != nil {
+		log.Println("SetWriteBuffer:", err)
+	}
+	connBuf <- conn
+	return
+}
+
 // Post handles every flowfile that is posted into the diode
 func post(rdr *flowfile.Scanner, w http.ResponseWriter, r *http.Request) {
 	var err error
 	var f *flowfile.File
-	var conn *kcp.UDPSession
-
-	// Create a KCP Transaction with target
-	if conn, err = kcp.DialWithOptions(*kcpTarget, nil, *dataShards, *parityShards); err != nil {
-		log.Fatal(err)
-	}
-	conn.SetStreamMode(true)
-	conn.SetWriteDelay(false)
-	conn.SetNoDelay(1, 10, 2, 1)
-	//conn.SetNoDelay(config.NoDelay, config.Interval, config.Resend, config.NoCongestion)
-	conn.SetWindowSize(128, 512)
-	//conn.SetMtu(config.MTU)
-	conn.SetACKNoDelay(false)
-
-	if err := conn.SetDSCP(0); err != nil {
-		log.Println("SetDSCP:", err)
-	}
-	if err := conn.SetReadBuffer(4194304); err != nil {
-		log.Println("SetReadBuffer:", err)
-	}
-	if err := conn.SetWriteBuffer(4194304); err != nil {
-		log.Println("SetWriteBuffer:", err)
-	}
+	conn := <-connBuf
 
 	// Create a writer and start sending flowfiles
 	ffWriter := flowfile.NewWriter(conn)
@@ -97,10 +123,15 @@ func post(rdr *flowfile.Scanner, w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Println("err:", err)
 			w.WriteHeader(http.StatusInternalServerError)
+			conn.Close()
+			if err := Dial(); err != nil {
+				connCount--
+				log.Println("Dialing error:", err, "connCount:", connCount)
+			}
 		} else {
+			connBuf <- conn
 			w.WriteHeader(http.StatusOK)
 		}
-		conn.Close()
 	}()
 
 	// Loop over all the files in the post payload
@@ -157,14 +188,18 @@ func post(rdr *flowfile.Scanner, w http.ResponseWriter, r *http.Request) {
 	if err = rdr.Err(); err != nil { // Pick up any reader errors
 		return
 	}
-	conn.SetACKNoDelay(true) // Flush quickly
-	conn.Write([]byte("NiFiEOF"))
-
-	//fmt.Println("Reading 4 bytes")
+	conn.SetACKNoDelay(true)                           // Flush quickly
+	conn.SetDeadline(time.Now().Add(15 * time.Second)) // We need to have a result
+	conn.Write([]byte("NiFiEOF"))                      // Send EOF
 	dat := make([]byte, 4)
-	conn.Read(dat)
-	//fmt.Println("bytes:", string(dat))
-	if string(dat) != "OKAY" {
-		err = fmt.Errorf("Remote receiving error")
+	var n int
+	if n, err = conn.Read(dat); err != nil { // Read in 4 bytes (OKAY/FAIL)
+		return
 	}
+	if n != 4 || string(dat) != "OKAY" { // Test if it is what we expect
+		err = fmt.Errorf("Remote receiving error")
+		return
+	}
+	conn.SetACKNoDelay(false)     // Flush slowly
+	conn.SetDeadline(time.Time{}) // Restore previous deadline
 }

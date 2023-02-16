@@ -58,7 +58,10 @@ $ ./nifi-sender -url http://localhost:8080/contentListener file1.dat file2.dat m
 ## NiFi to UDP
 
 NiFi to UDP listens on a NiFi endpoint and forwards all NiFi connections to an
-array of UDP ports.
+array of UDP ports.  This is intended to be a one way fire and forget setup
+where the sender has no idea if the receiver got the packets, but the FlowFile
+payload is broken up into indexed frames and sent so order can be restored on
+the receiving side.
 
 ![NiFi-to-UDP](images/NiFi-to-UDP.png)
 
@@ -78,7 +81,8 @@ $ ./nifi-to-udp -listen :8082 -throttle 167us -throttle-gap 67ns -segment-max-si
 ## UDP to NiFi
 
 UDP to NiFi listens on an array of UDP endpoint and forwards all flowfiles to a
-NiFi connection after doing consistency checks.
+NiFi connection after doing consistency checks.  Here the heavy work is done to 
+reconstruct a FlowFile and then do a checksum before forwarding onward.
 
 ![UDP-to-NiFi](images/UDP-to-NiFi.png)
 
@@ -94,6 +98,8 @@ $ ../udp-to-nifi
 ## NiFi Sink
 
 NiFi listens on a NiFi endpoint and accepts every file while doing nothing.
+
+![NiFi-Sink](images/NiFi-Sink.png)
 
 NiFi-Sink Usage:
 
@@ -111,7 +117,9 @@ $ ./nifi-sink -v
 
 ## NiFi Flood
 
-NiFi Flood sends empty files to a NiFi endpoint while saturating the pipes.
+NiFi Flood sends files (of various sizes) to a NiFi endpoint to saturate the bandwidth.
+
+![NiFi-Flood](images/NiFi-Flood.png)
 
 NiFi-Flood Usage:
 
@@ -293,6 +301,8 @@ and the entire block determines the success or failure-- one should send
 batches of many flow files instead of one at a time, but not too many, to not
 have to restart if the connection gets lost.
 
+![NiFi-to-KCP](images/NiFi-to-KCP.png)
+
 NiFi-to-KCP Usage:
 
 Example:
@@ -309,6 +319,8 @@ $ ./nifi-to-kcp -listen :8082  -kcp-data 10 -kcp-parity 3 -v -segment-max-size 3
 KCP FlowFile server listening for connections from the NiFi-to-KCP and then
 forwarding the FlowFiles to a NiFi compatible port while correcting errors in
 transmission.
+
+![KCP-to-NiFi](images/KCP-to-NiFi.png)
 
 KCP-to-NiFi Usage:
 
