@@ -17,14 +17,17 @@ github.com/google/uuid
 github.com/inhies/go-bytesize
 # github.com/klauspost/cpuid/v2 v2.0.14
 ## explicit; go 1.15
+github.com/klauspost/cpuid/v2
 # github.com/klauspost/reedsolomon v1.10.0
 ## explicit; go 1.15
+github.com/klauspost/reedsolomon
 # github.com/mdlayher/watchdog v0.0.0-20221003142519-49be0df7b3b5
 ## explicit; go 1.19
 github.com/mdlayher/watchdog
 # github.com/pkg/errors v0.9.1
 ## explicit
-# github.com/pschou/go-flowfile v0.0.0-20230214181610-fd297318769a
+github.com/pkg/errors
+# github.com/pschou/go-flowfile v0.0.0-20230216024916-322294f01638
 ## explicit; go 1.18
 github.com/pschou/go-flowfile
 # github.com/pschou/go-iothrottler v0.0.0-20230213180241-30159f7b06f5
@@ -34,16 +37,40 @@ github.com/pschou/go-flowfile
 github.com/relvacode/iso8601
 # github.com/templexxx/cpu v0.0.9
 ## explicit
+# github.com/templexxx/cpufeat v0.0.0-20180724012125-cef66df7f161
+## explicit
+github.com/templexxx/cpufeat
+# github.com/templexxx/xor v0.0.0-20191217153810-f85b25db303b
+## explicit
+github.com/templexxx/xor
 # github.com/templexxx/xorsimd v0.4.1
 ## explicit; go 1.13
 # github.com/tjfoc/gmsm v1.4.1
 ## explicit; go 1.14
+github.com/tjfoc/gmsm/sm4
+# github.com/xtaci/kcp-go v5.4.20+incompatible
+## explicit
+github.com/xtaci/kcp-go
 # github.com/xtaci/kcp-go/v5 v5.6.2
 ## explicit; go 1.13
 # golang.org/x/crypto v0.6.0
 ## explicit; go 1.17
+golang.org/x/crypto/blowfish
+golang.org/x/crypto/cast5
+golang.org/x/crypto/internal/alias
+golang.org/x/crypto/pbkdf2
+golang.org/x/crypto/salsa20
+golang.org/x/crypto/salsa20/salsa
+golang.org/x/crypto/tea
+golang.org/x/crypto/twofish
+golang.org/x/crypto/xtea
 # golang.org/x/net v0.6.0
 ## explicit; go 1.17
+golang.org/x/net/bpf
+golang.org/x/net/internal/iana
+golang.org/x/net/internal/socket
+golang.org/x/net/ipv4
+golang.org/x/net/ipv6
 # golang.org/x/sys v0.5.0
 ## explicit; go 1.17
 golang.org/x/sys/internal/unsafeheader

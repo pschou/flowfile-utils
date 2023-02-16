@@ -47,6 +47,10 @@ func main() {
 		log.Fatal("Invalid min size", *min)
 	}
 
+	if maxBytes < minBytes {
+		log.Fatal("Max is smaller than min")
+	}
+
 	// Connect to the NiFi server and establish a session
 	hs, err = flowfile.NewHTTPTransaction(*url, tlsConfig)
 	if err != nil {

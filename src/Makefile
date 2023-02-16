@@ -12,6 +12,8 @@ go:
 	go mod vendor
 
 build:
+	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../nifi-to-kcp nifi-to-kcp.go lib-*.go
+	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../kcp-to-nifi kcp-to-nifi.go lib-*.go
 	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../udp-to-nifi udp-to-nifi.go lib-*.go
 	go build -ldflags=${FLAGS} -o ../nifi-to-udp nifi-to-udp.go lib-*.go
 	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../nifi-stager nifi-stager.go lib-*.go

@@ -20,6 +20,10 @@ NiFi-Unstager - listens to a directory of staged files and send them to a NiFi e
 
 NiFi-Diode - takes a NiFi feed and forwards the FlowFiles to another NiFi (assures one direction)
 
+NiFi-to-KCP - takes a NiFi feed and sends it to a KCP listener, enabling forward error correction (FEC)
+
+KCP-to-NiFi - listens for a KCP feed and sends it to a NiFi endpoint, verifying and correcting errors
+
 
 For more documentation about the go-flowfile library: https://pkg.go.dev/github.com/pschou/go-flowfile .
 
@@ -41,7 +45,7 @@ instance are:
 
 NiFi-Sender Usage:
 ```
-NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230215.2004)
+NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230215.2216)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote NiFi server for processing.
@@ -92,7 +96,7 @@ array of UDP ports.
 
 NiFi-to-UDP Usage:
 ```
-NiFi -to-> UDP (github.com/pschou/flowfile-utils, version: 0.1.20230215.2004)
+NiFi -to-> UDP (github.com/pschou/flowfile-utils, version: 0.1.20230215.2216)
 
 This utility is intended to take input over a NiFi compatible port and pass all
 FlowFiles to a UDP endpoint after verifying checksums.  A chain of custody is
@@ -180,7 +184,7 @@ NiFi connection after doing consistency checks.
 
 UDP-to-NiFi Usage:
 ```
-UDP -to-> NiFi (github.com/pschou/flowfile-utils, version: 0.1.20230215.2004)
+UDP -to-> NiFi (github.com/pschou/flowfile-utils, version: 0.1.20230215.2216)
 
 This utility is intended to take input via UDP pass all FlowFiles to a UDP
 endpoint after verifying checksums.  A chain of custody is maintained by adding
@@ -231,11 +235,11 @@ $ ../udp-to-nifi
 
 ## NiFi Sink
 
-NiFi listens on a NiFi endpoint and accepts every packet.
+NiFi listens on a NiFi endpoint and accepts every file while doing nothing.
 
 NiFi-Sink Usage:
 ```
-NiFi Sink (github.com/pschou/flowfile-utils, version: 0.1.20230215.2004)
+NiFi Sink (github.com/pschou/flowfile-utils, version: 0.1.20230215.2216)
 
 This utility is intended to listen for flow files on a NifI compatible port and
 drop them as fast as they come in
@@ -274,13 +278,25 @@ Usage: ../nifi-sink [options]
     	Default is disabled (-watchdog=0s)
 ```
 
+Example:
+
+```
+$ ./nifi-sink -v
+2023/02/15 20:04:34 Listening with HTTP on :8080 at /contentListener
+ - [{"Name":"path","Value":"./"},{"Name":"custodyChain.0.time","Value":"2023-02-15T20:04:37-05:00"},{"Name":"custodyChain.0.local.hostname","Value":"centos7.schou.me"},{"Name":"custodyChain.0.action","Value":"FLOOD"},{"Name":"filename","Value":"file0001.dat"},{"Name":"uuid","Value":"8a7ad2d7-9e6c-4b85-b2af-6a7b59dd8ed4"},{"Name":"checksumType","Value":"SHA1"},{"Name":"checksum","Value":"8bf6dc847a281d5042d681eb93b760f3d00c8df3"}]
+2023/02/15 20:04:39     Checksum passed for file/segment file0000.dat 318.5MB
+  - [{"Name":"path","Value":"./"},{"Name":"custodyChain.0.time","Value":"2023-02-15T20:04:37-05:00"},{"Name":"custodyChain.0.local.hostname","Value":"centos7.schou.me"},{"Name":"custodyChain.0.action","Value":"FLOOD"},{"Name":"filename","Value":"file0003.dat"},{"Name":"uuid","Value":"170c7599-dfe3-43ba-9499-ca97f3548dec"},{"Name":"checksumType","Value":"SHA1"},{"Name":"checksum","Value":"7a4e3a3ab5ef4656d391bcf54657b4e1436bd866"}]
+  - [{"Name":"path","Value":"./"},{"Name":"custodyChain.0.time","Value":"2023-02-15T20:04:37-05:00"},{"Name":"custodyChain.0.local.hostname","Value":"centos7.schou.me"},{"Name":"custodyChain.0.action","Value":"FLOOD"},{"Name":"filename","Value":"file0002.dat"},{"Name":"uuid","Value":"f73084ea-97d8-4961-85d5-03a68de6382d"},{"Name":"checksumType","Value":"SHA1"},{"Name":"checksum","Value":"424e243fec99ce3d37086e76ae78c2b3dfe9a019"}]
+2023/02/15 20:04:40     Checksum passed for file/segment file0001.dat 447.1MB
+```
+
 ## NiFi Flood
 
-NiFi Flood sends empty files to a NiFi endpoint.
+NiFi Flood sends empty files to a NiFi endpoint while saturating the pipes.
 
 NiFi-Flood Usage:
 ```
-NiFi Flood (github.com/pschou/flowfile-utils, version: 0.1.20230215.2004)
+NiFi Flood (github.com/pschou/flowfile-utils, version: 0.1.20230215.2216)
 
 This utility is intended to saturate the bandwidth of a NiFi endpoint for
 load testing.
@@ -316,6 +332,16 @@ Usage: ../nifi-flood [options]
     	Turn on verbose
 ```
 
+Example:
+```
+$ ../nifi-flood  -max 1G
+2023/02/15 20:04:37 Sending...
+2023/02/15 20:04:38 3 sending file0000.dat 318.5MB
+2023/02/15 20:04:38 1 sending file0001.dat 447.1MB
+2023/02/15 20:04:40 2 sending file0003.dat 921.9MB
+2023/02/15 20:04:40 0 sending file0002.dat 950MB
+```
+
 ## NiFi Receiver
 
 NiFi Receiver listens on a port for NiFi flow files and then acts on them accordingly as they are streamed in.
@@ -324,7 +350,7 @@ NiFi Receiver listens on a port for NiFi flow files and then acts on them accord
 
 NiFi-Receiver Usage:
 ```
-NiFi Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230215.2004)
+NiFi Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230215.2216)
 
 This utility is intended to listen for flow files on a NifI compatible port and
 then parse these files and drop them to disk for usage elsewhere.
@@ -439,7 +465,7 @@ This tool enables files to be layed down to disk, to be replayed at a later time
 
 NiFi-Stager Usage:
 ```
-NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230215.2004)
+NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230215.2216)
 
 This utility is intended to take input over a NiFi compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
@@ -550,7 +576,7 @@ The purpose of the nifi-unstager is to replay the files layed to disk in the nif
 
 NiFi-Unstager Usage:
 ```
-NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230215.2004)
+NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230215.2216)
 
 This utility is intended to take a directory of NiFi flow files and ship them
 out to a listening NiFi endpoint while maintaining the same set of attribute
@@ -615,6 +641,150 @@ Output set to ./output/
 ^C
 ```
 
+## NiFi to KCP
+
+NiFi to KCP tool will take a TCP FlowFile session and add forward error
+correction and stream it to a KCP listening server for reducing latency over
+long distances.  As the sets of flow files are handled as a continuous block,
+and the success or failure is sent back, it is preferred to send batches of
+many flow files instead of one at a time, but not too big so as to have
+to restart if the connection gets lost.
+
+NiFi-to-KCP Usage:
+```
+NiFi -to-> UDP (github.com/pschou/flowfile-utils, version: 0.1.20230215.2216)
+
+This utility is intended to take input over a NiFi compatible port and pass all
+FlowFiles to a UDP endpoint after verifying checksums.  A chain of custody is
+maintained by adding an action field with "NIFI-UDP" value.
+
+Note: The port range used in the source UDP address directly affect the number
+of concurrent sessions, and as payloads are buffered in memory (to do the
+checksum) the memory bloat can be upwards on the order of NUM_PORTS *
+MAX_PAYLOAD.  Please choose wisely.
+
+The resend-delay will add latency (by delaying new connections until second
+send is complete) but will add error resilience in the transfer.  In other
+words, shortening the delay will likely mean more errors, while increaing will
+slow down the number of accepted HTTP connections upstream.
+
+Usage: ../nifi-to-udp [options]
+  -CA string
+    	A PEM encoded CA's certificate file. (default "someCertCAFile")
+  -attributes string
+    	File with additional attributes to add to FlowFiles
+  -cert string
+    	A PEM encoded certificate file. (default "someCertFile")
+  -debug
+    	Turn on debug in FlowFile library
+  -init-script string
+    	Shell script to be called on start
+    	Used to manually setup the networking interfaces when this program is called from GRUB
+  -init-script-shell string
+    	Shell to be used for init script run (default "/bin/bash")
+  -key string
+    	A PEM encoded private key file. (default "someKeyFile")
+  -listen string
+    	Where to listen to incoming connections (example 1.2.3.4:8080) (default ":8080")
+  -listenPath string
+    	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
+  -max-http-sessions int
+    	Limit the number of allowed incoming HTTP connections (default 20)
+  -mtu int
+    	Maximum transmit unit (default 1200)
+  -resend-delay duration
+    	Time between first transmit and second, set to 0s to disable. (default 1s)
+  -segment-max-size string
+    	Set a maximum size for partitioning files in sending
+  -throttle duration
+    	Additional seconds per frame
+    	This scales up with concurrent connections (set to 0s to disable) (default 600ns)
+  -throttle-gap duration
+    	Inter-packet gap
+    	This is the time added after all packet (set to 0s to disable) (default 60ns)
+  -tls
+    	Enforce TLS secure transport on incoming connections
+  -udp-dst-addr string
+    	Target IP:PORT for UDP packet (default "10.12.128.249:2100-2200")
+  -udp-src-addr string
+    	Source IP:PORT for UDP packet (default "10.12.128.249:3100-3200")
+  -update-chain
+    	Update the connection chain attributes: "custodyChain.#.*"
+    	To disable use -update-chain=false (default true)
+  -v	Turn on verbose (shorthand)
+  -verbose
+    	Turn on verbose
+  -watchdog duration
+    	Trigger a reboot if no connection is seen within this time window
+    	You'll neet to make sure you have the watchdog module enabled on the host and kernel.
+    	Default is disabled (-watchdog=0s)
+```
+
+Example:
+
+```
+$ ./nifi-to-kcp -listen :8082  -kcp-data 10 -kcp-parity 3 -v -segment-max-size 3MB
+2023/02/15 22:23:19 Creating sender,
+2023/02/15 22:23:19 Setting max-size to 3.00MB
+2023/02/15 22:23:19 Listening with HTTP on :8082 at /contentListener
+```
+
+## KCP to NiFi
+
+KCP FlowFile server listening for connections from the NiFi-to-KCP and then
+forwarding the FlowFiles to a NiFi compatible port while correcting errors in
+transmission.
+
+KCP-to-NiFi Usage:
+```
+UDP -to-> NiFi (github.com/pschou/flowfile-utils, version: 0.1.20230215.2216)
+
+This utility is intended to take input via UDP pass all FlowFiles to a UDP
+endpoint after verifying checksums.  A chain of custody is maintained by adding
+an action field with "UDP-NIFI" value.
+
+Usage: ../udp-to-nifi [options]
+  -CA string
+    	A PEM encoded CA's certificate file. (default "someCertCAFile")
+  -attributes string
+    	File with additional attributes to add to FlowFiles
+  -cert string
+    	A PEM encoded certificate file. (default "someCertFile")
+  -debug
+    	Turn on debug in FlowFile library
+  -init-script string
+    	Shell script to be called on start
+    	Used to manually setup the networking interfaces when this program is called from GRUB
+  -init-script-shell string
+    	Shell to be used for init script run (default "/bin/bash")
+  -key string
+    	A PEM encoded private key file. (default "someKeyFile")
+  -mtu int
+    	MTU payload size for pre-allocating memory (default 1400)
+  -no-checksums
+    	Ignore doing checksum checks
+  -udp-dst-ip string
+    	Local target IP:PORT for UDP packet (default ":2100-2200")
+  -update-chain
+    	Update the connection chain attributes: "custodyChain.#.*"
+    	To disable use -update-chain=false (default true)
+  -url string
+    	Where to send the files (default "http://localhost:8080/contentListener")
+  -v	Turn on verbose (shorthand)
+  -verbose
+    	Turn on verbose
+  -watchdog duration
+    	Trigger a reboot if no connection is seen within this time window
+    	You'll neet to make sure you have the watchdog module enabled on the host and kernel.
+    	Default is disabled (-watchdog=0s)
+```
+
+Example:
+
+```
+$ ./kcp-to-nifi  -v -kcp-data 10 -kcp-parity 3
+2023/02/15 22:26:18 Creating sender, http://localhost:8080/contentListener
+```
 
 ## NiFi Diode
 
@@ -672,7 +842,7 @@ What are the pitfalls?
 
 NiFi-Diode Usage:
 ```
-NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230215.2004)
+NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230215.2216)
 
 This utility is intended to take input over a NiFi compatible port and pass all
 FlowFiles into another NiFi port while updating the attributes with the

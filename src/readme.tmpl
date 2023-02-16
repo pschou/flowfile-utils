@@ -20,6 +20,10 @@ NiFi-Unstager - listens to a directory of staged files and send them to a NiFi e
 
 NiFi-Diode - takes a NiFi feed and forwards the FlowFiles to another NiFi (assures one direction)
 
+NiFi-to-KCP - takes a NiFi feed and sends it to a KCP listener, enabling forward error correction (FEC)
+
+KCP-to-NiFi - listens for a KCP feed and sends it to a NiFi endpoint, verifying and correcting errors
+
 
 For more documentation about the go-flowfile library: https://pkg.go.dev/github.com/pschou/go-flowfile .
 
@@ -280,6 +284,40 @@ Output set to ./output/
 ^C
 ```
 
+## NiFi to KCP
+
+NiFi to KCP tool will take a TCP FlowFile session and add forward error
+correction and stream it to a KCP listening server for reducing latency over
+long distances.  As the sets of flow files are handled as a continuous block,
+and the success or failure is sent back, it is preferred to send batches of
+many flow files instead of one at a time, but not too big so as to have
+to restart if the connection gets lost.
+
+NiFi-to-KCP Usage:
+
+Example:
+
+```
+$ ./nifi-to-kcp -listen :8082  -kcp-data 10 -kcp-parity 3 -v -segment-max-size 3MB
+2023/02/15 22:23:19 Creating sender,
+2023/02/15 22:23:19 Setting max-size to 3.00MB
+2023/02/15 22:23:19 Listening with HTTP on :8082 at /contentListener
+```
+
+## KCP to NiFi
+
+KCP FlowFile server listening for connections from the NiFi-to-KCP and then
+forwarding the FlowFiles to a NiFi compatible port while correcting errors in
+transmission.
+
+KCP-to-NiFi Usage:
+
+Example:
+
+```
+$ ./kcp-to-nifi  -v -kcp-data 10 -kcp-parity 3
+2023/02/15 22:26:18 Creating sender, http://localhost:8080/contentListener
+```
 
 ## NiFi Diode
 
