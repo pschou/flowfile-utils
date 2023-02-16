@@ -30,7 +30,6 @@ FlowFiles into KCP endpoint for speeding up throughput over long distances.`
 	rcvwnd       = flag.Int("rcvwnd", 128, "set receive window size(num of packets)")
 	readbuf      = flag.Int("readbuf", 4194304, "per-socket read buffer in bytes")
 	writebuf     = flag.Int("writebuf", 16777217, "per-socket write buffer in bytes")
-	streambuf    = flag.Int("streambuf", 2097152, "per stream receive buffer in bytes")
 	dscp         = flag.Int("dscp", 46, "set DSCP(6bit)")
 	mtu          = flag.Int("mtu", 1350, "set maximum transmission unit for UDP packets")
 	threads      = flag.Int("threads", 40, "Parallel concurrent uploads")
