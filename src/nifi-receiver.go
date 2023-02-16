@@ -21,7 +21,7 @@ import (
 
 var about = `NiFi Receiver
 
-This utility is intended to listen for flow files on a NifI compatible port and
+This utility is intended to listen for FlowFiles on a NifI compatible port and
 then parse these files and drop them to disk for usage elsewhere.`
 
 var (
@@ -48,7 +48,7 @@ func main() {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	// Setting up the flow file receiver
+	// Setting up the FlowFile receiver
 	ffReceiver := flowfile.NewHTTPFileReceiver(post)
 	http.Handle(*listenPath, ffReceiver)
 

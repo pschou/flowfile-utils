@@ -17,7 +17,7 @@ import (
 
 var about = `NiFi Unstager
 
-This utility is intended to take a directory of NiFi flow files and ship them
+This utility is intended to take a directory of NiFi FlowFiles and ship them
 out to a listening NiFi endpoint while maintaining the same set of attribute
 headers.`
 
