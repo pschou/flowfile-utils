@@ -652,27 +652,14 @@ have to restart if the connection gets lost.
 
 NiFi-to-KCP Usage:
 ```
-NiFi -to-> UDP (github.com/pschou/flowfile-utils, version: 0.1.20230215.2216)
+NiFi -to-> KCP (github.com/pschou/flowfile-utils, version: 0.1.20230215.2216)
 
 This utility is intended to take input over a NiFi compatible port and pass all
-FlowFiles to a UDP endpoint after verifying checksums.  A chain of custody is
-maintained by adding an action field with "NIFI-UDP" value.
+FlowFiles into KCP endpoint for speeding up throughput over long distances.
 
-Note: The port range used in the source UDP address directly affect the number
-of concurrent sessions, and as payloads are buffered in memory (to do the
-checksum) the memory bloat can be upwards on the order of NUM_PORTS *
-MAX_PAYLOAD.  Please choose wisely.
-
-The resend-delay will add latency (by delaying new connections until second
-send is complete) but will add error resilience in the transfer.  In other
-words, shortening the delay will likely mean more errors, while increaing will
-slow down the number of accepted HTTP connections upstream.
-
-Usage: ../nifi-to-udp [options]
+Usage: ../nifi-to-kcp [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
-  -attributes string
-    	File with additional attributes to add to FlowFiles
   -cert string
     	A PEM encoded certificate file. (default "someCertFile")
   -debug
@@ -682,32 +669,24 @@ Usage: ../nifi-to-udp [options]
     	Used to manually setup the networking interfaces when this program is called from GRUB
   -init-script-shell string
     	Shell to be used for init script run (default "/bin/bash")
+  -kcp string
+    	Target KCP server to send flowfiles (default "10.12.128.249:2112")
+  -kcp-data int
+    	Number of data packets to send in a FEC grouping (default 5)
+  -kcp-parity int
+    	Number of parity packets to send in a FEC grouping (default 2)
   -key string
     	A PEM encoded private key file. (default "someKeyFile")
   -listen string
     	Where to listen to incoming connections (example 1.2.3.4:8080) (default ":8080")
   -listenPath string
     	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
-  -max-http-sessions int
-    	Limit the number of allowed incoming HTTP connections (default 20)
-  -mtu int
-    	Maximum transmit unit (default 1200)
-  -resend-delay duration
-    	Time between first transmit and second, set to 0s to disable. (default 1s)
+  -no-checksums
+    	Ignore doing checksum checks
   -segment-max-size string
     	Set a maximum size for partitioning files in sending
-  -throttle duration
-    	Additional seconds per frame
-    	This scales up with concurrent connections (set to 0s to disable) (default 600ns)
-  -throttle-gap duration
-    	Inter-packet gap
-    	This is the time added after all packet (set to 0s to disable) (default 60ns)
   -tls
     	Enforce TLS secure transport on incoming connections
-  -udp-dst-addr string
-    	Target IP:PORT for UDP packet (default "10.12.128.249:2100-2200")
-  -udp-src-addr string
-    	Source IP:PORT for UDP packet (default "10.12.128.249:3100-3200")
   -update-chain
     	Update the connection chain attributes: "custodyChain.#.*"
     	To disable use -update-chain=false (default true)
@@ -737,13 +716,12 @@ transmission.
 
 KCP-to-NiFi Usage:
 ```
-UDP -to-> NiFi (github.com/pschou/flowfile-utils, version: 0.1.20230215.2216)
+KCP -to-> NiFi (github.com/pschou/flowfile-utils, version: 0.1.20230215.2216)
 
-This utility is intended to take input via UDP pass all FlowFiles to a UDP
-endpoint after verifying checksums.  A chain of custody is maintained by adding
-an action field with "UDP-NIFI" value.
+This utility is intended to take input over a KCP connection and send FlowFiles
+into a NiFi compatible port for speeding up throughput over long distances.
 
-Usage: ../udp-to-nifi [options]
+Usage: ../kcp-to-nifi [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -attributes string
@@ -757,14 +735,16 @@ Usage: ../udp-to-nifi [options]
     	Used to manually setup the networking interfaces when this program is called from GRUB
   -init-script-shell string
     	Shell to be used for init script run (default "/bin/bash")
+  -kcp string
+    	Listen port for KCP connections (default ":2112")
+  -kcp-data int
+    	Number of data packets to send in a FEC grouping (default 5)
+  -kcp-parity int
+    	Number of parity packets to send in a FEC grouping (default 2)
   -key string
     	A PEM encoded private key file. (default "someKeyFile")
-  -mtu int
-    	MTU payload size for pre-allocating memory (default 1400)
   -no-checksums
     	Ignore doing checksum checks
-  -udp-dst-ip string
-    	Local target IP:PORT for UDP packet (default ":2100-2200")
   -update-chain
     	Update the connection chain attributes: "custodyChain.#.*"
     	To disable use -update-chain=false (default true)

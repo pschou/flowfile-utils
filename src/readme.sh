@@ -9,6 +9,6 @@
   sed -i -e '/UDP-to-NiFi Usage:/r /dev/stdin' README.md < <(echo "\`\`\`";../udp-to-nifi -h 2>&1;echo "\`\`\`")
   sed -i -e '/NiFi-Sink Usage:/r /dev/stdin' README.md < <(echo "\`\`\`";../nifi-sink -h 2>&1;echo "\`\`\`")
   sed -i -e '/NiFi-Flood Usage:/r /dev/stdin' README.md < <(echo "\`\`\`";../nifi-flood -h 2>&1;echo "\`\`\`")
-  sed -i -e '/NiFi-to-KCP Usage:/r /dev/stdin' README.md < <(echo "\`\`\`";../nifi-to-udp -h 2>&1;echo "\`\`\`")
-  sed -i -e '/KCP-to-NiFi Usage:/r /dev/stdin' README.md < <(echo "\`\`\`";../udp-to-nifi -h 2>&1;echo "\`\`\`")
+  sed -i -e '/NiFi-to-KCP Usage:/r /dev/stdin' README.md < <(echo "\`\`\`";../nifi-to-kcp -h 2>&1;echo "\`\`\`")
+  sed -i -e '/KCP-to-NiFi Usage:/r /dev/stdin' README.md < <(echo "\`\`\`";../kcp-to-nifi -h 2>&1;echo "\`\`\`")
 	mv README.md ..
