@@ -8,9 +8,9 @@ A set of FlowFile routines for working with NiFi feeds.  The utilities include:
 
 [UDP-to-NiFi](#UDP-to-NiFi) - listens for a UDP feed and sends it to a NiFi endpoint
 
-[NiFi-Sink](#NiFi-Sink) - a listener that listens and accepts flowfiles and does nothing
+[NiFi-Sink](#NiFi-Sink) - a listener that listens and accepts FlowFiles and does nothing
 
-[NiFi-Flood](#NiFi-Flood) - a sender which sends a continuous stream of NiFi flowfiles
+[NiFi-Flood](#NiFi-Flood) - a sender which sends a continuous stream of NiFi FlowFiles
 
 [NiFi-Receiver](#NiFi-Receiver) - take a NiFi feed and save off files while doing checksums for validity
 
@@ -180,7 +180,7 @@ $ ./nifi-to-udp -listen :8082 -throttle 167us -throttle-gap 67ns -segment-max-si
 
 ## UDP to NiFi
 
-UDP to NiFi listens on an array of UDP endpoint and forwards all flowfiles to a
+UDP to NiFi listens on an array of UDP endpoint and forwards all FlowFiles to a
 NiFi connection after doing consistency checks.  Here the heavy work is done to 
 reconstruct a FlowFile and then do a checksum before forwarding onward.
 
@@ -352,7 +352,7 @@ $ ../nifi-flood  -max 1G
 
 ## NiFi Receiver
 
-NiFi Receiver listens on a port for NiFi flow files and then acts on them accordingly as they are streamed in.
+NiFi Receiver listens on a port for NiFi FlowFiles and then acts on them accordingly as they are streamed in.
 
 ![NiFi-Receiver](images/NiFi-Receiver.png)
 
@@ -467,7 +467,7 @@ $
 
 ## NiFi Stager
 
-This tool enables files to be layed down to disk, to be replayed at a later time or different location into a flowfile feed.  Note that the binary payload that is layed down is FlowFile encoded and not parsed out for making sure the exact binary payload is replayed.
+This tool enables files to be layed down to disk, to be replayed at a later time or different location into a FlowFile feed.  Note that the binary payload that is layed down is FlowFile encoded and not parsed out for making sure the exact binary payload is replayed.
 
 ![NiFi-Stager](images/NiFi-Stager.png)
 
@@ -653,9 +653,9 @@ Output set to ./output/
 
 NiFi to KCP tool will take a TCP FlowFile session, add forward error
 correction, and stream it to a KCP listening server to reduce the latency over
-long distances. As the sets of flow files are handled as a continuous block,
+long distances. As the sets of FlowFiles are handled as a continuous block,
 and the entire block determines the success or failure-- one should send
-batches of many flow files instead of one at a time, but not too many, to not
+batches of many FlowFiles instead of one at a time, but not too many, to not
 have to restart if the connection gets lost.
 
 ![NiFi-to-KCP](images/NiFi-to-KCP.png)
