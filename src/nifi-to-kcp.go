@@ -56,6 +56,18 @@ func main() {
 		}
 	}
 
+	// Test one packet for sanity
+	if !ping() {
+		log.Fatal("KCP server not ready")
+	}
+
+	go func() {
+		for {
+			time.Sleep(10 * time.Second)
+			ping()
+		}
+	}()
+
 	// Configure the go HTTP server
 	server := &http.Server{
 		Addr:           *listen,
@@ -146,15 +158,15 @@ func post(rdr *flowfile.Scanner, w http.ResponseWriter, r *http.Request) {
 
 		filename := f.Attrs.Get("filename")
 
-		if id := f.Attrs.Get("fragment.index"); id != "" {
-			i, _ := strconv.Atoi(id)
-			fmt.Printf("  KCPing segment %d of %s of %s for %v\n", i,
-				f.Attrs.Get("fragment.count"), path.Join(dir, filename), r.RemoteAddr)
-		} else {
-			fmt.Printf("  KCPing file %s for %v\n", path.Join(dir, filename), r.RemoteAddr)
-		}
-
 		if *verbose {
+			if id := f.Attrs.Get("fragment.index"); id != "" {
+				i, _ := strconv.Atoi(id)
+				fmt.Printf("  KCPing segment %d of %s of %s for %v\n", i,
+					f.Attrs.Get("fragment.count"), path.Join(dir, filename), r.RemoteAddr)
+			} else {
+				fmt.Printf("  KCPing file %s for %v\n", path.Join(dir, filename), r.RemoteAddr)
+			}
+
 			adat, _ := json.Marshal(f.Attrs)
 			fmt.Printf("    %s\n", adat)
 		}
@@ -202,4 +214,37 @@ func post(rdr *flowfile.Scanner, w http.ResponseWriter, r *http.Request) {
 	}
 	conn.SetACKNoDelay(false)     // Flush slowly
 	conn.SetDeadline(time.Time{}) // Restore previous deadline
+}
+
+func ping() (ok bool) {
+	conn := <-connBuf
+	conn.SetACKNoDelay(true)                           // Flush quickly
+	conn.SetDeadline(time.Now().Add(15 * time.Second)) // We need to have a result
+	conn.Write([]byte("NiFiEOF"))                      // Send EOF
+	dat := make([]byte, 4)
+	conn.Read(dat)
+	if string(dat) == "OKAY" { // Test if it is what we expect
+		conn.SetACKNoDelay(false)     // Flush slowly
+		conn.SetDeadline(time.Time{}) // Restore previous deadline
+		connBuf <- conn
+		ok = true
+
+		for connCount < *threads {
+			// Fill up the connection pool again
+			if err := Dial(); err != nil {
+				break
+			} else {
+				connCount++
+			}
+		}
+		return
+	}
+	conn.Close()
+
+	if err := Dial(); err != nil {
+		connCount--
+		log.Println("Dialing error:", err, "connCount:", connCount)
+	}
+
+	return
 }

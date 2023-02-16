@@ -62,6 +62,7 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 	switch *dump {
 	case "raw":
 		io.Copy(os.Stdout, f)
+		fmt.Println()
 	case "hex":
 		io.Copy(hex.Dumper(os.Stdout), f)
 	case "":
@@ -69,7 +70,6 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 	default:
 		log.Fatal("Unknown dump kind", *dump)
 	}
-	fmt.Println()
 	f.Close()
 
 	//if *verbose && f.Size > 0 {

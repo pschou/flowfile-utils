@@ -117,15 +117,15 @@ func post(conn *kcp.UDPSession) (err error) {
 
 		filename := f.Attrs.Get("filename")
 
-		if id := f.Attrs.Get("fragment.index"); id != "" {
-			i, _ := strconv.Atoi(id)
-			fmt.Printf("  UnKCPing segment %d of %s of %s for %s\n", i,
-				f.Attrs.Get("fragment.count"), path.Join(dir, filename), conn.RemoteAddr())
-		} else {
-			fmt.Printf("  UnKCPing file %s for %s\n", path.Join(dir, filename), conn.RemoteAddr())
-		}
-
 		if *verbose {
+			if id := f.Attrs.Get("fragment.index"); id != "" {
+				i, _ := strconv.Atoi(id)
+				fmt.Printf("  UnKCPing segment %d of %s of %s for %s\n", i,
+					f.Attrs.Get("fragment.count"), path.Join(dir, filename), conn.RemoteAddr())
+			} else {
+				fmt.Printf("  UnKCPing file %s for %s\n", path.Join(dir, filename), conn.RemoteAddr())
+			}
+
 			adat, _ := json.Marshal(f.Attrs)
 			fmt.Printf("    %s\n", adat)
 		}
