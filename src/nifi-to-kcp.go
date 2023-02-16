@@ -71,6 +71,7 @@ func main() {
 
 	// Setup a timer to update the maximums and minimums for the sender
 	handshaker(nil, ffReceiver)
+	//send_metrics(func(f *flowfile.File) { hs.Send(f) }, ffReceiver)
 
 	// Open the local port to listen for incoming connections
 	if *enableTLS {

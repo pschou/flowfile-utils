@@ -132,6 +132,12 @@ github.com/pschou/go-flowfile v0.0.0-20230214181610-fd297318769a h1:NqzEqaA5RrP6
 github.com/pschou/go-flowfile v0.0.0-20230214181610-fd297318769a/go.mod h1:cuARYtqKJHs6lo8DKEKKJShLp3nQ/I2HMchsYuk0T5M=
 github.com/pschou/go-flowfile v0.0.0-20230216024916-322294f01638 h1:XPoHw1BcuopLQc35YAM2tz5zOKDp34mKWkuhJrJ5FHQ=
 github.com/pschou/go-flowfile v0.0.0-20230216024916-322294f01638/go.mod h1:cuARYtqKJHs6lo8DKEKKJShLp3nQ/I2HMchsYuk0T5M=
+github.com/pschou/go-flowfile v0.0.0-20230216181344-ac520d42a1aa h1:9iOWesgeJRY7zKBjhWHwBgPXe67n70gfYMWz1CTMntI=
+github.com/pschou/go-flowfile v0.0.0-20230216181344-ac520d42a1aa/go.mod h1:cuARYtqKJHs6lo8DKEKKJShLp3nQ/I2HMchsYuk0T5M=
+github.com/pschou/go-flowfile v0.0.0-20230216184543-03d4d3af0ed6 h1:vuygmmTNYNKmoB1peKrSztpzOc8R7xHUx+U47Us1ptU=
+github.com/pschou/go-flowfile v0.0.0-20230216184543-03d4d3af0ed6/go.mod h1:cuARYtqKJHs6lo8DKEKKJShLp3nQ/I2HMchsYuk0T5M=
+github.com/pschou/go-flowfile v0.0.0-20230216184732-cee7530207c4 h1:TnjvlG9RJGJiBmCFZ8tNYX8jGaMH4/oSqG9EdOV5GBI=
+github.com/pschou/go-flowfile v0.0.0-20230216184732-cee7530207c4/go.mod h1:cuARYtqKJHs6lo8DKEKKJShLp3nQ/I2HMchsYuk0T5M=
 github.com/pschou/go-iothrottler v0.0.0-20230213174139-e53d255d02b9 h1:R26elIAm5ZntUcsvLQJ1EfjV1pm7Hfke8BsFd61Vc3Y=
 github.com/pschou/go-iothrottler v0.0.0-20230213174139-e53d255d02b9/go.mod h1:WHzAHzehWSrkxTzDdC4hy9aZSJsRfDuN7M/WPdAOi8M=
 github.com/pschou/go-iothrottler v0.0.0-20230213175959-6a1506cbdaf4 h1:Kn3oQo1IyqjbqvsihVpzGoWZUFWKg49cvZj/DjCxEAc=

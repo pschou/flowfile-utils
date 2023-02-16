@@ -29,6 +29,7 @@ func main() {
 	service_flags()
 	listen_flags()
 	sender_flags()
+	metrics_flags()
 	parse()
 	var err error
 
@@ -55,6 +56,7 @@ func main() {
 
 	// Setup a timer to update the maximums and minimums for the sender
 	handshaker(hs, ffReceiver)
+	send_metrics(func(f *flowfile.File) { hs.Send(f) }, ffReceiver)
 
 	// Open the local port to listen for incoming connections
 	if *enableTLS {

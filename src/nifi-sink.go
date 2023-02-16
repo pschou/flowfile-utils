@@ -1,11 +1,14 @@
 package main
 
 import (
+	"encoding/hex"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/docker/go-units"
@@ -18,7 +21,8 @@ This utility is intended to listen for FlowFiles on a NifI compatible port and
 drop them as fast as they come in`
 
 var (
-	hs *flowfile.HTTPTransaction
+	hs   *flowfile.HTTPTransaction
+	dump = flag.String("dump", "", "Dump the payload to the screen")
 )
 
 func main() {
@@ -55,7 +59,17 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 		adat, _ := json.Marshal(f.Attrs)
 		fmt.Printf("  - %s\n", adat)
 	}
-	io.Copy(io.Discard, f)
+	switch *dump {
+	case "raw":
+		io.Copy(os.Stdout, f)
+	case "hex":
+		io.Copy(hex.Dumper(os.Stdout), f)
+	case "":
+		io.Copy(io.Discard, f)
+	default:
+		log.Fatal("Unknown dump kind", *dump)
+	}
+	fmt.Println()
 	f.Close()
 
 	//if *verbose && f.Size > 0 {
