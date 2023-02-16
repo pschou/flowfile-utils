@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/docker/go-units"
 	"github.com/pschou/go-flowfile"
 )
 
@@ -60,10 +61,12 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 	//if *verbose && f.Size > 0 {
 	err = f.Verify()
 	if err == nil {
-		log.Println("    Checksum passed for file/segment", f.Attrs.Get("filename"))
+		log.Println("    Checksum passed for file/segment", f.Attrs.Get("filename"),
+			units.HumanSize(float64(f.Size)))
 	} else {
 		//if err == flowfile.ErrorChecksumMissing {
-		log.Println("    Checksum Error", err, "for", f.Attrs.Get("filename"))
+		log.Println("    Checksum Error", err, "for", f.Attrs.Get("filename"),
+			units.HumanSize(float64(f.Size)))
 	}
 	//}
 

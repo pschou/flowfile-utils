@@ -89,15 +89,37 @@ $ ../udp-to-nifi
 
 ## NiFi Sink
 
-NiFi listens on a NiFi endpoint and accepts every packet.
+NiFi listens on a NiFi endpoint and accepts every file while doing nothing.
 
 NiFi-Sink Usage:
 
+Example:
+
+```
+$ ./nifi-sink -v
+2023/02/15 20:04:34 Listening with HTTP on :8080 at /contentListener
+ - [{"Name":"path","Value":"./"},{"Name":"custodyChain.0.time","Value":"2023-02-15T20:04:37-05:00"},{"Name":"custodyChain.0.local.hostname","Value":"centos7.schou.me"},{"Name":"custodyChain.0.action","Value":"FLOOD"},{"Name":"filename","Value":"file0001.dat"},{"Name":"uuid","Value":"8a7ad2d7-9e6c-4b85-b2af-6a7b59dd8ed4"},{"Name":"checksumType","Value":"SHA1"},{"Name":"checksum","Value":"8bf6dc847a281d5042d681eb93b760f3d00c8df3"}]
+2023/02/15 20:04:39     Checksum passed for file/segment file0000.dat 318.5MB
+  - [{"Name":"path","Value":"./"},{"Name":"custodyChain.0.time","Value":"2023-02-15T20:04:37-05:00"},{"Name":"custodyChain.0.local.hostname","Value":"centos7.schou.me"},{"Name":"custodyChain.0.action","Value":"FLOOD"},{"Name":"filename","Value":"file0003.dat"},{"Name":"uuid","Value":"170c7599-dfe3-43ba-9499-ca97f3548dec"},{"Name":"checksumType","Value":"SHA1"},{"Name":"checksum","Value":"7a4e3a3ab5ef4656d391bcf54657b4e1436bd866"}]
+  - [{"Name":"path","Value":"./"},{"Name":"custodyChain.0.time","Value":"2023-02-15T20:04:37-05:00"},{"Name":"custodyChain.0.local.hostname","Value":"centos7.schou.me"},{"Name":"custodyChain.0.action","Value":"FLOOD"},{"Name":"filename","Value":"file0002.dat"},{"Name":"uuid","Value":"f73084ea-97d8-4961-85d5-03a68de6382d"},{"Name":"checksumType","Value":"SHA1"},{"Name":"checksum","Value":"424e243fec99ce3d37086e76ae78c2b3dfe9a019"}]
+2023/02/15 20:04:40     Checksum passed for file/segment file0001.dat 447.1MB
+```
+
 ## NiFi Flood
 
-NiFi Flood sends empty files to a NiFi endpoint.
+NiFi Flood sends empty files to a NiFi endpoint while saturating the pipes.
 
 NiFi-Flood Usage:
+
+Example:
+```
+$ ../nifi-flood  -max 1G
+2023/02/15 20:04:37 Sending...
+2023/02/15 20:04:38 3 sending file0000.dat 318.5MB
+2023/02/15 20:04:38 1 sending file0001.dat 447.1MB
+2023/02/15 20:04:40 2 sending file0003.dat 921.9MB
+2023/02/15 20:04:40 0 sending file0002.dat 950MB
+```
 
 ## NiFi Receiver
 
