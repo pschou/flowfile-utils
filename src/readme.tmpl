@@ -2,27 +2,27 @@
 
 A set of FlowFile routines for working with NiFi feeds.  The utilities include:
 
-[NiFi-Sender](#NiFiSender) - take a file or directory and send them to a NiFi endpoint
+[NiFi-Sender](#NiFi-Sender) - take a file or directory and send them to a NiFi endpoint
 
-[NiFi-to-UDP](#NiFitoUDP) - takes a NiFi feed and sends it to a UDP endpoint
+[NiFi-to-UDP](#NiFi-to-UDP) - takes a NiFi feed and sends it to a UDP endpoint
 
-[UDP-to-NiFi](#UDPtoNiFi) - listens for a UDP feed and sends it to a NiFi endpoint
+[UDP-to-NiFi](#UDP-to-NiFi) - listens for a UDP feed and sends it to a NiFi endpoint
 
-[NiFi-Sink](#NiFiSink) - a listener that listens and accepts flowfiles and does nothing
+[NiFi-Sink](#NiFi-Sink) - a listener that listens and accepts flowfiles and does nothing
 
-[NiFi-Flood](#NiFiFlood) - a sender which sends a continuous stream of NiFi flowfiles
+[NiFi-Flood](#NiFi-Flood) - a sender which sends a continuous stream of NiFi flowfiles
 
-[NiFi-Receiver](#NiFiReceiver) - take a NiFi feed and save off files while doing checksums for validity
+[NiFi-Receiver](#NiFi-Receiver) - take a NiFi feed and save off files while doing checksums for validity
 
-[NiFi-Stager](#NiFiStager) - take a NiFi feed and temporarily store them to disk for processing later
+[NiFi-Stager](#NiFi-Stager) - take a NiFi feed and temporarily store them to disk for processing later
 
-[NiFi-Unstager](#NiFiUnstager) - listens to a directory of staged files and send them to a NiFi endpoint
+[NiFi-Unstager](#NiFi-Unstager) - listens to a directory of staged files and send them to a NiFi endpoint
 
-[NiFi-Diode](#NiFiDiode) - takes a NiFi feed and forwards the FlowFiles to another NiFi (assures one direction)
+[NiFi-Diode](#NiFi-Diode) - takes a NiFi feed and forwards the FlowFiles to another NiFi (assures one direction)
 
-[NiFi-to-KCP](#NiFitoKCP) - takes a NiFi feed and sends it to a KCP listener, enabling forward error correction (FEC)
+[NiFi-to-KCP](#NiFi-to-KCP) - takes a NiFi feed and sends it to a KCP listener, enabling forward error correction (FEC)
 
-[KCP-to-NiFi](#KCPtoNiFi) - listens for a KCP feed and sends it to a NiFi endpoint, verifying and correcting errors
+[KCP-to-NiFi](#KCP-to-NiFi) - listens for a KCP feed and sends it to a NiFi endpoint, verifying and correcting errors
 
 
 For more documentation about the go-flowfile library: https://pkg.go.dev/github.com/pschou/go-flowfile .
