@@ -2,27 +2,27 @@
 
 A set of FlowFile routines for working with FlowFile feeds.  The utilities include:
 
-[FF-Sender](#flowfile-sender) - take a file or directory and send them to a FlowFile endpoint
+[FF-Sender](#ff-sender) - take a file or directory and send them to a FlowFile endpoint
 
-[FF-HTTP-to-UDP](#flowfile-http-to-udp) - takes a FlowFile feed and sends it to a UDP endpoint
+[FF-HTTP-to-UDP](#ff-http-to-udp) - takes a FlowFile feed and sends it to a UDP endpoint
 
-[FF-UDP-to-HTTP](#flowfile-udp-to-http) - listens for a UDP feed and sends it to a FlowFile endpoint
+[FF-UDP-to-HTTP](#ff-udp-to-http) - listens for a UDP feed and sends it to a FlowFile endpoint
 
-[FF-Sink](#flowfile-sink) - a listener that listens and accepts FlowFiles and does nothing
+[FF-Sink](#ff-sink) - a listener that listens and accepts FlowFiles and does nothing
 
-[FF-Flood](#flowfile-flood) - a sender which sends a continuous stream of FlowFiles
+[FF-Flood](#ff-flood) - a sender which sends a continuous stream of FlowFiles
 
-[FF-Receiver](#flowfile-receiver) - take a FlowFile feed and save off files while doing checksums for validity
+[FF-Receiver](#ff-receiver) - take a FlowFile feed and save off files while doing checksums for validity
 
-[FF-Stager](#flowfile-stager) - take a FlowFile feed and temporarily store them to disk for processing later
+[FF-Stager](#ff-stager) - take a FlowFile feed and temporarily store them to disk for processing later
 
-[FF-Unstager](#flowfile-unstager) - listens to a directory of staged files and send them to a FlowFile endpoint
+[FF-Unstager](#ff-unstager) - listens to a directory of staged files and send them to a FlowFile endpoint
 
-[FF-Diode](#flowfile-diode) - takes a FlowFile feed and forwards the FlowFiles to another listener (assures one direction)
+[FF-Diode](#ff-diode) - takes a FlowFile feed and forwards the FlowFiles to another listener (assures one direction)
 
-[FF-HTTP-to-KCP](#flowfile-http-to-kcp) - takes a FlowFile feed and sends it to a KCP listener, enabling forward error correction (FEC)
+[FF-HTTP-to-KCP](#ff-http-to-kcp) - takes a FlowFile feed and sends it to a KCP listener, enabling forward error correction (FEC)
 
-[FF-KCP-to-HTTP](#flowfile-kcp-to-http) - listens for a KCP feed and sends it to a FlowFile endpoint, verifying and correcting errors
+[FF-KCP-to-HTTP](#ff-kcp-to-http) - listens for a KCP feed and sends it to a FlowFile endpoint, verifying and correcting errors
 
 
 For more documentation about the go-flowfile library: https://pkg.go.dev/github.com/pschou/go-flowfile .
