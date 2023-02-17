@@ -1,56 +1,55 @@
 # FlowFile-Utils
 
-A set of FlowFile routines for working with NiFi feeds.  The utilities include:
+A set of FlowFile routines for working with FlowFile feeds.  The utilities include:
 
-[NiFi-Sender](#NiFi-Sender) - take a file or directory and send them to a NiFi endpoint
+[FF-Sender](#flowfile-sender) - take a file or directory and send them to a FlowFile endpoint
 
-[NiFi-to-UDP](#NiFi-to-UDP) - takes a NiFi feed and sends it to a UDP endpoint
+[FF-HTTP-to-UDP](#flowfile-http-to-udp) - takes a FlowFile feed and sends it to a UDP endpoint
 
-[UDP-to-NiFi](#UDP-to-NiFi) - listens for a UDP feed and sends it to a NiFi endpoint
+[FF-UDP-to-HTTP](#flowfile-udp-to-http) - listens for a UDP feed and sends it to a FlowFile endpoint
 
-[NiFi-Sink](#NiFi-Sink) - a listener that listens and accepts FlowFiles and does nothing
+[FF-Sink](#flowfile-sink) - a listener that listens and accepts FlowFiles and does nothing
 
-[NiFi-Flood](#NiFi-Flood) - a sender which sends a continuous stream of NiFi FlowFiles
+[FF-Flood](#flowfile-flood) - a sender which sends a continuous stream of FlowFiles
 
-[NiFi-Receiver](#NiFi-Receiver) - take a NiFi feed and save off files while doing checksums for validity
+[FF-Receiver](#flowfile-receiver) - take a FlowFile feed and save off files while doing checksums for validity
 
-[NiFi-Stager](#NiFi-Stager) - take a NiFi feed and temporarily store them to disk for processing later
+[FF-Stager](#flowfile-stager) - take a FlowFile feed and temporarily store them to disk for processing later
 
-[NiFi-Unstager](#NiFi-Unstager) - listens to a directory of staged files and send them to a NiFi endpoint
+[FF-Unstager](#flowfile-unstager) - listens to a directory of staged files and send them to a FlowFile endpoint
 
-[NiFi-Diode](#NiFi-Diode) - takes a NiFi feed and forwards the FlowFiles to another NiFi (assures one direction)
+[FF-Diode](#flowfile-diode) - takes a FlowFile feed and forwards the FlowFiles to another listener (assures one direction)
 
-[NiFi-to-KCP](#NiFi-to-KCP) - takes a NiFi feed and sends it to a KCP listener, enabling forward error correction (FEC)
+[FF-HTTP-to-KCP](#flowfile-http-to-kcp) - takes a FlowFile feed and sends it to a KCP listener, enabling forward error correction (FEC)
 
-[KCP-to-NiFi](#KCP-to-NiFi) - listens for a KCP feed and sends it to a NiFi endpoint, verifying and correcting errors
+[FF-KCP-to-HTTP](#flowfile-kcp-to-http) - listens for a KCP feed and sends it to a FlowFile endpoint, verifying and correcting errors
 
 
 For more documentation about the go-flowfile library: https://pkg.go.dev/github.com/pschou/go-flowfile .
 
 
 
-## NiFi Sender
+## FF Sender
 
-NiFi sender does one thing, it will take data from the disk and upload it to a
-NiFi endpoint.  Some advantages of using this NiFi sender over a full NiFi
-instance are:
+FF sender does one thing, it will take data from the disk and upload it to a
+HTTP/HTTPS endpoint.
 
-- One does not need to install NiFi or have it running
+- One does not need to install JAVA
 
 - It is ultra portable and can run on a minimal instance
 
 - Enables segmenting, so an upstream stream handler with limited capabilities can get segments instead of a whole file
 
-![NiFi-Sender](images/NiFi-Sender.png)
+![FF-Sender](images/FF-Sender.png)
 
-NiFi-Sender Usage:
+FF-Sender Usage:
 ```
-NiFi Sender (github.com/pschou/flowfile-utils, version: 0.1.20230216.1508)
+FF-Sender (github.com/pschou/flowfile-utils, version: 0.1.20230217.0036)
 
 This utility is intended to capture a set of files or directory of files and
-send them to a remote NiFi server for processing.
+send them to a remote FlowFile server for processing.
 
-Usage: ../nifi-sender [options] path1 path2...
+Usage: ../ff-sender [options] path1 path2...
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -attributes string
@@ -64,7 +63,7 @@ Usage: ../nifi-sender [options] path1 path2...
   -no-dedup
     	Deduplication by checksums (default true)
   -retries int
-    	Retries after failing to send a file to NiFi listening point (default 5)
+    	Retries after failing to send a file to a FlowFile listener (default 5)
   -retry-timeout duration
     	Time between retries (default 10s)
   -update-chain
@@ -79,7 +78,7 @@ Usage: ../nifi-sender [options] path1 path2...
 
 Example:
 ```
-$ ./nifi-sender -url http://localhost:8080/contentListener file1.dat file2.dat myDir/
+$ ./ff-sender -url http://localhost:8080/contentListener file1.dat file2.dat myDir/
 2023/02/06 08:43:26 creating sender...
 2023/02/06 08:43:26   sending file1.dat ...
 2023/02/06 08:43:26   sending file2.dat ...
@@ -87,23 +86,23 @@ $ ./nifi-sender -url http://localhost:8080/contentListener file1.dat file2.dat m
 2023/02/06 08:43:26 done.
 ```
 
-## NiFi to UDP
+## FF HTTP to UDP
 
-NiFi to UDP listens on a NiFi endpoint and forwards all NiFi connections to an
+FlowFile HTTP to UDP listens on a FlowFile endpoint and forwards all FlowFile connections to an
 array of UDP ports.  This is intended to be a one way fire and forget setup
 where the sender has no idea if the receiver got the packets, but the FlowFile
 payload is broken up into indexed frames and sent so order can be restored on
 the receiving side.
 
-![NiFi-to-UDP](images/NiFi-to-UDP.png)
+![FF-HTTP-to-UDP](images/ff-http-to-udp.png)
 
-NiFi-to-UDP Usage:
+FF-HTTP2UDP Usage:
 ```
-NiFi -to-> UDP (github.com/pschou/flowfile-utils, version: 0.1.20230216.1508)
+FF-HTTP2UDP (github.com/pschou/flowfile-utils, version: 0.1.20230217.0036)
 
-This utility is intended to take input over a NiFi compatible port and pass all
-FlowFiles to a UDP endpoint after verifying checksums.  A chain of custody is
-maintained by adding an action field with "NIFI-UDP" value.
+This utility is intended to take input over a FlowFile compatible port and pass
+all FlowFiles to a UDP endpoint after verifying checksums.  A chain of custody
+is maintained by adding an action field with "HTTP-UDP" value.
 
 Note: The port range used in the source UDP address directly affect the number
 of concurrent sessions, and as payloads are buffered in memory (to do the
@@ -115,7 +114,7 @@ send is complete) but will add error resilience in the transfer.  In other
 words, shortening the delay will likely mean more errors, while increaing will
 slow down the number of accepted HTTP connections upstream.
 
-Usage: ../nifi-to-udp [options]
+Usage: ../ff-http2udp [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -attributes string
@@ -169,7 +168,7 @@ Usage: ../nifi-to-udp [options]
 
 Example:
 ```
-$ ./nifi-to-udp -listen :8082 -throttle 167us -throttle-gap 67ns -segment-max-size 10MB
+$ ./ff-http2udp -listen :8082 -throttle 167us -throttle-gap 67ns -segment-max-size 10MB
 2023/02/15 12:40:01 Creating senders for UDP from: 10.12.128.249:3100-3200
 2023/02/15 12:40:01 Creating destinations for UDP: 10.12.128.249:2100-2200
 2023/02/15 12:40:01 Creating listener on: :8082
@@ -178,23 +177,23 @@ $ ./nifi-to-udp -listen :8082 -throttle 167us -throttle-gap 67ns -segment-max-si
 ```
 
 
-## UDP to NiFi
+## FF UDP to HTTP
 
-UDP to NiFi listens on an array of UDP endpoint and forwards all FlowFiles to a
-NiFi connection after doing consistency checks.  Here the heavy work is done to 
+FF UDP to HTTP listens on an array of UDP endpoint and forwards all FlowFiles to a
+HTTP/HTTPS connection after doing consistency checks.  Here the heavy work is done to 
 reconstruct a FlowFile and then do a checksum before forwarding onward.
 
-![UDP-to-NiFi](images/UDP-to-NiFi.png)
+![FF-UDP-to-HTTP](images/ff-udp2http.png)
 
-UDP-to-NiFi Usage:
+FF-UDP2HTTP Usage:
 ```
-UDP -to-> NiFi (github.com/pschou/flowfile-utils, version: 0.1.20230216.1508)
+FlowFile UDP -to-> HTTP (github.com/pschou/flowfile-utils, version: 0.1.20230217.0036)
 
 This utility is intended to take input via UDP pass all FlowFiles to a UDP
 endpoint after verifying checksums.  A chain of custody is maintained by adding
-an action field with "UDP-NIFI" value.
+an action field with "UDP2HTTP" value.
 
-Usage: ../udp-to-nifi [options]
+Usage: ../ff-udp2http [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -attributes string
@@ -232,25 +231,25 @@ Usage: ../udp-to-nifi [options]
 
 Example:
 ```
-$ ../udp-to-nifi
-2023/02/15 12:41:13 Creating NiFi sender, http://localhost:8080/contentListener
+$ ../ff-udp2http
+2023/02/15 12:41:13 Creating FlowFile sender, http://localhost:8080/contentListener
 2023/02/15 12:41:13 Listening on UDP :2100-2200
 ```
 
-## NiFi Sink
+## FF Sink
 
-NiFi listens on a NiFi endpoint and accepts every file while doing nothing.
+FF-Sink listens on a FlowFile endpoint and accepts every file while doing nothing.
 
-![NiFi-Sink](images/NiFi-Sink.png)
+![FF-Sink](images/ff-sink.png)
 
-NiFi-Sink Usage:
+FF-Sink Usage:
 ```
-NiFi Sink (github.com/pschou/flowfile-utils, version: 0.1.20230216.1508)
+FlowFile Sink (github.com/pschou/flowfile-utils, version: 0.1.20230217.0036)
 
-This utility is intended to listen for FlowFiles on a NifI compatible port and
-drop them as fast as they come in
+This utility is intended to listen for FlowFiles on HTTP/HTTPS and drop them as
+fast as they come in
 
-Usage: ../nifi-sink [options]
+Usage: ../ff-sink [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -cert string
@@ -289,7 +288,7 @@ Usage: ../nifi-sink [options]
 Example:
 
 ```
-$ ./nifi-sink -v
+$ ./ff-sink -v
 2023/02/15 20:04:34 Listening with HTTP on :8080 at /contentListener
  - [{"Name":"path","Value":"./"},{"Name":"custodyChain.0.time","Value":"2023-02-15T20:04:37-05:00"},{"Name":"custodyChain.0.local.hostname","Value":"centos7.schou.me"},{"Name":"custodyChain.0.action","Value":"FLOOD"},{"Name":"filename","Value":"file0001.dat"},{"Name":"uuid","Value":"8a7ad2d7-9e6c-4b85-b2af-6a7b59dd8ed4"},{"Name":"checksumType","Value":"SHA1"},{"Name":"checksum","Value":"8bf6dc847a281d5042d681eb93b760f3d00c8df3"}]
 2023/02/15 20:04:39     Checksum passed for file/segment file0000.dat 318.5MB
@@ -298,20 +297,20 @@ $ ./nifi-sink -v
 2023/02/15 20:04:40     Checksum passed for file/segment file0001.dat 447.1MB
 ```
 
-## NiFi Flood
+## FF Flood
 
-NiFi Flood sends files (of various sizes) to a NiFi endpoint to saturate the bandwidth.
+FF Flood sends files (of various sizes) to a FlowFile endpoint to saturate the bandwidth.
 
-![NiFi-Flood](images/NiFi-Flood.png)
+![FF-Flood](images/ff-flood.png)
 
-NiFi-Flood Usage:
+FF-Flood Usage:
 ```
-NiFi Flood (github.com/pschou/flowfile-utils, version: 0.1.20230216.1508)
+FF-Flood (github.com/pschou/flowfile-utils, version: 0.1.20230217.0036)
 
-This utility is intended to saturate the bandwidth of a NiFi endpoint for
+This utility is intended to saturate the bandwidth of a FlowFile endpoint for
 load testing.
 
-Usage: ../nifi-flood [options]
+Usage: ../ff-flood [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -attributes string
@@ -344,7 +343,7 @@ Usage: ../nifi-flood [options]
 
 Example:
 ```
-$ ../nifi-flood  -max 1G
+$ ../ff-flood  -max 1G
 2023/02/15 20:04:37 Sending...
 2023/02/15 20:04:38 3 sending file0000.dat 318.5MB
 2023/02/15 20:04:38 1 sending file0001.dat 447.1MB
@@ -352,20 +351,20 @@ $ ../nifi-flood  -max 1G
 2023/02/15 20:04:40 0 sending file0002.dat 950MB
 ```
 
-## NiFi Receiver
+## FF Receiver
 
-NiFi Receiver listens on a port for NiFi FlowFiles and then acts on them accordingly as they are streamed in.
+FF Receiver listens on a port for FlowFile FlowFiles and then acts on them accordingly as they are streamed in.
 
-![NiFi-Receiver](images/NiFi-Receiver.png)
+![FF-Receiver](images/ff-receiver.png)
 
-NiFi-Receiver Usage:
+FF-Receiver Usage:
 ```
-NiFi Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230216.1508)
+FlowFile Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230217.0036)
 
-This utility is intended to listen for FlowFiles on a NifI compatible port and
-then parse these files and drop them to disk for usage elsewhere.
+This utility is intended to listen for FlowFiles via HTTP/HTTPS and then parse
+these files and drop them to disk for usage elsewhere.
 
-Usage: ../nifi-receiver [options]
+Usage: ../ff-receiver [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -cert string
@@ -409,12 +408,12 @@ Usage: ../nifi-receiver [options]
 
 Example:
 ```
-$ ./nifi-receiver
+$ ./ff-receiver
 Output set to ./output/
 2023/02/06 08:58:25 Listening with HTTP on :8080 at /contentListener
-2023/02/06 08:58:28   Receiving nifi file output/file1.dat size 18
+2023/02/06 08:58:28   Receiving file output/file1.dat size 18
 2023/02/06 08:58:28   Verified file output/file1.dat
-2023/02/06 08:58:28   Receiving nifi file output/file2.dat size 10
+2023/02/06 08:58:28   Receiving file output/file2.dat size 10
 2023/02/06 08:58:28   Verified file output/file2.dat
 ```
 
@@ -426,10 +425,10 @@ $ cat script.sh
 #!/bin/bash
 echo In Script, doing something:
 sha256sum "$1"
-$ ./nifi-receiver -script script.sh -verbose
+$ ./ff-receiver -script script.sh -verbose
 Output set to ./output/
 2023/02/06 08:59:38 Listening with HTTP on :8080 at /contentListener
-2023/02/06 08:59:40   Receiving nifi file output/file1.dat size 18
+2023/02/06 08:59:40   Receiving file output/file1.dat size 18
     [{"Name":"path","Value":"./"},{"Name":"filename","Value":"file1.dat"},{"Name":"modtime","Value":"2023-02-06T08:47:47-05:00"},{"Name":"checksum-type","Value":"SHA256"},{"Name":"checksum","Value":"51fd71b1368a1b130b60cab1301b05bbef470cf4a21ef2956553def809edf4ec"},{"Name":"uuid","Value":"271d19fd-827a-4c9d-a21e-7ede9d652120"}]
 2023/02/06 08:59:40   Verified file output/file1.dat
 2023/02/06 08:59:40   Calling script /bin/bash script.sh output/file1.dat
@@ -438,7 +437,7 @@ In Script, doing something:
 51fd71b1368a1b130b60cab1301b05bbef470cf4a21ef2956553def809edf4ec  output/file1.dat
 
 2023/02/06 08:59:40 ----- END script.sh output/file1.dat -----
-2023/02/06 08:59:40   Receiving nifi file output/file2.dat size 10
+2023/02/06 08:59:40   Receiving file output/file2.dat size 10
     [{"Name":"path","Value":"./"},{"Name":"filename","Value":"file2.dat"},{"Name":"modtime","Value":"2023-02-06T08:47:53-05:00"},{"Name":"checksum-type","Value":"SHA256"},{"Name":"checksum","Value":"1e26ce5588db2ef5080a3df10385a731af2a4bfd0d2515f691d05d9dd900e18a"},{"Name":"uuid","Value":"08f48cce-b09f-47b7-9e5f-fbd0bf2e2b56"}]
 2023/02/06 08:59:40   Verified file output/file2.dat
 2023/02/06 08:59:40   Calling script /bin/bash script.sh output/file2.dat
@@ -451,14 +450,14 @@ In Script, doing something:
 
 If one desires for the files to be removed after the script is ran:
 ```
-$ ./nifi-receiver -script script.sh -rm
+$ ./ff-receiver -script script.sh -rm
 Output set to ./output/
 2023/02/06 09:06:18 Listening with HTTP on :8080 at /contentListener
-2023/02/06 09:06:20   Receiving nifi file output/file1.dat size 18
+2023/02/06 09:06:20   Receiving file output/file1.dat size 18
 2023/02/06 09:06:20   Verified file output/file1.dat
 2023/02/06 09:06:20   Calling script /bin/bash script.sh output/file1.dat
 2023/02/06 09:06:20   Removed output/file1.dat
-2023/02/06 09:06:20   Receiving nifi file output/file2.dat size 10
+2023/02/06 09:06:20   Receiving file output/file2.dat size 10
 2023/02/06 09:06:20   Verified file output/file2.dat
 2023/02/06 09:06:20   Calling script /bin/bash script.sh output/file2.dat
 2023/02/06 09:06:20   Removed output/file2.dat
@@ -467,21 +466,21 @@ $ ls output/
 $
 ```
 
-## NiFi Stager
+## FF Stager
 
 This tool enables files to be layed down to disk, to be replayed at a later time or different location into a FlowFile feed.  Note that the binary payload that is layed down is FlowFile encoded and not parsed out for making sure the exact binary payload is replayed.
 
-![NiFi-Stager](images/NiFi-Stager.png)
+![FF-Stager](images/ff-stager.png)
 
-NiFi-Stager Usage:
+FF-Stager Usage:
 ```
-NiFi Stager (github.com/pschou/flowfile-utils, version: 0.1.20230216.1508)
+FF-Stager (github.com/pschou/flowfile-utils, version: 0.1.20230217.0036)
 
-This utility is intended to take input over a NiFi compatible port and drop all
+This utility is intended to take input over a FlowFile compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
-unstaged using the NiFi Unstager.
+unstaged using the FF-Unstager.
 
-Usage: ../nifi-stager [options]
+Usage: ../ff-stager [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -cert string
@@ -528,16 +527,16 @@ Usage: ../nifi-stager [options]
 
 Example:
 ```
-$ ./nifi-stager
+$ ./ff-stager
 Output set to stager
 2023/02/06 12:01:10 Listening with HTTP on :8080 at /contentListener
-  Receiving nifi file file1.dat size 18
-  Receiving nifi file file2.dat size 10
+  Receiving file file1.dat size 18
+  Receiving file file2.dat size 10
 ```
 
 The sending side sends like this:
 ```
-$ ./nifi-sender -url http://localhost:8080/contentListener file1.dat file2.dat
+$ ./ff-sender -url http://localhost:8080/contentListener file1.dat file2.dat
 2023/02/06 12:03:06 creating sender...
 2023/02/06 12:03:06   sending file1.dat ...
 2023/02/06 12:03:06   sending file2.dat ...
@@ -551,10 +550,10 @@ $ cat stager_send.sh
 echo moving content "$1" to another folder /tmp
 mv "$1" /tmp
 
-$ ./nifi-stager  -script stager_send.sh -verbose -rm
+$ ./ff-stager  -script stager_send.sh -verbose -rm
 Output set to stager
 2023/02/06 12:03:00 Listening with HTTP on :8080 at /contentListener
-  Receiving nifi file file1.dat size 18
+  Receiving file file1.dat size 18
     [{"Name":"path","Value":"./"},{"Name":"filename","Value":"file1.dat"},{"Name":"modtime","Value":"2023-02-06T08:47:47-05:00"},{"Name":"checksum-type","Value":"SHA256"},{"Name":"checksum","Value":"51fd71b1368a1b130b60cab1301b05bbef470cf4a21ef2956553def809edf4ec"},{"Name":"uuid","Value":"f0aa041f-3302-4358-acd1-136ba76078cf"}]
 2023/02/06 12:03:06   Calling script /bin/bash stager_send.sh stager/60af9b0c-7f23-48a6-bc0e-4f44879e9f3a.dat stager/60af9b0c-7f23-48a6-bc0e-4f44879e9f3a.json
 2023/02/06 12:03:06 ----- START stager_send.sh 60af9b0c-7f23-48a6-bc0e-4f44879e9f3a -----
@@ -562,7 +561,7 @@ moving content stager/60af9b0c-7f23-48a6-bc0e-4f44879e9f3a.dat to another folder
 
 2023/02/06 12:03:06 ----- END stager_send.sh 60af9b0c-7f23-48a6-bc0e-4f44879e9f3a -----
 2023/02/06 12:03:06   Removed 60af9b0c-7f23-48a6-bc0e-4f44879e9f3a
-  Receiving nifi file file2.dat size 10
+  Receiving file file2.dat size 10
     [{"Name":"path","Value":"./"},{"Name":"filename","Value":"file2.dat"},{"Name":"modtime","Value":"2023-02-06T08:47:53-05:00"},{"Name":"checksum-type","Value":"SHA256"},{"Name":"checksum","Value":"1e26ce5588db2ef5080a3df10385a731af2a4bfd0d2515f691d05d9dd900e18a"},{"Name":"uuid","Value":"794f5452-7aae-4748-8218-6892a9b0b4b5"}]
 2023/02/06 12:03:06   Calling script /bin/bash stager_send.sh stager/02b1ee5d-432a-478d-920b-0e3052dc2344.dat stager/02b1ee5d-432a-478d-920b-0e3052dc2344.json
 2023/02/06 12:03:06 ----- START stager_send.sh 02b1ee5d-432a-478d-920b-0e3052dc2344 -----
@@ -578,21 +577,21 @@ staging directory to be cluttered with leftover FlowFiles).
 
 Using the '-rm-partial=false' will keep files from being deleted if they fail verifications.
 
-## NiFi Unstager
+## FF Unstager
 
-The purpose of the nifi-unstager is to replay the files layed to disk in the nifi-stager operation.
+The purpose of the ff-unstager is to replay the files layed to disk in the ff-stager operation.
 
-![NiFi-Unstager](images/NiFi-Unstager.png)
+![FF-Unstager](images/ff-unstager.png)
 
-NiFi-Unstager Usage:
+FF-Unstager Usage:
 ```
-NiFi Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230216.1508)
+FF-Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230217.0036)
 
-This utility is intended to take a directory of NiFi FlowFiles and ship them
-out to a listening NiFi endpoint while maintaining the same set of attribute
+This utility is intended to take a directory of FlowFiles and ship them out to
+a listening HTTP/HTTPS endpoint while maintaining the same set of attribute
 headers.
 
-Usage: ../nifi-unstager [options]
+Usage: ../ff-unstager [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -attributes string
@@ -611,7 +610,7 @@ Usage: ../nifi-unstager [options]
   -path string
     	Directory which to scan for FlowFiles (default "stager")
   -retries int
-    	Retries after failing to send a file to NiFi listening point (default 5)
+    	Retries after failing to send a file to a FlowFile listener (default 5)
   -retry-timeout duration
     	Time between retries (default 10s)
   -update-chain
@@ -632,48 +631,51 @@ Example:
 
 The unstager listens to a directory and sends files to a remote url:
 ```
-$ ./nifi-unstager -url http://localhost:8080/contentListener -path stager
+$ ./ff-unstager -url http://localhost:8080/contentListener -path stager
 2023/02/06 12:22:10 Creating FlowFile sender to url http://localhost:8080/contentListener
 2023/02/06 12:22:10 Creating directory listener on stager
   Unstaging file file2.dat
   Unstaging file file1.dat
 ```
 
-The remote side sees the files come in as if they were just sent out from a NiFi server.
+The remote side sees the files come in as if they were just sent out from a FlowFile server.
 ```
-$ ./nifi-receiver
+$ ./ff-receiver
 Output set to ./output/
 2023/02/06 12:22:09 Listening with HTTP on :8080 at /contentListener
-2023/02/06 12:22:10   Receiving nifi file output/file2.dat size 10
+2023/02/06 12:22:10   Receiving file output/file2.dat size 10
 2023/02/06 12:22:10   Verified file output/file2.dat
-2023/02/06 12:22:10   Receiving nifi file output/file1.dat size 18
+2023/02/06 12:22:10   Receiving file output/file1.dat size 18
 2023/02/06 12:22:10   Verified file output/file1.dat
 ^C
 ```
 
-## NiFi to KCP
+## FF HTTP to KCP
 
-NiFi to KCP tool will take a TCP FlowFile session, add forward error
+FF HTTP to KCP tool will take a TCP FlowFile session, add forward error
 correction, and stream it to a KCP listening server to reduce the latency over
 long distances. As the sets of FlowFiles are handled as a continuous block,
 and the entire block determines the success or failure-- one should send
 batches of many FlowFiles instead of one at a time, but not too many, to not
 have to restart if the connection gets lost.
 
-![NiFi-to-KCP](images/NiFi-to-KCP.png)
+![FF-HTTP-to-KCP](images/ff-http-to-kcp.png)
 
-NiFi-to-KCP Usage:
+FF-HTTP2KCP Usage:
 ```
-NiFi -to-> KCP (github.com/pschou/flowfile-utils, version: 0.1.20230216.1508)
+FF-HTTP2KCP (github.com/pschou/flowfile-utils, version: 0.1.20230217.0036)
 
-This utility is intended to take input over a NiFi compatible port and pass all
+This utility is intended to take input over a FlowFile compatible port and pass all
 FlowFiles into KCP endpoint for speeding up throughput over long distances.
 
-Usage: ../nifi-to-kcp [options]
+Usage: ../ff-http2kcp [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -cert string
     	A PEM encoded certificate file. (default "someCertFile")
+  -crypto string
+    	Enable or disable crypto
+    	"none" To use no cipher. (default "salsa20:ThisIsASecret")
   -debug
     	Turn on debug in FlowFile library
   -dscp int
@@ -728,34 +730,37 @@ Usage: ../nifi-to-kcp [options]
 Example:
 
 ```
-$ ./nifi-to-kcp -listen :8082  -kcp-data 10 -kcp-parity 3 -v -segment-max-size 3MB
+$ ./ff-http2kcp -listen :8082  -kcp-data 10 -kcp-parity 3 -v -segment-max-size 3MB
 2023/02/15 22:23:19 Creating sender,
 2023/02/15 22:23:19 Setting max-size to 3.00MB
 2023/02/15 22:23:19 Listening with HTTP on :8082 at /contentListener
 ```
 
-## KCP to NiFi
+## FF KCP to HTTP
 
-KCP FlowFile server listening for connections from the NiFi-to-KCP and then
-forwarding the FlowFiles to a NiFi compatible port while correcting errors in
+KCP FlowFile server listening for connections from the FF-HTTP2KCP and then
+forwarding the FlowFiles to a FlowFile compatible port while correcting errors in
 transmission.
 
-![KCP-to-NiFi](images/KCP-to-NiFi.png)
+![FF-KCP-to-HTTP](images/ff-kcp-to-http.png)
 
-KCP-to-NiFi Usage:
+FF-KCP2HTTP Usage:
 ```
-KCP -to-> NiFi (github.com/pschou/flowfile-utils, version: 0.1.20230216.1508)
+FF-KCP2HTTP (github.com/pschou/flowfile-utils, version: 0.1.20230217.0036)
 
 This utility is intended to take input over a KCP connection and send FlowFiles
-into a NiFi compatible port for speeding up throughput over long distances.
+into a HTTP/HTTPS compatible port for speeding up throughput over long distances.
 
-Usage: ../kcp-to-nifi [options]
+Usage: ../ff-kcp2http [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -attributes string
     	File with additional attributes to add to FlowFiles
   -cert string
     	A PEM encoded certificate file. (default "someCertFile")
+  -crypto string
+    	Enable or disable crypto
+    	"none" To use no cipher. (default "salsa20:ThisIsASecret")
   -debug
     	Turn on debug in FlowFile library
   -init-script string
@@ -796,24 +801,24 @@ Usage: ../kcp-to-nifi [options]
 Example:
 
 ```
-$ ./kcp-to-nifi  -v -kcp-data 10 -kcp-parity 3
+$ ./ff-kcp2http -v -kcp-data 10 -kcp-parity 3
 2023/02/15 22:26:18 Creating sender, http://localhost:8080/contentListener
 ```
 
-## NiFi Diode
+## FF Diode
 
-A simple NiFi Diode that does one thing, takes in data and passes it on to
-another NiFi without letting anything go the other direction.  Hence it is a
+A simple FlowFile Diode that does one thing, takes in data and passes it on to
+another FlowFile without letting anything go the other direction.  Hence it is a
 simple, no-cache-diode.
 
 The idea here is this server listens on a IP:Port and then any incomming
 connection is streamed to another IP:Port, but data can only transfer one way.
 The sending side will have no idea what server it is sending to nor be able to
-get any information from the downstream NiFi.
+get any information from the downstream listener.
 
-Think of the NiFi diode like a one way glass.  The downstream NiFi sees
-everything from the sending NiFi server as if the diode is not there but the
-sending side only sees "NiFi Diode".  So if the downstream NiFi is expecting a
+Think of the FlowFile diode like a one way glass.  The downstream FlowFile sees
+everything from the sending FlowFile server as if the diode is not there but the
+sending side only sees "FF Diode".  So if the downstream FlowFile is expecting a
 POST to go to an alternate content listener URL, the client must be configured
 to point to the same URL as the diode will only reply with success if a success
 happens.  No notifications are sent to the sending side what may have gone
@@ -821,13 +826,13 @@ wrong if a transfer fails.  This is to ensure nothing gets leaked back to the
 sending side via server replies.
 
 The only fields which are changed going through the diode in the forward
-direction are the `Host` field (which NiFi needs to ensure connection
+direction are the `Host` field (which FlowFile needs to ensure connection
 authenticity) and `X-Forwarded-For` which lists the remote endpoint(s).  If
-multiple NiFi diode servers are stacked one upon another, the X-Forwarded-For
+multiple FlowFile diode servers are stacked one upon another, the X-Forwarded-For
 will have a complete list of source IP addresses seperated by commas.
 
 
-![NiFi-Diode diagram showing a NiFi box on the left, and arrow representing a TCP flow pointing to a NiFi Diode in the middle, and another arrow to the right going to a NiFi box on the right, again representing a TCP flow](images/NiFi-Diode.png)
+![FF-Diode diagram showing a FlowFile box on the left, and arrow representing a TCP flow pointing to a FlowFile Diode in the middle, and another arrow to the right going to a FlowFile box on the right, again representing a TCP flow](images/FF-Diode.png)
 
 ### Why do I need this?
 
@@ -836,7 +841,7 @@ will have a complete list of source IP addresses seperated by commas.
 - Can run directly from a kernel INIT= call - Avoid purchasing a dedicated
   hardware appliance.  Download your favorite distro and then modify the grub
   init to point to this binary instead of the standard init and you have yourself
-  a linux based "hardware" NiFi diode.
+  a linux based "hardware" FlowFile diode.
 - Standard data diode protections apply - place this on a box in a locked server
   room, and by denying physical access, you effectively prohibit data from going
   the wrong way. (It's a win-win!)
@@ -854,15 +859,15 @@ What are the pitfalls?
 - If you like burning all your data to a DVD and sneaker netting it between
   buildings, you'll have to find a gym now.  :(
 
-NiFi-Diode Usage:
+FF-Diode Usage:
 ```
-NiFi Diode (github.com/pschou/flowfile-utils, version: 0.1.20230216.1508)
+FF-Diode (github.com/pschou/flowfile-utils, version: 0.1.20230217.0036)
 
-This utility is intended to take input over a NiFi compatible port and pass all
-FlowFiles into another NiFi port while updating the attributes with the
+This utility is intended to take input over a FlowFile compatible port and pass all
+FlowFiles into another HTTP/HTTPS port while updating the attributes with the
 certificate and chaining any previous certificates.
 
-Usage: ../nifi-diode [options]
+Usage: ../ff-diode [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -attributes string
@@ -883,7 +888,7 @@ Usage: ../nifi-diode [options]
   -listenPath string
     	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
   -metrics-ff
-    	Send local metrics as a FlowFile
+    	Send local metrics as a FlowFile (default true)
   -no-checksums
     	Ignore doing checksum checks
   -segment-max-size string
@@ -906,7 +911,7 @@ Usage: ../nifi-diode [options]
 
 # Example:
 
-Here are some examples of the nifi-sender and nifi-receiver in action.  To set things up, we need some fake data first:
+Here are some examples of the ff-sender and ff-receiver in action.  To set things up, we need some fake data first:
 
 ```
 source$ dd if=/dev/urandom of=infile_rnd.dat count=100000
@@ -914,16 +919,16 @@ source$ dd if=/dev/urandom of=infile_rnd.dat count=100000
 
 ## Sender and receiver
 
-Setting up the NiFi receiver first:
+Setting up the FlowFile receiver first:
 ```
-target$ ./nifi-receiver
+target$ ./ff-receiver
 Output set to ./output/
 2023/02/06 20:20:03 Listening with HTTP on :8080 at /contentListener
 ```
 
 We can now send a file:
 ```
-source$ ./nifi-sender -url=http://localhost:8080/contentListener output2/
+source$ ./ff-sender -url=http://localhost:8080/contentListener output2/
 2023/02/06 20:20:16 creating sender...
 2023/02/06 20:20:16   sending empty dir output2/a ...
 2023/02/06 20:20:16   sending empty dir output2/b ...
@@ -934,18 +939,18 @@ source$ ./nifi-sender -url=http://localhost:8080/contentListener output2/
 2023/02/06 20:20:22 done.
 ```
 
-Back at the NiFi receiver side:
+Back at the FlowFile receiver side:
 ```
-target$ ./nifi-receiver
+target$ ./ff-receiver
 Output set to ./output/
 2023/02/06 20:20:03 Listening with HTTP on :8080 at /contentListener
-2023/02/06 20:20:16   Receiving nifi flowfile output/output2/infile.dat size 512000
+2023/02/06 20:20:16   Receiving flowfile output/output2/infile.dat size 512000
 2023/02/06 20:20:16   Verified file output/output2/infile.dat
-2023/02/06 20:20:16   Receiving nifi flowfile output/output2/infile_rnd.dat size 51200000
+2023/02/06 20:20:16   Receiving flowfile output/output2/infile_rnd.dat size 51200000
 2023/02/06 20:20:17   Verified file output/output2/infile_rnd.dat
-2023/02/06 20:20:18   Receiving nifi flowfile output/output2/output/infile_rnd.dat size 51200000
+2023/02/06 20:20:18   Receiving flowfile output/output2/output/infile_rnd.dat size 51200000
 2023/02/06 20:20:18   Verified file output/output2/output/infile_rnd.dat
-2023/02/06 20:20:20   Receiving nifi flowfile output/output2/random size 153600000
+2023/02/06 20:20:20   Receiving flowfile output/output2/random size 153600000
 2023/02/06 20:20:22   Verified file output/output2/random
 ```
 
@@ -953,22 +958,22 @@ The files have been sent and dropped to the folder output
 
 ## Sender, diode, and receiver
 
-Here we will look at tying 3 of these utilities together, in this order we setup the NiFi receiver first:
+Here we will look at tying 3 of these utilities together, in this order we setup the FlowFile receiver first:
 ```
-target$ ./nifi-receiver -path output2
+target$ ./ff-receiver -path output2
 2023/02/02 14:57:33 Listening with HTTP on :8080 at /contentListener
 ```
 
 Setup the diode to make the connections in-between:
 ```
-diode$ ./nifi-diode -segment-max-size 10MB -url=http://localhost:8080/contentListener -listen :8082
+diode$ ./ff-diode -segment-max-size 10MB -url=http://localhost:8080/contentListener -listen :8082
 2023/02/02 14:58:28 creating sender...
 2023/02/02 14:58:28 Listening with HTTP on :8082 at /contentListener
 ```
 
 and finally we send a file:
 ```
-source$ ./nifi-sender -url=http://localhost:8082/contentListener infile_rnd.dat
+source$ ./ff-sender -url=http://localhost:8082/contentListener infile_rnd.dat
 2023/02/02 14:59:04 creating sender...
 2023/02/02 14:59:04   sending infile_rnd.dat ...
 ```
@@ -982,7 +987,7 @@ infile_rnd.dat
 ## Restrict size throughput
 
 ```bash
-$ ./nifi-diode -segment-max-size 10MB -url https://localhost:8080/contentListener -listen :8082 -tls
+$ ./ff-diode -segment-max-size 10MB -url https://localhost:8080/contentListener -listen :8082 -tls
 ```
 
 ## Add Additional Custom Attributes
@@ -994,7 +999,7 @@ MY_poc:     dan
 MY_sidecar: 123
 MY_group:   TeamA
 
-$ ./nifi-diode -segment-max-size 10MB -CA test/ca_cert_DONOTUSE.pem -key test/npe2_key_DONOTUSE.pem -cert test/npe2_cert_DONOTUSE.pem  -url https://localhost:8080/contentListener -listen :8082 -tls -attributes example_attributes.yml
+$ ./ff-diode -segment-max-size 10MB -CA test/ca_cert_DONOTUSE.pem -key test/npe2_key_DONOTUSE.pem -cert test/npe2_cert_DONOTUSE.pem  -url https://localhost:8080/contentListener -listen :8082 -tls -attributes example_attributes.yml
 ```
 
 ## Chain of Custody

@@ -18,6 +18,10 @@ var (
 	caFile   = flag.String("CA", "someCertCAFile", "A PEM encoded CA's certificate file.")
 )
 
+const (
+	SALT = "FLOWFILE"
+)
+
 var tlsConfig *tls.Config
 var caCertPool = x509.NewCertPool()
 

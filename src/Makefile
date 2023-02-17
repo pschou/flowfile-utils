@@ -12,20 +12,20 @@ go:
 	go mod vendor
 
 build:
-	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../nifi-to-kcp nifi-to-kcp.go lib-*.go
-	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../kcp-to-nifi kcp-to-nifi.go lib-*.go
-	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../udp-to-nifi udp-to-nifi.go lib-*.go
-	go build -ldflags=${FLAGS} -o ../nifi-to-udp nifi-to-udp.go lib-*.go
-	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../nifi-stager nifi-stager.go lib-*.go
-	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../nifi-sender nifi-sender.go lib-*.go
-	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../nifi-unstager nifi-unstager.go lib-*.go
-	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../nifi-receiver nifi-receiver.go lib-*.go
-	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../nifi-diode nifi-diode.go lib-*.go
-	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../nifi-sink nifi-sink.go lib-*.go
-	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../nifi-flood nifi-flood.go lib-*.go
+	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-http2kcp ff-http2kcp.go lib-*.go
+	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-kcp2http ff-kcp2http.go lib-*.go
+	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-udp2http ff-udp2http.go lib-*.go
+	go build -ldflags=${FLAGS} -o ../ff-http2udp ff-http2udp.go lib-*.go
+	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-stager ff-stager.go lib-*.go
+	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-sender ff-sender.go lib-*.go
+	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-unstager ff-unstager.go lib-*.go
+	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-receiver ff-receiver.go lib-*.go
+	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-diode ff-diode.go lib-*.go
+	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-sink ff-sink.go lib-*.go
+	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-flood ff-flood.go lib-*.go
 
 readme:
 	./readme.sh
 
 clean:
-	rm nifi-diode nifi-receiver nifi-sender nifi-stager nifi-unstager
+	rm ff-diode ff-receiver ff-sender ff-stager ff-unstager

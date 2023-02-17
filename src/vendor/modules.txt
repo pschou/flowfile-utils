@@ -27,7 +27,7 @@ github.com/mdlayher/watchdog
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
-# github.com/pschou/go-flowfile v0.0.0-20230216191925-2616e42903b0
+# github.com/pschou/go-flowfile v0.0.0-20230217012645-fc3f5349b05c
 ## explicit; go 1.18
 github.com/pschou/go-flowfile
 # github.com/pschou/go-iothrottler v0.0.0-20230213180241-30159f7b06f5

@@ -29,7 +29,7 @@ func sender_flags() {
 	attributes = flag.String("attributes", "", "File with additional attributes to add to FlowFiles")
 }
 func origin_flags() {
-	retries = flag.Int("retries", 5, "Retries after failing to send a file to NiFi listening point")
+	retries = flag.Int("retries", 5, "Retries after failing to send a file to a FlowFile listener")
 	retryTimeout = flag.Duration("retry-timeout", 10*time.Second, "Time between retries")
 }
 func listen_flags() {

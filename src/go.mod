@@ -8,7 +8,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/inhies/go-bytesize v0.0.0-20220417184213-4913239db9cf
 	github.com/mdlayher/watchdog v0.0.0-20221003142519-49be0df7b3b5
-	github.com/pschou/go-flowfile v0.0.0-20230216191925-2616e42903b0
+	github.com/pschou/go-flowfile v0.0.0-20230217012645-fc3f5349b05c
 	github.com/relvacode/iso8601 v1.3.0
 	github.com/xtaci/kcp-go v5.4.20+incompatible
 	github.com/xtaci/kcp-go/v5 v5.6.2
