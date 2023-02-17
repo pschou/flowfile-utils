@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -134,6 +135,12 @@ func post(conn *kcp.UDPSession) (err error) {
 
 		// Make sure the client chain is added to attributes, 1 being the closest
 		updateChain(f, nil, "KCP2HTTP")
+		if host, port, err := net.SplitHostPort(conn.RemoteAddr().String()); err == nil {
+			if host != "" {
+				f.Attrs.Set("custodyChain.0.source.host", host)
+			}
+			f.Attrs.Set("custodyChain.0.source.port", port)
+		}
 
 		filename := f.Attrs.Get("filename")
 

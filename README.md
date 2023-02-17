@@ -44,7 +44,7 @@ HTTP/HTTPS endpoint.
 
 FF-Sender Usage:
 ```
-FF-Sender (github.com/pschou/flowfile-utils, version: 0.1.20230217.0036)
+FF-Sender (github.com/pschou/flowfile-utils, version: 0.1.20230217.0915)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote FlowFile server for processing.
@@ -98,7 +98,7 @@ the receiving side.
 
 FF-HTTP2UDP Usage:
 ```
-FF-HTTP2UDP (github.com/pschou/flowfile-utils, version: 0.1.20230217.0036)
+FF-HTTP2UDP (github.com/pschou/flowfile-utils, version: 0.1.20230217.0915)
 
 This utility is intended to take input over a FlowFile compatible port and pass
 all FlowFiles to a UDP endpoint after verifying checksums.  A chain of custody
@@ -187,7 +187,7 @@ reconstruct a FlowFile and then do a checksum before forwarding onward.
 
 FF-UDP2HTTP Usage:
 ```
-FlowFile UDP -to-> HTTP (github.com/pschou/flowfile-utils, version: 0.1.20230217.0036)
+FlowFile UDP -to-> HTTP (github.com/pschou/flowfile-utils, version: 0.1.20230217.0915)
 
 This utility is intended to take input via UDP pass all FlowFiles to a UDP
 endpoint after verifying checksums.  A chain of custody is maintained by adding
@@ -244,7 +244,7 @@ FF-Sink listens on a FlowFile endpoint and accepts every file while doing nothin
 
 FF-Sink Usage:
 ```
-FlowFile Sink (github.com/pschou/flowfile-utils, version: 0.1.20230217.0036)
+FlowFile Sink (github.com/pschou/flowfile-utils, version: 0.1.20230217.0915)
 
 This utility is intended to listen for FlowFiles on HTTP/HTTPS and drop them as
 fast as they come in
@@ -305,7 +305,7 @@ FF Flood sends files (of various sizes) to a FlowFile endpoint to saturate the b
 
 FF-Flood Usage:
 ```
-FF-Flood (github.com/pschou/flowfile-utils, version: 0.1.20230217.0036)
+FF-Flood (github.com/pschou/flowfile-utils, version: 0.1.20230217.0915)
 
 This utility is intended to saturate the bandwidth of a FlowFile endpoint for
 load testing.
@@ -359,7 +359,7 @@ FF Receiver listens on a port for FlowFile FlowFiles and then acts on them accor
 
 FF-Receiver Usage:
 ```
-FlowFile Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230217.0036)
+FlowFile Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230217.0915)
 
 This utility is intended to listen for FlowFiles via HTTP/HTTPS and then parse
 these files and drop them to disk for usage elsewhere.
@@ -474,7 +474,7 @@ This tool enables files to be layed down to disk, to be replayed at a later time
 
 FF-Stager Usage:
 ```
-FF-Stager (github.com/pschou/flowfile-utils, version: 0.1.20230217.0036)
+FF-Stager (github.com/pschou/flowfile-utils, version: 0.1.20230217.0915)
 
 This utility is intended to take input over a FlowFile compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
@@ -585,7 +585,7 @@ The purpose of the ff-unstager is to replay the files layed to disk in the ff-st
 
 FF-Unstager Usage:
 ```
-FF-Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230217.0036)
+FF-Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230217.0915)
 
 This utility is intended to take a directory of FlowFiles and ship them out to
 a listening HTTP/HTTPS endpoint while maintaining the same set of attribute
@@ -663,7 +663,7 @@ have to restart if the connection gets lost.
 
 FF-HTTP2KCP Usage:
 ```
-FF-HTTP2KCP (github.com/pschou/flowfile-utils, version: 0.1.20230217.0036)
+FF-HTTP2KCP (github.com/pschou/flowfile-utils, version: 0.1.20230217.0915)
 
 This utility is intended to take input over a FlowFile compatible port and pass all
 FlowFiles into KCP endpoint for speeding up throughput over long distances.
@@ -746,7 +746,7 @@ transmission.
 
 FF-KCP2HTTP Usage:
 ```
-FF-KCP2HTTP (github.com/pschou/flowfile-utils, version: 0.1.20230217.0036)
+FF-KCP2HTTP (github.com/pschou/flowfile-utils, version: 0.1.20230217.0915)
 
 This utility is intended to take input over a KCP connection and send FlowFiles
 into a HTTP/HTTPS compatible port for speeding up throughput over long distances.
@@ -861,7 +861,7 @@ What are the pitfalls?
 
 FF-Diode Usage:
 ```
-FF-Diode (github.com/pschou/flowfile-utils, version: 0.1.20230217.0036)
+FF-Diode (github.com/pschou/flowfile-utils, version: 0.1.20230217.0915)
 
 This utility is intended to take input over a FlowFile compatible port and pass all
 FlowFiles into another HTTP/HTTPS port while updating the attributes with the
@@ -1006,74 +1006,43 @@ $ ./ff-diode -segment-max-size 10MB -CA test/ca_cert_DONOTUSE.pem -key test/npe2
 
 When using these flowfile-util tools, the attributes are updated to include
 chain of custody details,  Here is an example of one such set of metadata from
-a flow that went through two diodes, put to disk in a staging folder, and then
-sent to an additional two diodes.
+a flow that went through a KCP connection, a diode, and then put to disk.  Note
+the timestamps in RFC3339 with nano seconds enables high precision tracking of
+FlowFile latencies.
 
 ```json
 [
   {"Name":"path","Value":"output2/"},
-  {"Name":"filename","Value":"infile_rnd.dat"},
-  {"Name":"file.lastModifiedTime","Value":"2023-02-03T12:17:36-05:00"},
-  {"Name":"file.creationTime","Value":"2023-02-03T12:17:36-05:00"},
-  {"Name":"custodyChain.4.action","Value":"SENDER"},
-  {"Name":"custodyChain.4.time","Value":"2023-02-09T13:46:46-05:00"},
-  {"Name":"custodyChain.4.local.hostname","Value":"centos7.schou.me"},
-  {"Name":"fragment.identifier","Value":"4416fe67-7138-43a1-b6c3-05db0a91a080"},
-  {"Name":"segment.original.size","Value":"51200000"},
-  {"Name":"segment.original.filename","Value":"infile_rnd.dat"},
-  {"Name":"segment.original.checksumType","Value":"SHA256"},
-  {"Name":"segment.original.checksum","Value":"3663d5284cc37ffcafc21b9425a231389c7661d569adf4e18835998c18463f7d"},
-  {"Name":"merge.reason","Value":"MAX_BYTES_THRESHOLD_REACHED"},
-  {"Name":"fragment.offset","Value":"10485760"},
-  {"Name":"fragment.index","Value":"2"},
-  {"Name":"fragment.count","Value":"5"},
-  {"Name":"uuid","Value":"866c54c4-c045-4fba-8939-39e7f50d6e19"},
-  {"Name":"checksumType","Value":"SHA256"},
-  {"Name":"checksum","Value":"7509c1318832ae0f69b373db94315b81c59b18d596af4a31429e66c16f63565a"},
-  {"Name":"MY_poc","Value":"dan"},
-  {"Name":"MY_sidecar","Value":"123"},
-  {"Name":"MY_group","Value":"TeamA"},
-  {"Name":"custodyChain.3.action","Value":"DIODE"},
-  {"Name":"custodyChain.3.time","Value":"2023-02-09T13:46:46-05:00"},
+  {"Name":"filename","Value":"z"},
+  {"Name":"file.lastModifiedTime","Value":"2023-02-10T12:47:38-05:00"},
+  {"Name":"file.creationTime","Value":"2023-02-10T12:47:38-05:00"},
+  {"Name":"uuid","Value":"26fb9651-1ad2-48ab-9866-8e6c925f161f"},
+  {"Name":"file.permissions","Value":"-rw-rw-r--"},
+  {"Name":"custodyChain.3.time","Value":"2023-02-17T08:33:43.686627632-05:00"},
   {"Name":"custodyChain.3.local.hostname","Value":"centos7.schou.me"},
-  {"Name":"custodyChain.3.user.dn","Value":"CN=localhost,O=Global Security npe4,C=US"},
-  {"Name":"custodyChain.3.issuer.dn","Value":"CN=localhost,O=Test Security,C=US"},
-  {"Name":"custodyChain.3.request.uri","Value":"/contentListener"},
-  {"Name":"custodyChain.3.source.host","Value":"::1"},
-  {"Name":"custodyChain.3.source.port","Value":"45822"},
-  {"Name":"custodyChain.3.local.port","Value":"8082"},
-  {"Name":"custodyChain.3.protocol","Value":"HTTPS"},
-  {"Name":"custodyChain.3.tls.cipher","Value":"TLS_AES_128_GCM_SHA256"},
-  {"Name":"custodyChain.3.tls.host","Value":"localhost"},
-  {"Name":"custodyChain.3.tls.version","Value":"1.3"},
-  {"Name":"custodyChain.2.action","Value":"TO-DISK"},
-  {"Name":"custodyChain.2.time","Value":"2023-02-09T13:46:46-05:00"},
+  {"Name":"custodyChain.3.action","Value":"SENDER"},
+  {"Name":"checksumType","Value":"SHA256"},
+  {"Name":"checksum","Value":"3663d5284cc37ffcafc21b9425a231389c7661d569adf4e18835998c18463f7d"},
+  {"Name":"kind","Value":"link"},
+  {"Name":"target","Value":"infile_rnd.dat"},
+  {"Name":"custodyChain.2.time","Value":"2023-02-17T08:33:57.937135375-05:00"},
   {"Name":"custodyChain.2.local.hostname","Value":"centos7.schou.me"},
-  {"Name":"custodyChain.2.user.dn","Value":"CN=localhost,O=Global Security npe2,C=US"},
-  {"Name":"custodyChain.2.issuer.dn","Value":"CN=localhost,O=Test Security,C=US"},
+  {"Name":"custodyChain.2.action","Value":"HTTP2KCP"},
   {"Name":"custodyChain.2.request.uri","Value":"/contentListener"},
   {"Name":"custodyChain.2.source.host","Value":"::1"},
-  {"Name":"custodyChain.2.source.port","Value":"53180"},
-  {"Name":"custodyChain.2.local.port","Value":"8080"},
-  {"Name":"custodyChain.2.protocol","Value":"HTTPS"},
-  {"Name":"custodyChain.2.tls.cipher","Value":"TLS_AES_128_GCM_SHA256"},
-  {"Name":"custodyChain.2.tls.host","Value":"localhost"},
-  {"Name":"custodyChain.2.tls.version","Value":"1.3"},
-  {"Name":"custodyChain.1.action","Value":"FROM-DISK"},
-  {"Name":"custodyChain.1.time","Value":"2023-02-09T13:50:31-05:00"},
+  {"Name":"custodyChain.2.protocol","Value":"HTTP"},
+  {"Name":"custodyChain.2.local.port","Value":"8084"},
+  {"Name":"custodyChain.1.time","Value":"2023-02-17T08:33:57.940555116-05:00"},
   {"Name":"custodyChain.1.local.hostname","Value":"centos7.schou.me"},
-  {"Name":"custodyChain.0.action","Value":"DIODE"},
-  {"Name":"custodyChain.0.time","Value":"2023-02-09T13:50:31-05:00"},
+  {"Name":"custodyChain.1.action","Value":"KCP2HTTP"},
+  {"Name":"custodyChain.1.source.host","Value":"10.12.128.249"},
+  {"Name":"custodyChain.1.source.port","Value":"44443"},
+  {"Name":"custodyChain.0.time","Value":"2023-02-17T08:33:57.941173557-05:00"},
   {"Name":"custodyChain.0.local.hostname","Value":"centos7.schou.me"},
-  {"Name":"custodyChain.0.user.dn","Value":"CN=localhost,O=Global Security npe4,C=US"},
-  {"Name":"custodyChain.0.issuer.dn","Value":"CN=localhost,O=Test Security,C=US"},
+  {"Name":"custodyChain.0.action","Value":"DIODE"},
   {"Name":"custodyChain.0.request.uri","Value":"/contentListener"},
   {"Name":"custodyChain.0.source.host","Value":"::1"},
-  {"Name":"custodyChain.0.source.port","Value":"45850"},
-  {"Name":"custodyChain.0.local.port","Value":"8082"},
-  {"Name":"custodyChain.0.protocol","Value":"HTTPS"},
-  {"Name":"custodyChain.0.tls.cipher","Value":"TLS_AES_128_GCM_SHA256"},
-  {"Name":"custodyChain.0.tls.host","Value":"localhost"},
-  {"Name":"custodyChain.0.tls.version","Value":"1.3"}
+  {"Name":"custodyChain.0.protocol","Value":"HTTP"},
+  {"Name":"custodyChain.0.local.port","Value":"8082"}
 ]
 ```

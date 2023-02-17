@@ -61,6 +61,13 @@ func main() {
 		if conn, err := Dial(); err != nil {
 			log.Fatal(err)
 		} else {
+			if i == 0 {
+				if ping(conn) {
+					log.Println("Ping check passed")
+				} else {
+					log.Println("Waiting for remote to become available")
+				}
+			}
 			connBuf <- conn
 		}
 		worker <- i
@@ -235,10 +242,8 @@ func post(rdr *flowfile.Scanner, w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		//toSend := flowfile.New(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
-		//toSend.Attrs = f.Attrs
+		// Grab the underlying buffer and send it off
 		b := buf.Bytes()
-
 		var n int
 		for err == nil && len(b) > 4000 {
 			conn.SetDeadline(time.Now().Add(10 * time.Second)) // We need to have a result

@@ -8,7 +8,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/inhies/go-bytesize v0.0.0-20220417184213-4913239db9cf
 	github.com/mdlayher/watchdog v0.0.0-20221003142519-49be0df7b3b5
-	github.com/pschou/go-flowfile v0.0.0-20230217012645-fc3f5349b05c
+	github.com/pschou/go-flowfile v0.0.0-20230217132317-d5607a8ab1a6
 	github.com/relvacode/iso8601 v1.3.0
 	github.com/xtaci/kcp-go v5.4.20+incompatible
 	github.com/xtaci/kcp-go/v5 v5.6.2
@@ -28,4 +28,5 @@ require (
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	golang.org/x/net v0.6.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
+	gopkg.in/src-d/go-git.v4 v4.13.1 // indirect
 )

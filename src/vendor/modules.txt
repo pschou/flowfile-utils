@@ -27,7 +27,7 @@ github.com/mdlayher/watchdog
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
-# github.com/pschou/go-flowfile v0.0.0-20230217012645-fc3f5349b05c
+# github.com/pschou/go-flowfile v0.0.0-20230217132317-d5607a8ab1a6
 ## explicit; go 1.18
 github.com/pschou/go-flowfile
 # github.com/pschou/go-iothrottler v0.0.0-20230213180241-30159f7b06f5
@@ -76,3 +76,6 @@ golang.org/x/net/ipv6
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
+# gopkg.in/src-d/go-git.v4 v4.13.1
+## explicit
+gopkg.in/src-d/go-git.v4/plumbing/filemode

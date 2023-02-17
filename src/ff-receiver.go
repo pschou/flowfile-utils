@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -91,6 +92,23 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 		fmt.Printf("  - %s\n", adat)
 	}
 
+	var fileMode *os.FileMode
+	if fm := f.Attrs.Get("file.permissions"); len(fm) >= 9 && runtime.GOOS != "windows" {
+		fm = fm[len(fm)-9:]
+		var out uint32
+		for i := 0; i < 3; i++ {
+			out = out << 3
+			for j := 0; j < 3; j++ {
+				if fm[i*3+j] != '-' {
+					out = out | (1 << (2 - j))
+				}
+			}
+		}
+		//fmt.Printf("%s -> %#o\n", fm, out)
+		t := os.FileMode(out)
+		fileMode = &t
+	}
+
 	switch kind := f.Attrs.Get("kind"); kind {
 	case "file", "":
 		log.Println("  Receiving flowfile", fp, "size", f.Size)
@@ -138,11 +156,29 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 				}
 			}
 		}
+		if fileMode != nil {
+			os.Chmod(fp, *fileMode)
+		}
+		// Update file time from sender
+		if mt := f.Attrs.Get("file.lastModifiedTime"); mt != "" {
+			if fileTime, err := iso8601.ParseString(mt); err == nil {
+				os.Chtimes(fp, fileTime, fileTime)
+			}
+		}
 
 	case "dir":
 		err = os.MkdirAll(fp, 0755)
+		if fileMode != nil {
+			os.Chmod(fp, *fileMode)
+		}
 		if *debug {
 			fmt.Println("making directory", fp, err)
+		}
+		// Update file time from sender
+		if mt := f.Attrs.Get("file.lastModifiedTime"); mt != "" {
+			if fileTime, err := iso8601.ParseString(mt); err == nil {
+				os.Chtimes(fp, fileTime, fileTime)
+			}
 		}
 	case "link":
 		if target := f.Attrs.Get("target"); target != "" && !strings.HasPrefix(target, "/") {
@@ -162,18 +198,12 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 				fmt.Println("invalid relative link", target, fp)
 			}
 		}
+	case "metrics":
 	default:
 		if *verbose {
 			log.Println("Cannot accept kind:", kind)
 		}
 		return fmt.Errorf("Unknown kind %q", kind)
-	}
-
-	// Update file time from sender
-	if mt := f.Attrs.Get("file.lastModifiedTime"); mt != "" {
-		if fileTime, err := iso8601.ParseString(mt); err == nil {
-			os.Chtimes(fp, fileTime, fileTime)
-		}
 	}
 
 	return
