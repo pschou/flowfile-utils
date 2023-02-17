@@ -40,7 +40,7 @@ HTTP/HTTPS endpoint.
 
 - Enables segmenting, so an upstream stream handler with limited capabilities can get segments instead of a whole file
 
-![FF-Sender](images/FF-Sender.png)
+![FF-Sender](images/ff-sender.png)
 
 FF-Sender Usage:
 ```
@@ -94,7 +94,7 @@ where the sender has no idea if the receiver got the packets, but the FlowFile
 payload is broken up into indexed frames and sent so order can be restored on
 the receiving side.
 
-![FF-HTTP-to-UDP](images/ff-http-to-udp.png)
+![FF-HTTP-to-UDP](images/ff-http2udp.png)
 
 FF-HTTP2UDP Usage:
 ```
@@ -659,7 +659,7 @@ and the entire block determines the success or failure-- one should send
 batches of many FlowFiles instead of one at a time, but not too many, to not
 have to restart if the connection gets lost.
 
-![FF-HTTP-to-KCP](images/ff-http-to-kcp.png)
+![FF-HTTP-to-KCP](images/ff-http2kcp.png)
 
 FF-HTTP2KCP Usage:
 ```
@@ -742,7 +742,7 @@ KCP FlowFile server listening for connections from the FF-HTTP2KCP and then
 forwarding the FlowFiles to a FlowFile compatible port while correcting errors in
 transmission.
 
-![FF-KCP-to-HTTP](images/ff-kcp-to-http.png)
+![FF-KCP-to-HTTP](images/ff-kcp2http.png)
 
 FF-KCP2HTTP Usage:
 ```
@@ -832,7 +832,7 @@ multiple FlowFile diode servers are stacked one upon another, the X-Forwarded-Fo
 will have a complete list of source IP addresses seperated by commas.
 
 
-![FF-Diode diagram showing a FlowFile box on the left, and arrow representing a TCP flow pointing to a FlowFile Diode in the middle, and another arrow to the right going to a FlowFile box on the right, again representing a TCP flow](images/FF-Diode.png)
+![FF-Diode diagram showing a FlowFile box on the left, and arrow representing a TCP flow pointing to a FlowFile Diode in the middle, and another arrow to the right going to a FlowFile box on the right, again representing a TCP flow](images/ff-diode.png)
 
 ### Why do I need this?
 
