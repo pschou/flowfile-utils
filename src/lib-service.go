@@ -41,7 +41,7 @@ func listen_flags() {
 
 func service_flags() {
 	isService = true
-	watchdog_max = flag.Duration("watchdog", time.Duration(0), "Trigger a reboot if no connection is seen within this time window\nYou'll neet to make sure you have the watchdog module enabled on the host and kernel.\nDefault is disabled (-watchdog=0s)")
+	watchdog_max = flag.Duration("watchdog", time.Duration(0), "Trigger a reboot if no connection is seen within this time window\nYou'll need to make sure you have the watchdog module enabled on the host and kernel.\nDefault is disabled (-watchdog=0s)")
 	initScript = flag.String("init-script", "", "Shell script to be called on start\nUsed to manually setup the networking interfaces when this program is called from GRUB")
 	initScriptShell = flag.String("init-script-shell", "/bin/bash", "Shell to be used for init script run")
 }
