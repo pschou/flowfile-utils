@@ -12,6 +12,7 @@ import (
 
 	"github.com/docker/go-units"
 	"github.com/pschou/go-flowfile"
+	"github.com/remeh/sizedwaitgroup"
 )
 
 var (
@@ -24,7 +25,8 @@ send them to a remote FlowFile server for processing.`
 	wd, _         = os.Getwd()
 	seenChecksums = make(map[string]string)
 
-	dedup = flag.Bool("no-dedup", true, "Deduplication by checksums")
+	dedup   = flag.Bool("no-dedup", true, "Deduplication by checksums")
+	threads = flag.Int("threads", 3, "Number of concurrent sends")
 )
 
 func main() {
@@ -47,7 +49,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var zeros, content []*flowfile.File
+	var content, batch []*flowfile.File
 
 	// Loop over the files sending them one at a time
 	for _, arg := range flag.Args() {
@@ -77,7 +79,7 @@ func main() {
 				case "link":
 					fmt.Printf("  [%s] %s -> %s\n", kind, filename, f.Attrs.Get("target"))
 				}
-				zeros = append(zeros, f)
+				batch = append(batch, f)
 			} else {
 				fmt.Printf("  [file] %s (%s)\n", filename, units.HumanSize(float64(f.Size)))
 				content = append(content, f)
@@ -92,23 +94,11 @@ func main() {
 		log.Println("   Retrying", retry, "due to", err)
 	}
 
-	// Send off all the empty files and folders first
-	log.Println("Sending meta data...")
-
-	// do the work
-	if err = hs.Send(zeros...); err != nil {
-		log.Fatal("Failed to send, ", err)
-	}
-
-	// Send off the regular files
-	log.Println("Sending content...")
+	// Build metadata for the content to be sent
+	log.Println("Building meta data...")
 	for _, c := range content {
 		filename := c.FilePath()
-		log.Printf(" sending %s (%s)", filename, units.HumanSize(float64(c.Size)))
-
-		if *debug {
-			log.Println("   Doing checksum...")
-		}
+		log.Printf(" check summing %s (%s)", filename, units.HumanSize(float64(c.Size)))
 		c.AddChecksum("SHA256")
 
 		if *dedup {
@@ -148,12 +138,26 @@ func main() {
 
 			f.AddChecksum("SHA256")
 
+			batch = append(batch, f)
+		}
+	}
+
+	// Send off the regular files
+	log.Println("Sending content with", *threads, "thread(s)...")
+	swg := sizedwaitgroup.New(*threads)
+	for i, f := range batch {
+		swg.Add()
+		go func(i int, f *flowfile.File) {
+			defer swg.Done()
+			filename := path.Join(f.Attrs.Get("path"), f.Attrs.Get("filename"))
+			log.Println("sending", i, units.HumanSize(float64(f.Size)), "for", filename)
 			// do the work
 			if err = hs.Send(f); err != nil {
 				log.Fatal("Failed to send", filename, err)
 			}
-		}
+		}(i, f)
 	}
+	swg.Wait()
 
 	log.Println("done.")
 }

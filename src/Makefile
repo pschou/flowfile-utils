@@ -8,14 +8,16 @@ pure: go build readme
 go:
 	go clean -modcache
 	GOPRIVATE=github.com/pschou go get github.com/pschou/go-flowfile
+	GOPRIVATE=github.com/pschou go get github.com/pschou/go-unixmode
 	GOPRIVATE=github.com/pschou go get github.com/pschou/go-iothrottler
+	GOPRIVATE=github.com/pschou go get github.com/pschou/go-sorting/numstr
 	go mod vendor
 
 build:
-	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-http2kcp ff-http2kcp.go lib-*.go
-	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-kcp2http ff-kcp2http.go lib-*.go
-	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-udp2http ff-udp2http.go lib-*.go
-	go build -ldflags=${FLAGS} -o ../ff-http2udp ff-http2udp.go lib-*.go
+	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-http-to-kcp ff-http-to-kcp.go lib-*.go
+	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-kcp-to-http ff-kcp-to-http.go lib-*.go
+	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-udp-to-http ff-udp-to-http.go lib-*.go
+	go build -ldflags=${FLAGS} -o ../ff-http-to-udp ff-http-to-udp.go lib-*.go
 	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-stager ff-stager.go lib-*.go
 	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-sender ff-sender.go lib-*.go
 	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-unstager ff-unstager.go lib-*.go

@@ -44,7 +44,7 @@ HTTP/HTTPS endpoint.
 
 FF-Sender Usage:
 ```
-FF-Sender (github.com/pschou/flowfile-utils, version: 0.1.20230217.0915)
+FF-Sender (github.com/pschou/flowfile-utils, version: 0.1.20230221.0911)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote FlowFile server for processing.
@@ -66,6 +66,8 @@ Usage: ../ff-sender [options] path1 path2...
     	Retries after failing to send a file to a FlowFile listener (default 5)
   -retry-timeout duration
     	Time between retries (default 10s)
+  -threads int
+    	Number of concurrent sends (default 3)
   -update-chain
     	Update the connection chain attributes: "custodyChain.#.*"
     	To disable use -update-chain=false (default true)
@@ -94,11 +96,11 @@ where the sender has no idea if the receiver got the packets, but the FlowFile
 payload is broken up into indexed frames and sent so order can be restored on
 the receiving side.
 
-![FF-HTTP-to-UDP](images/ff-http2udp.png)
+![FF-HTTP-to-UDP](images/ff-http-to-udp.png)
 
-FF-HTTP2UDP Usage:
+FF-HTTP-TO-UDP Usage:
 ```
-FF-HTTP2UDP (github.com/pschou/flowfile-utils, version: 0.1.20230217.0915)
+FF-HTTP-TO-UDP (github.com/pschou/flowfile-utils, version: 0.1.20230221.0911)
 
 This utility is intended to take input over a FlowFile compatible port and pass
 all FlowFiles to a UDP endpoint after verifying checksums.  A chain of custody
@@ -114,7 +116,7 @@ send is complete) but will add error resilience in the transfer.  In other
 words, shortening the delay will likely mean more errors, while increaing will
 slow down the number of accepted HTTP connections upstream.
 
-Usage: ../ff-http2udp [options]
+Usage: ../ff-http-to-udp [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -attributes string
@@ -142,18 +144,22 @@ Usage: ../ff-http2udp [options]
     	Time between first transmit and second, set to 0s to disable. (default 1s)
   -segment-max-size string
     	Set a maximum size for partitioning files in sending
-  -throttle duration
-    	Additional seconds per frame
-    	This scales up with concurrent connections (set to 0s to disable) (default 600ns)
-  -throttle-gap duration
-    	Inter-packet gap
-    	This is the time added after all packet (set to 0s to disable) (default 60ns)
+  -throttle int
+    	Bandwidth shape in bits per second (per thread), for example 80Mbps (default 83886080)
+  -throttle-shared
+    	By default each thread is throttled, instead throttle all threads as one (not recommended).
+  -throttle-spec int
+    	Frame spec defined by carrier/media, used to tune the tx rate.
+    	This is the number of bytes added to the mtu which defines the time on the media between frames.
+    	The value can be tuned (like -120 to 120). Frames are sent less frequently with a larger value.
   -tls
     	Enforce TLS secure transport on incoming connections
   -udp-dst-addr string
-    	Target IP:PORT for UDP packet (default "10.12.128.249:2100-2200")
+    	Target IP:PORT for sending UDP packet, to enable threading specify a port range
+    	IE 10 threads split: 10.12.128.249:2100-2104,2106-2110, 1 thread: 10.12.128.249:2100 (default "10.12.128.249:2100-2107")
   -udp-src-addr string
-    	Source IP:PORT for UDP packet (default "10.12.128.249:3100-3200")
+    	Source IP:PORT for originating UDP packets, to enable threading specify a port range
+    	IE 10 threads split: 10.12.128.249:3100-3104,3106-3110, 1 thread: 10.12.128.249:3100 (default "10.12.128.249:3100-3107")
   -update-chain
     	Update the connection chain attributes: "custodyChain.#.*"
     	To disable use -update-chain=false (default true)
@@ -168,7 +174,7 @@ Usage: ../ff-http2udp [options]
 
 Example:
 ```
-$ ./ff-http2udp -listen :8082 -throttle 167us -throttle-gap 67ns -segment-max-size 10MB
+$ ./ff-http-to-udp -listen :8082 -throttle 167us -throttle-gap 67ns -segment-max-size 10MB
 2023/02/15 12:40:01 Creating senders for UDP from: 10.12.128.249:3100-3200
 2023/02/15 12:40:01 Creating destinations for UDP: 10.12.128.249:2100-2200
 2023/02/15 12:40:01 Creating listener on: :8082
@@ -183,17 +189,17 @@ FF UDP to HTTP listens on an array of UDP endpoint and forwards all FlowFiles to
 HTTP/HTTPS connection after doing consistency checks.  Here the heavy work is done to 
 reconstruct a FlowFile and then do a checksum before forwarding onward.
 
-![FF-UDP-to-HTTP](images/ff-udp2http.png)
+![FF-UDP-to-HTTP](images/ff-udp-to-http.png)
 
-FF-UDP2HTTP Usage:
+FF-UDP-TO-HTTP Usage:
 ```
-FlowFile UDP -to-> HTTP (github.com/pschou/flowfile-utils, version: 0.1.20230217.0915)
+FlowFile UDP -to-> HTTP (github.com/pschou/flowfile-utils, version: 0.1.20230221.0911)
 
 This utility is intended to take input via UDP pass all FlowFiles to a UDP
 endpoint after verifying checksums.  A chain of custody is maintained by adding
-an action field with "UDP2HTTP" value.
+an action field with "UDP-TO-HTTP" value.
 
-Usage: ../ff-udp2http [options]
+Usage: ../ff-udp-to-http [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -attributes string
@@ -210,7 +216,7 @@ Usage: ../ff-udp2http [options]
   -key string
     	A PEM encoded private key file. (default "someKeyFile")
   -mtu int
-    	MTU payload size for pre-allocating memory (default 1400)
+    	MTU payload size for pre-allocating memory (default 1500)
   -no-checksums
     	Ignore doing checksum checks
   -udp-dst-ip string
@@ -231,7 +237,7 @@ Usage: ../ff-udp2http [options]
 
 Example:
 ```
-$ ../ff-udp2http
+$ ../ff-udp-to-http
 2023/02/15 12:41:13 Creating FlowFile sender, http://localhost:8080/contentListener
 2023/02/15 12:41:13 Listening on UDP :2100-2200
 ```
@@ -244,7 +250,7 @@ FF-Sink listens on a FlowFile endpoint and accepts every file while doing nothin
 
 FF-Sink Usage:
 ```
-FlowFile Sink (github.com/pschou/flowfile-utils, version: 0.1.20230217.0915)
+FlowFile Sink (github.com/pschou/flowfile-utils, version: 0.1.20230221.0911)
 
 This utility is intended to listen for FlowFiles on HTTP/HTTPS and drop them as
 fast as they come in
@@ -305,7 +311,7 @@ FF Flood sends files (of various sizes) to a FlowFile endpoint to saturate the b
 
 FF-Flood Usage:
 ```
-FF-Flood (github.com/pschou/flowfile-utils, version: 0.1.20230217.0915)
+FF-Flood (github.com/pschou/flowfile-utils, version: 0.1.20230221.0911)
 
 This utility is intended to saturate the bandwidth of a FlowFile endpoint for
 load testing.
@@ -359,7 +365,7 @@ FF Receiver listens on a port for FlowFile FlowFiles and then acts on them accor
 
 FF-Receiver Usage:
 ```
-FlowFile Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230217.0915)
+FlowFile Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230221.0911)
 
 This utility is intended to listen for FlowFiles via HTTP/HTTPS and then parse
 these files and drop them to disk for usage elsewhere.
@@ -474,7 +480,7 @@ This tool enables files to be layed down to disk, to be replayed at a later time
 
 FF-Stager Usage:
 ```
-FF-Stager (github.com/pschou/flowfile-utils, version: 0.1.20230217.0915)
+FF-Stager (github.com/pschou/flowfile-utils, version: 0.1.20230221.0911)
 
 This utility is intended to take input over a FlowFile compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
@@ -585,7 +591,7 @@ The purpose of the ff-unstager is to replay the files layed to disk in the ff-st
 
 FF-Unstager Usage:
 ```
-FF-Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230217.0915)
+FF-Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230221.0911)
 
 This utility is intended to take a directory of FlowFiles and ship them out to
 a listening HTTP/HTTPS endpoint while maintaining the same set of attribute
@@ -659,16 +665,16 @@ and the entire block determines the success or failure-- one should send
 batches of many FlowFiles instead of one at a time, but not too many, to not
 have to restart if the connection gets lost.
 
-![FF-HTTP-to-KCP](images/ff-http2kcp.png)
+![FF-HTTP-to-KCP](images/ff-http-to-kcp.png)
 
-FF-HTTP2KCP Usage:
+FF-HTTP-TO-KCP Usage:
 ```
-FF-HTTP2KCP (github.com/pschou/flowfile-utils, version: 0.1.20230217.0915)
+FF-HTTP-TO-KCP (github.com/pschou/flowfile-utils, version: 0.1.20230221.0911)
 
 This utility is intended to take input over a FlowFile compatible port and pass all
 FlowFiles into KCP endpoint for speeding up throughput over long distances.
 
-Usage: ../ff-http2kcp [options]
+Usage: ../ff-http-to-kcp [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -cert string
@@ -730,7 +736,7 @@ Usage: ../ff-http2kcp [options]
 Example:
 
 ```
-$ ./ff-http2kcp -listen :8082  -kcp-data 10 -kcp-parity 3 -v -segment-max-size 3MB
+$ ./ff-http-to-kcp -listen :8082  -kcp-data 10 -kcp-parity 3 -v -segment-max-size 3MB
 2023/02/15 22:23:19 Creating sender,
 2023/02/15 22:23:19 Setting max-size to 3.00MB
 2023/02/15 22:23:19 Listening with HTTP on :8082 at /contentListener
@@ -738,20 +744,20 @@ $ ./ff-http2kcp -listen :8082  -kcp-data 10 -kcp-parity 3 -v -segment-max-size 3
 
 ## FF KCP to HTTP
 
-KCP FlowFile server listening for connections from the FF-HTTP2KCP and then
+KCP FlowFile server listening for connections from the FF-HTTP-TO-KCP and then
 forwarding the FlowFiles to a FlowFile compatible port while correcting errors in
 transmission.
 
-![FF-KCP-to-HTTP](images/ff-kcp2http.png)
+![FF-KCP-to-HTTP](images/ff-kcp-to-http.png)
 
-FF-KCP2HTTP Usage:
+FF-KCP-TO-HTTP Usage:
 ```
-FF-KCP2HTTP (github.com/pschou/flowfile-utils, version: 0.1.20230217.0915)
+FF-KCP-TO-HTTP (github.com/pschou/flowfile-utils, version: 0.1.20230221.0911)
 
 This utility is intended to take input over a KCP connection and send FlowFiles
 into a HTTP/HTTPS compatible port for speeding up throughput over long distances.
 
-Usage: ../ff-kcp2http [options]
+Usage: ../ff-kcp-to-http [options]
   -CA string
     	A PEM encoded CA's certificate file. (default "someCertCAFile")
   -attributes string
@@ -801,7 +807,7 @@ Usage: ../ff-kcp2http [options]
 Example:
 
 ```
-$ ./ff-kcp2http -v -kcp-data 10 -kcp-parity 3
+$ ./ff-kcp-to-http -v -kcp-data 10 -kcp-parity 3
 2023/02/15 22:26:18 Creating sender, http://localhost:8080/contentListener
 ```
 
@@ -861,7 +867,7 @@ What are the pitfalls?
 
 FF-Diode Usage:
 ```
-FF-Diode (github.com/pschou/flowfile-utils, version: 0.1.20230217.0915)
+FF-Diode (github.com/pschou/flowfile-utils, version: 0.1.20230221.0911)
 
 This utility is intended to take input over a FlowFile compatible port and pass all
 FlowFiles into another HTTP/HTTPS port while updating the attributes with the
@@ -1027,14 +1033,14 @@ FlowFile latencies.
   {"Name":"target","Value":"infile_rnd.dat"},
   {"Name":"custodyChain.2.time","Value":"2023-02-17T08:33:57.937135375-05:00"},
   {"Name":"custodyChain.2.local.hostname","Value":"centos7.schou.me"},
-  {"Name":"custodyChain.2.action","Value":"HTTP2KCP"},
+  {"Name":"custodyChain.2.action","Value":"HTTP-TO-KCP"},
   {"Name":"custodyChain.2.request.uri","Value":"/contentListener"},
   {"Name":"custodyChain.2.source.host","Value":"::1"},
   {"Name":"custodyChain.2.protocol","Value":"HTTP"},
   {"Name":"custodyChain.2.local.port","Value":"8084"},
   {"Name":"custodyChain.1.time","Value":"2023-02-17T08:33:57.940555116-05:00"},
   {"Name":"custodyChain.1.local.hostname","Value":"centos7.schou.me"},
-  {"Name":"custodyChain.1.action","Value":"KCP2HTTP"},
+  {"Name":"custodyChain.1.action","Value":"KCP-TO-HTTP"},
   {"Name":"custodyChain.1.source.host","Value":"10.12.128.249"},
   {"Name":"custodyChain.1.source.port","Value":"44443"},
   {"Name":"custodyChain.0.time","Value":"2023-02-17T08:33:57.941173557-05:00"},

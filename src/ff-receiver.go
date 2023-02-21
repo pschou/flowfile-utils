@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/pschou/go-flowfile"
+	"github.com/pschou/go-unixmode"
 	"github.com/relvacode/iso8601"
 )
 
@@ -92,21 +93,10 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 		fmt.Printf("  - %s\n", adat)
 	}
 
-	var fileMode *os.FileMode
+	var unixMode *unixmode.Mode
 	if fm := f.Attrs.Get("file.permissions"); len(fm) >= 9 && runtime.GOOS != "windows" {
-		fm = fm[len(fm)-9:]
-		var out uint32
-		for i := 0; i < 3; i++ {
-			out = out << 3
-			for j := 0; j < 3; j++ {
-				if fm[i*3+j] != '-' {
-					out = out | (1 << (2 - j))
-				}
-			}
-		}
-		//fmt.Printf("%s -> %#o\n", fm, out)
-		t := os.FileMode(out)
-		fileMode = &t
+		t, _ := unixmode.Parse(fm)
+		unixMode = &t
 	}
 
 	switch kind := f.Attrs.Get("kind"); kind {
@@ -156,8 +146,8 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 				}
 			}
 		}
-		if fileMode != nil {
-			os.Chmod(fp, *fileMode)
+		if unixMode != nil {
+			unixmode.Chmod(fp, *unixMode)
 		}
 		// Update file time from sender
 		if mt := f.Attrs.Get("file.lastModifiedTime"); mt != "" {
@@ -168,8 +158,8 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 
 	case "dir":
 		err = os.MkdirAll(fp, 0755)
-		if fileMode != nil {
-			os.Chmod(fp, *fileMode)
+		if unixMode != nil {
+			unixmode.Chmod(fp, *unixMode)
 		}
 		if *debug {
 			fmt.Println("making directory", fp, err)

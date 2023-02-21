@@ -62,13 +62,13 @@ where the sender has no idea if the receiver got the packets, but the FlowFile
 payload is broken up into indexed frames and sent so order can be restored on
 the receiving side.
 
-![FF-HTTP-to-UDP](images/ff-http2udp.png)
+![FF-HTTP-to-UDP](images/ff-http-to-udp.png)
 
-FF-HTTP2UDP Usage:
+FF-HTTP-TO-UDP Usage:
 
 Example:
 ```
-$ ./ff-http2udp -listen :8082 -throttle 167us -throttle-gap 67ns -segment-max-size 10MB
+$ ./ff-http-to-udp -listen :8082 -throttle 167us -throttle-gap 67ns -segment-max-size 10MB
 2023/02/15 12:40:01 Creating senders for UDP from: 10.12.128.249:3100-3200
 2023/02/15 12:40:01 Creating destinations for UDP: 10.12.128.249:2100-2200
 2023/02/15 12:40:01 Creating listener on: :8082
@@ -83,13 +83,13 @@ FF UDP to HTTP listens on an array of UDP endpoint and forwards all FlowFiles to
 HTTP/HTTPS connection after doing consistency checks.  Here the heavy work is done to 
 reconstruct a FlowFile and then do a checksum before forwarding onward.
 
-![FF-UDP-to-HTTP](images/ff-udp2http.png)
+![FF-UDP-to-HTTP](images/ff-udp-to-http.png)
 
-FF-UDP2HTTP Usage:
+FF-UDP-TO-HTTP Usage:
 
 Example:
 ```
-$ ../ff-udp2http
+$ ../ff-udp-to-http
 2023/02/15 12:41:13 Creating FlowFile sender, http://localhost:8080/contentListener
 2023/02/15 12:41:13 Listening on UDP :2100-2200
 ```
@@ -300,14 +300,14 @@ and the entire block determines the success or failure-- one should send
 batches of many FlowFiles instead of one at a time, but not too many, to not
 have to restart if the connection gets lost.
 
-![FF-HTTP-to-KCP](images/ff-http2kcp.png)
+![FF-HTTP-to-KCP](images/ff-http-to-kcp.png)
 
-FF-HTTP2KCP Usage:
+FF-HTTP-TO-KCP Usage:
 
 Example:
 
 ```
-$ ./ff-http2kcp -listen :8082  -kcp-data 10 -kcp-parity 3 -v -segment-max-size 3MB
+$ ./ff-http-to-kcp -listen :8082  -kcp-data 10 -kcp-parity 3 -v -segment-max-size 3MB
 2023/02/15 22:23:19 Creating sender,
 2023/02/15 22:23:19 Setting max-size to 3.00MB
 2023/02/15 22:23:19 Listening with HTTP on :8082 at /contentListener
@@ -315,18 +315,18 @@ $ ./ff-http2kcp -listen :8082  -kcp-data 10 -kcp-parity 3 -v -segment-max-size 3
 
 ## FF KCP to HTTP
 
-KCP FlowFile server listening for connections from the FF-HTTP2KCP and then
+KCP FlowFile server listening for connections from the FF-HTTP-TO-KCP and then
 forwarding the FlowFiles to a FlowFile compatible port while correcting errors in
 transmission.
 
-![FF-KCP-to-HTTP](images/ff-kcp2http.png)
+![FF-KCP-to-HTTP](images/ff-kcp-to-http.png)
 
-FF-KCP2HTTP Usage:
+FF-KCP-TO-HTTP Usage:
 
 Example:
 
 ```
-$ ./ff-kcp2http -v -kcp-data 10 -kcp-parity 3
+$ ./ff-kcp-to-http -v -kcp-data 10 -kcp-parity 3
 2023/02/15 22:26:18 Creating sender, http://localhost:8080/contentListener
 ```
 
@@ -504,14 +504,14 @@ FlowFile latencies.
   {"Name":"target","Value":"infile_rnd.dat"},
   {"Name":"custodyChain.2.time","Value":"2023-02-17T08:33:57.937135375-05:00"},
   {"Name":"custodyChain.2.local.hostname","Value":"centos7.schou.me"},
-  {"Name":"custodyChain.2.action","Value":"HTTP2KCP"},
+  {"Name":"custodyChain.2.action","Value":"HTTP-TO-KCP"},
   {"Name":"custodyChain.2.request.uri","Value":"/contentListener"},
   {"Name":"custodyChain.2.source.host","Value":"::1"},
   {"Name":"custodyChain.2.protocol","Value":"HTTP"},
   {"Name":"custodyChain.2.local.port","Value":"8084"},
   {"Name":"custodyChain.1.time","Value":"2023-02-17T08:33:57.940555116-05:00"},
   {"Name":"custodyChain.1.local.hostname","Value":"centos7.schou.me"},
-  {"Name":"custodyChain.1.action","Value":"KCP2HTTP"},
+  {"Name":"custodyChain.1.action","Value":"KCP-TO-HTTP"},
   {"Name":"custodyChain.1.source.host","Value":"10.12.128.249"},
   {"Name":"custodyChain.1.source.port","Value":"44443"},
   {"Name":"custodyChain.0.time","Value":"2023-02-17T08:33:57.941173557-05:00"},

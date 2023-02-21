@@ -7,10 +7,12 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/pschou/go-unixmode"
 	"github.com/relvacode/iso8601"
 )
 
@@ -42,6 +44,12 @@ func (f *File) Save(baseDir string) (outputFile string, err error) {
 		if err == nil {
 			switch kind {
 			case "dir", "file", "":
+				if fm := f.Attrs.Get("file.permissions"); len(fm) >= 9 && runtime.GOOS != "windows" {
+					if mode, err := unixmode.Parse(fm); err == nil {
+						unixmode.Chmod(outputFile, mode)
+					}
+				}
+
 				// Update file time from sender
 				if mt := f.Attrs.Get("file.lastModifiedTime"); mt != "" {
 					if fileTime, err := iso8601.ParseString(mt); err == nil {

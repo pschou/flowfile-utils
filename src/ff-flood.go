@@ -66,7 +66,12 @@ func main() {
 			var j, size int
 			// do the work
 			for {
-				j, c, size = c, c+1, rand.Intn(int(maxBytes-minBytes))+int(minBytes)
+				if sp := int(maxBytes - minBytes); sp > 0 {
+					size = rand.Intn(sp) + int(minBytes)
+				} else {
+					size = int(maxBytes)
+				}
+				j, c = c, c+1
 				f := flowfile.New(&zero{}, int64(size))
 				f.Attrs.Set("path", "./")
 				updateChain(f, nil, "FLOOD")
