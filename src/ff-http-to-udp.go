@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/binary"
 	"encoding/json"
 	"flag"
@@ -13,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"sync"
 	"time"
@@ -23,6 +23,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pschou/go-flowfile"
 	"github.com/pschou/go-iothrottler"
+	"github.com/pschou/go-memdiskbuf"
 )
 
 var (
@@ -44,16 +45,17 @@ slow down the number of accepted HTTP connections upstream.`
 
 	//noChecksum = flag.Bool("no-checksums", false, "Ignore doing checksum checks")
 	//udpSrcInt  = flag.String("udp-src-int", "ens192", "Interface where to send UDP packets")
-	udpDstAddr = flag.String("udp-dst-addr", "10.12.128.249:2100-2107",
+	udpDstAddr = flag.String("udp-dst-addr", "127.0.0.1:2100-2107",
 		"Target IP:PORT for sending UDP packet, to enable threading specify a port range\n"+
-			"IE 10 threads split: 10.12.128.249:2100-2104,2106-2110, 1 thread: 10.12.128.249:2100")
-	udpSrcAddr = flag.String("udp-src-addr", "10.12.128.249:3100-3107",
+			"IE 10 threads split: 10.12.128.249:2100-2104,2106-2110")
+	udpSrcAddr = flag.String("udp-src-addr", ":3100-3107",
 		"Source IP:PORT for originating UDP packets, to enable threading specify a port range\n"+
-			"IE 10 threads split: 10.12.128.249:3100-3104,3106-3110, 1 thread: 10.12.128.249:3100")
+			"IE 10 threads split: :3100-3104,3106-3110, 1 thread: :3100")
 	//udpDstMac  = flag.String("udp-dst-mac", "6c:3b:6b:ed:78:14", "Target MAC for UDP packet (only needed using raw)")
 	//udpSrcMac  = flag.String("udp-src-mac", "00:0c:29:69:bd:3d", "Source MAC for UDP packet (only needed using raw)")
 	resend         = flag.Duration("resend-delay", 1*time.Second, "Time between first transmit and second, set to 0s to disable.")
-	maxConnections = flag.Int("max-http-sessions", 20, "Limit the number of allowed incoming HTTP connections")
+	maxConnections = flag.Int("max-http-sessions", 1000, "Limit the number of allowed concurrent incoming HTTP connections")
+	connTimeout    = flag.Duration("http-timeout", 10*time.Hour, "Limit the number total upload time")
 
 	// Additional math parts
 	//throttleDelay, throttleConnections time.Duration
@@ -76,6 +78,7 @@ slow down the number of accepted HTTP connections upstream.`
 func main() {
 	service_flags()
 	listen_flags()
+	temp_flags()
 	attributes = flag.String("attributes", "", "File with additional attributes to add to FlowFiles")
 	parse()
 
@@ -98,8 +101,8 @@ func main() {
 	server := &http.Server{
 		Addr:           *listen,
 		TLSConfig:      tlsConfig,
-		ReadTimeout:    10 * time.Hour,
-		WriteTimeout:   10 * time.Hour,
+		ReadTimeout:    *connTimeout,
+		WriteTimeout:   *connTimeout,
 		MaxHeaderBytes: 1 << 20,
 	}
 
@@ -126,9 +129,14 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 	close := true
 	wk := <-workers
 	defer func() {
+		if *debug && err != nil {
+			log.Println("post failed:", err)
+		}
 		if close {
+			wk.buf.Reset()
 			workers <- wk
 		}
+		runtime.GC()
 	}()
 	if *verbose {
 		fmt.Println("using connection:", wk.conn)
@@ -138,7 +146,7 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 	updateChain(f, r, "HTTP-UDP")
 
 	// Prepare to send initial sizing packet for allocation of memory remotely
-	buf := bufPool.Get().(*bytes.Buffer)
+
 	id, _ := uuid.Parse(f.Attrs.Get("uuid"))
 	hdr := &ffHeader{
 		UUID:   id,
@@ -149,9 +157,9 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 	//fmt.Println("sizes", flowfile.HeaderSize(f), f.Size, uint32(flowfile.HeaderSize(f))+uint32(f.Size), "ff:", f)
 
 	// Write out the initial header
-	binary.Write(buf, binary.BigEndian, hdr)
+	binary.Write(wk.buf, binary.BigEndian, hdr)
 	toCopy := maxPayloadSize - int(ffHeaderSize)
-	wk.conn.WriteTo(buf.Bytes(), wk.dst) // Send an empty payload
+	//wk.conn.WriteTo(buf.Bytes(), wk.dst) // Send an empty payload
 
 	// Flatten directory for ease of viewing
 	dir := filepath.Clean(f.Attrs.Get("path"))
@@ -181,17 +189,24 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 	//_, err = io.Copy(
 	//	buf, //&ffHeaderWriter{h: hdr, w: buf, mtu: uint32(maxPayloadSize - ffHeaderSize)},
 	//	f.EncodedReader())
-	var n int64
 	//cp := make([]byte, toCopy)
 	//fmt.Println("tocopy", toCopy)
+
+	// Copy the entire chunk to memory doing a checksum at the same time
 	for err == nil {
-		n, err = io.CopyN(buf, rdr, int64(toCopy))
-		//fmt.Println("len", buf.Len())
+		var n int64
+		n, err = io.CopyN(wk.buf, rdr, int64(toCopy))
+		fmt.Println("len", wk.buf.Len())
 		if int(n) == toCopy {
 			hdr.Offset = hdr.Offset + uint32(toCopy)
-			binary.Write(buf, binary.BigEndian, hdr)
+			binary.Write(wk.buf, binary.BigEndian, hdr)
 		}
 		//buf.Write(cp[:n])
+	}
+	if err == io.EOF {
+		err = nil
+	} else if err != nil {
+		return
 	}
 
 	//fmt.Printf("buf: %#v\n", string(buf.Bytes()))
@@ -208,30 +223,33 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 			log.Println("    Checksum passed for", filename)
 		}
 	default:
-		log.Println("    Checksum failed for", filename, f.VerifyDetails(), buf.Len())
+		log.Println("    Checksum failed for", filename, f.VerifyDetails(), wk.buf.Len())
 		return
 	}
-
-	bufBytes := buf.Bytes()
-	b := bufBytes
 
 	// Write out the payload
-	for len(b) > maxPayloadSize {
+	writeBuf := make([]byte, maxPayloadSize)
+	var buf_err error
+	var a, b int
+	for buf_err == nil {
 		<-wk.throttler.C
-		wk.conn.WriteTo(b[:maxPayloadSize], wk.dst)
-		//fmt.Printf("tocopy: %q\n", string(b[:100]))
-		b = b[maxPayloadSize:]
-	}
-
-	<-wk.throttler.C
-	if _, err = wk.conn.WriteTo(b, wk.dst); err != nil {
-		return
+		a, buf_err = wk.buf.Read(writeBuf)
+		fmt.Printf("writing: %q\n", writeBuf[:15])
+		if b, err = wk.conn.WriteTo(writeBuf[:a], wk.dst); err != nil {
+			return
+		}
+		if a != b {
+			err = fmt.Errorf("Buffer to packet size error %d != %d", a, b)
+			return
+		}
 	}
 
 	close = false // prevent the connection return to pool while writes are happening
 	go func() {   // spawn child thread to do the send so as to release the parent
 		defer func() {
+			wk.buf.Reset()
 			workers <- wk
+			runtime.GC()
 		}()
 		if *resend > 0 {
 			if *debug {
@@ -243,19 +261,22 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 			if *debug {
 				fmt.Println("  resending on same conn", filename, wk.conn)
 			}
-			b = bufBytes
+
+			wk.buf.Rewind()
 
 			// Write out the payload
-			for len(b) > maxPayloadSize {
+			var buf_err error
+			var a, b int
+			for buf_err == nil {
 				<-wk.throttler.C
-				wk.conn.WriteTo(b[:maxPayloadSize], wk.dst)
-				b = b[maxPayloadSize:]
-			}
-
-			// Last packet
-			<-wk.throttler.C
-			if _, err = wk.conn.WriteTo(b, wk.dst); err != nil {
-				return
+				a, buf_err = wk.buf.Read(writeBuf)
+				if b, err = wk.conn.WriteTo(writeBuf[:a], wk.dst); err != nil {
+					return
+				}
+				if a != b {
+					err = fmt.Errorf("Buffer to packet size error %d != %d", a, b)
+					return
+				}
 			}
 		}
 	}()
@@ -266,6 +287,7 @@ type worker struct {
 	conn      *net.UDPConn
 	dst       *net.UDPAddr
 	throttler *iothrottler.Limit
+	buf       *memdiskbuf.Buffer
 }
 
 var workers chan *worker
@@ -319,6 +341,7 @@ func setupUDP() {
 			throttler: throttler,
 			conn:      conn,
 			dst:       dst,
+			buf:       makeBuf(),
 		}
 
 		if *throttleShared {

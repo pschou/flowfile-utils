@@ -10,6 +10,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"runtime"
 	"sync"
 	"time"
 
@@ -24,7 +25,7 @@ This utility is intended to take input via UDP pass all FlowFiles to a UDP
 endpoint after verifying checksums.  A chain of custody is maintained by adding
 an action field with "UDP-TO-HTTP" value.`
 
-	udpDstAddr = flag.String("udp-dst-ip", ":2100-2200", "Local target IP:PORT for UDP packet")
+	udpDstAddr = flag.String("udp-dst-addr", ":2100-2200", "Local target IP:PORT for UDP packet")
 	mtu        = flag.Int("mtu", 1500, "MTU payload size for pre-allocating memory")
 	noChecksum = flag.Bool("no-checksums", false, "Ignore doing checksum checks")
 	hs         *flowfile.HTTPTransaction
@@ -118,6 +119,7 @@ func handle(conn *net.UDPConn) {
 			//mid = total +total/2
 			//for i := uint32(0); i < total; i++ {
 			fileBufs = make([][]byte, total)
+			runtime.GC()
 			//}
 			copy(UUID[:], hdr.UUID[:])
 		}
@@ -251,6 +253,7 @@ func process(hdr ffHeader, fileBufs [][]byte, done *bool) {
 			}
 			*done = true
 		}
+		f.Close()
 	}
 	if *verbose {
 		if err := scn.Err(); err != nil {

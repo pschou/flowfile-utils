@@ -8,6 +8,7 @@ pure: go build readme
 go:
 	go clean -modcache
 	GOPRIVATE=github.com/pschou go get github.com/pschou/go-flowfile
+	GOPRIVATE=github.com/pschou go get github.com/pschou/go-memdiskbuf
 	GOPRIVATE=github.com/pschou go get github.com/pschou/go-unixmode
 	GOPRIVATE=github.com/pschou go get github.com/pschou/go-iothrottler
 	GOPRIVATE=github.com/pschou go get github.com/pschou/go-sorting/numstr

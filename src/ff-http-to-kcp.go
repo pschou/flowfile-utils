@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"crypto/sha1"
 	"encoding/binary"
 	"encoding/json"
@@ -17,6 +16,7 @@ import (
 	"time"
 
 	"github.com/pschou/go-flowfile"
+	"github.com/pschou/go-memdiskbuf"
 	"github.com/xtaci/kcp-go"
 	"golang.org/x/crypto/pbkdf2"
 )
@@ -49,6 +49,7 @@ FlowFiles into KCP endpoint for speeding up throughput over long distances.`
 func main() {
 	service_flags()
 	listen_flags()
+	temp_flags()
 	parse()
 
 	// Connect to the destination to prepare to send files
@@ -215,9 +216,12 @@ func post(rdr *flowfile.Scanner, w http.ResponseWriter, r *http.Request) {
 		}
 
 		// SLURP!
-		buf := bufPool.Get().(*bytes.Buffer)
+		buf := bufPool.Get().(*memdiskbuf.Buffer)
 		defer func() { buf.Reset(); bufPool.Put(buf) }()
-		buf.ReadFrom(f)
+
+		if _, err = io.Copy(buf, f); err != nil {
+			return
+		}
 
 		if err == nil && !*noChecksum {
 			err = f.Verify()
@@ -242,20 +246,16 @@ func post(rdr *flowfile.Scanner, w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Grab the underlying buffer and send it off
-		b := buf.Bytes()
+		// Send off the underlying buf
+		b := make([]byte, 4000)
 		var n int
-		for err == nil && len(b) > 4000 {
+		var read_err error
+		for read_err == nil {
+			n, read_err = buf.Read(b)
 			conn.SetDeadline(time.Now().Add(10 * time.Second)) // We need to have a result
-			n, err = conn.Write(b[:4000])
-			b = b[n:]
-		}
-		if err != nil && err != io.EOF {
-			return
-		}
-		n, err = conn.Write(b)
-		if err != nil && err != io.EOF {
-			return
+			if n, err = conn.Write(b[:n]); err != nil {
+				return
+			}
 		}
 	}
 

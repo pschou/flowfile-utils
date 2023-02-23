@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"sync"
 
 	"github.com/docker/go-units"
 	"github.com/pschou/go-flowfile"
@@ -17,6 +18,7 @@ var (
 This utility is intended to saturate the bandwidth of a FlowFile endpoint for
 load testing.`
 
+	count         = flag.Int("n", 0, "Count of number of FlowFiles to send")
 	max           = flag.String("max", "20MB", "Max payload size for upload in bytes")
 	min           = flag.String("min", "10MB", "Min Payload size for upload in bytes")
 	hash          = flag.String("hash", "SHA1", "Hash to use in checksum value")
@@ -61,17 +63,23 @@ func main() {
 	log.Println("Sending...")
 
 	var c int
+	var wg sync.WaitGroup
 	for th := 0; th < *threads; th++ {
+		wg.Add(1)
 		go func(th int) {
+			defer wg.Done()
 			var j, size int
 			// do the work
 			for {
+				j, c = c, c+1
+				if *count > 0 && j >= *count {
+					break
+				}
 				if sp := int(maxBytes - minBytes); sp > 0 {
 					size = rand.Intn(sp) + int(minBytes)
 				} else {
 					size = int(maxBytes)
 				}
-				j, c = c, c+1
 				f := flowfile.New(&zero{}, int64(size))
 				f.Attrs.Set("path", "./")
 				updateChain(f, nil, "FLOOD")
@@ -90,8 +98,7 @@ func main() {
 		}(th)
 	}
 
-	ch := make(chan int)
-	<-ch
+	wg.Wait()
 }
 
 type zero struct{}

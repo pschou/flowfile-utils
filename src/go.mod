@@ -8,18 +8,21 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/inhies/go-bytesize v0.0.0-20220417184213-4913239db9cf
 	github.com/mdlayher/watchdog v0.0.0-20221003142519-49be0df7b3b5
-	github.com/pschou/go-flowfile v0.0.0-20230221135825-ffac0cda7bff
+	github.com/pschou/go-flowfile v0.0.0-20230221172513-30d326537fd9
 	github.com/relvacode/iso8601 v1.3.0
 	github.com/xtaci/kcp-go v5.4.20+incompatible
 	golang.org/x/crypto v0.6.0
 )
 
 require (
+	github.com/ShoshinNikita/go-disk-buffer v0.3.0 // indirect
 	github.com/djherbis/times v1.5.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.14 // indirect
 	github.com/klauspost/reedsolomon v1.10.0 // indirect
+	github.com/minio/sio v0.2.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pschou/go-iothrottler v0.0.0-20230219023204-9f984ea32e61 // indirect
+	github.com/pschou/go-memdiskbuf v0.0.0-20230222200915-fd67da5760a4 // indirect
 	github.com/pschou/go-numstr v0.0.0-20230217202549-c04767600335 // indirect
 	github.com/pschou/go-sorting/numstr v0.0.0-20230218015952-a2a98f172ba3 // indirect
 	github.com/pschou/go-unixmode v0.0.0-20230221010515-d14c1c1b2888 // indirect

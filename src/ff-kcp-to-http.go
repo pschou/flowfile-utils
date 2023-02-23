@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"crypto/sha1"
 	"encoding/json"
 	"flag"
@@ -16,6 +15,7 @@ import (
 	"time"
 
 	"github.com/pschou/go-flowfile"
+	"github.com/pschou/go-memdiskbuf"
 	"github.com/xtaci/kcp-go"
 	"golang.org/x/crypto/pbkdf2"
 )
@@ -43,6 +43,7 @@ into a HTTP/HTTPS compatible port for speeding up throughput over long distances
 func main() {
 	service_flags()
 	sender_flags()
+	temp_flags()
 	parse()
 	var err error
 
@@ -158,7 +159,7 @@ func post(conn *kcp.UDPSession) (err error) {
 		}
 
 		// SLURP!
-		buf := bufPool.Get().(*bytes.Buffer)
+		buf := bufPool.Get().(*memdiskbuf.Buffer)
 		defer func() { buf.Reset(); bufPool.Put(buf) }()
 		io.Copy(buf, f)
 

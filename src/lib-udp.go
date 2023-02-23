@@ -6,9 +6,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"sync"
 
-	"github.com/google/gopacket"
 	"github.com/google/uuid"
 )
 
@@ -77,7 +75,7 @@ var ffHeaderSize = func() uint32 {
 	return uint32(buf.Len())
 }()
 
-var bufPool = sync.Pool{
+/*var bufPool = sync.Pool{
 	New: func() any {
 		return new(bytes.Buffer)
 	},

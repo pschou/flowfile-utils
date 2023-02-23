@@ -150,7 +150,7 @@ func main() {
 		go func(i int, f *flowfile.File) {
 			defer swg.Done()
 			filename := path.Join(f.Attrs.Get("path"), f.Attrs.Get("filename"))
-			log.Println("sending", i, units.HumanSize(float64(f.Size)), "for", filename)
+			log.Println("sending", i, "/", len(batch), units.HumanSize(float64(f.Size)), "for", filename)
 			// do the work
 			if err = hs.Send(f); err != nil {
 				log.Fatal("Failed to send", filename, err)
