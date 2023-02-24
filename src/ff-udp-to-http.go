@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"hash"
@@ -13,7 +14,6 @@ import (
 	"os"
 	"path"
 	"sync"
-	"time"
 
 	"github.com/docker/go-units"
 	"github.com/pschou/go-flowfile"
@@ -118,31 +118,39 @@ func doWork() {
 			}()
 
 			// Do verifications
-			var verify bool
-			if !job.noBuf {
-				if err := job.wab.Flush(); err != nil || job.hash == nil {
-					job.noBuf = true
-				} else {
-					f := flowfile.File{Attrs: job.attrs}
-					err = f.VerifyHash(job.hash)
-					verify = err == nil
+			if job.hdr.Size > 0 { // When the payload has content, do checksums
+				var verifyErr = errors.New("No checksum done")
+				if !job.noBuf {
+					if err := job.wab.Flush(); err != nil || job.hash == nil {
+						job.noBuf = true
+					} else {
+						f := flowfile.File{Attrs: job.attrs}
+						verifyErr = f.VerifyHash(job.hash)
+					}
 				}
-			}
 
-			if job.noBuf {
-				// TODO: do verification even when buffer is missed
-			}
+				if job.noBuf {
+					// Verification even when the buffer is missed
+					job.hash = job.attrs.NewChecksumHash()
+					if job.hash != nil {
+						job.fh.Seek(0, io.SeekStart)
+						io.Copy(job.hash, job.fh) // Do the checksum on the file
+						f := flowfile.File{Attrs: job.attrs}
+						verifyErr = f.VerifyHash(job.hash)
+					}
+				}
 
-			if !verify {
+				if verifyErr != nil {
+					if *verbose {
+						log.Println("Checksum failed for job", verifyErr)
+					}
+					return
+				}
 				if *verbose {
-					log.Println("Checksum failed for job")
+					log.Println("Checksum passed for job")
 				}
-				return
+				job.fh.Seek(0, io.SeekStart)
 			}
-			if *verbose {
-				log.Println("Checksum passed for job")
-			}
-			job.fh.Seek(0, io.SeekStart)
 
 			scn := flowfile.NewScanner(job.fh)
 			for scn.Scan() {
@@ -196,11 +204,11 @@ func handle(conn *net.UDPConn) {
 
 		// Print out packet for debugging
 		if *debug {
-			n := 20
-			if len(dat) < 20 {
+			n := 30
+			if len(dat) < 30 {
 				n = len(dat)
 			}
-			fmt.Printf("raw %d: %q %s\n", n, string(dat[:n]), time.Now()) // Debug the raw packet
+			fmt.Printf("raw %d: %q %s\n", n, string(dat[:n])) // Debug the raw packet
 		}
 
 		// Parse the incoming packet's header for position and UUID info
@@ -264,8 +272,11 @@ func handle(conn *net.UDPConn) {
 							if hdrBuf.Len() >= f.HeaderSize() {
 								// found ff and right sized header
 								parsed = true
+								if *verbose {
+									log.Println("Attrs:", sf_job.attrs)
+								}
 								// making hash
-								sf_job.hash = sf_job.attrs.NewEmptyChecksum()
+								sf_job.hash = sf_job.attrs.NewChecksumHash()
 								if sf_job.hash != nil {
 									// copy over header buf
 									io.CopyN(io.Discard, &hdrBuf, int64(f.HeaderSize()))
@@ -281,15 +292,15 @@ func handle(conn *net.UDPConn) {
 					}
 				}
 			}
-			if *verbose {
-				fmt.Printf("sending job %v\n", job.hdr)
-			}
+			//if *verbose {
+			//	fmt.Printf("creating job %v\n", job.hdr)
+			//}
 
 			copy(UUID[:], hdr.UUID[:])
 		}
 
 		// The current file is done, do nothing
-		if done { // short circuit for we are done
+		if done || n == int(ffHeaderSize) { // short circuit for we are done
 			continue
 		}
 
@@ -324,6 +335,9 @@ func handle(conn *net.UDPConn) {
 				}
 			}
 			if done {
+				if *verbose {
+					fmt.Printf("sending job %v\n", job.hdr)
+				}
 				workChan <- job
 				job = nil
 			}

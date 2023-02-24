@@ -1,8 +1,8 @@
 package main
 
 import (
+	"bytes"
 	"encoding/binary"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -17,9 +17,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
-	"github.com/google/gopacket/pcap"
+	"github.com/docker/go-units"
 	"github.com/google/uuid"
 	"github.com/pschou/go-flowfile"
 	"github.com/pschou/go-iothrottler"
@@ -31,12 +29,10 @@ var (
 
 This utility is intended to take input over a FlowFile compatible port and pass
 all FlowFiles to a UDP endpoint after verifying checksums.  A chain of custody
-is maintained by adding an action field with "HTTP-UDP" value.
+is maintained by adding an action field with "HTTP-TO-UDP" value.
 
 Note: The port range used in the source UDP address directly affect the number
-of concurrent sessions, and as payloads are buffered in memory (to do the
-checksum) the memory bloat can be upwards on the order of NUM_PORTS *
-MAX_PAYLOAD.  Please choose wisely.
+of concurrent sessions.
 
 The resend-delay will add latency (by delaying new connections until second
 send is complete) but will add error resilience in the transfer.  In other
@@ -73,6 +69,9 @@ slow down the number of accepted HTTP connections upstream.`
 		"This is the number of bytes added to the mtu which defines the time on the media between frames.\n"+
 		"The value can be tuned (like -120 to 120). Frames are sent less frequently with a larger value.")
 	throttleShared = flag.Bool("throttle-shared", false, "By default each thread is throttled, instead throttle all threads as one (not recommended).")
+
+	hash        = flag.String("hash", "SHA1", "Hash to use in checksum value")
+	addChecksum = flag.Bool("add-checksum", false, "Add a checksum to the attributes (if missing)")
 )
 
 func main() {
@@ -143,115 +142,127 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 	}
 
 	// Make sure the client chain is added to attributes, 1 being the closest
-	updateChain(f, r, "HTTP-UDP")
+	updateChain(f, r, "HTTP-TO-UDP")
 
-	// Prepare to send initial sizing packet for allocation of memory remotely
-
+	// Send initial wakeup packet for allocation of job remotely
 	id, _ := uuid.Parse(f.Attrs.Get("uuid"))
-	hdr := &ffHeader{
+	hdr := ffHeader{
 		UUID:   id,
 		Size:   uint64(f.HeaderSize()) + uint64(f.Size),
 		Offset: 0,
 		MTU:    uint16(maxPayloadSize) - uint16(ffHeaderSize),
 	}
-	//fmt.Println("sizes", flowfile.HeaderSize(f), f.Size, uint32(flowfile.HeaderSize(f))+uint32(f.Size), "ff:", f)
 
-	// Write out the initial header
-	binary.Write(wk.buf, binary.BigEndian, hdr)
+	{ // Write out the initial header
+		var initBuf bytes.Buffer
+		binary.Write(&initBuf, binary.BigEndian, &hdr)
+		wk.conn.WriteTo(initBuf.Bytes(), wk.dst) // Send an empty payload
+	}
+
 	toCopy := maxPayloadSize - int(ffHeaderSize)
-	//wk.conn.WriteTo(buf.Bytes(), wk.dst) // Send an empty payload
 
-	// Flatten directory for ease of viewing
+	// Flatten directory for ease of log viewing
 	dir := filepath.Clean(f.Attrs.Get("path"))
-
 	filename := f.Attrs.Get("filename")
 
+	// Print out to the screen activity
 	if id := f.Attrs.Get("fragment.index"); id != "" {
 		i, _ := strconv.Atoi(id)
-		fmt.Printf("  Sending segment %d of %s of %s for %s\n", i,
-			f.Attrs.Get("fragment.count"), path.Join(dir, filename), r.RemoteAddr)
+		log.Printf("  Got segment %d of %s of %s (%s) for %s\n", i,
+			f.Attrs.Get("fragment.count"), path.Join(dir, filename), units.HumanSize(float64(f.Size)), r.RemoteAddr)
 	} else {
-		fmt.Printf("  Sending file %s for %s\n", path.Join(dir, filename), r.RemoteAddr)
+		log.Printf("  Got file %s (%s) for %s\n", path.Join(dir, filename), units.HumanSize(float64(f.Size)), r.RemoteAddr)
 	}
 
+	// Show the details of the file being sent
 	if *verbose {
-		adat, _ := json.Marshal(f.Attrs)
-		fmt.Printf("incoming: %s\n", adat)
+		fmt.Printf("incoming: %s\n", f.Attrs)
 	}
 
-	// Wrap the reader in a buffer so partial reads will be concatinated
-	//rdr := bufio.NewReader(f.EncodedReader())
-	rdr := f.EncodedReader()
-
-	//_ = hdr
-
-	// Bring the entire send into memory to verify checksum before forwarding
-	//_, err = io.Copy(
-	//	buf, //&ffHeaderWriter{h: hdr, w: buf, mtu: uint32(maxPayloadSize - ffHeaderSize)},
-	//	f.EncodedReader())
-	//cp := make([]byte, toCopy)
-	//fmt.Println("tocopy", toCopy)
-
-	// Copy the entire chunk to memory doing a checksum at the same time
-	for err == nil {
-		var n int64
-		n, err = io.CopyN(wk.buf, rdr, int64(toCopy))
-		//fmt.Println("len", wk.buf.Len())
-		if int(n) == toCopy {
-			hdr.Offset = hdr.Offset + uint64(toCopy)
-			binary.Write(wk.buf, binary.BigEndian, hdr)
+	// Add a checksum
+	var checksumAdded bool
+	if ck := f.Attrs.Get("checksumType"); *addChecksum && ck == "" {
+		f.Attrs.Set("checksumType", *hash)
+		checksumAdded = true
+		if err := f.ChecksumInit(); err != nil {
+			log.Println("Error adding checksum", *hash, err)
 		}
-		//buf.Write(cp[:n])
 	}
-	if err == io.EOF {
-		err = nil
-	} else if err != nil {
-		return
-	}
+
+	// Copy the entire file payload to MemDiskBuffer
+	io.Copy(wk.buf, f)
 
 	//fmt.Printf("buf: %#v\n", string(buf.Bytes()))
+	if checksumAdded {
+		f.AddChecksumFromVerify() // Add the correct checksum to payload
+	}
 
 	// Verify the checksum
 	err = f.Verify()
 	switch err {
 	case flowfile.ErrorChecksumMissing:
-		if *verbose && f.Size > 0 {
+		if f.Size > 0 {
 			log.Println("    No checksum found for", filename)
+			return
 		}
+		log.Println("    Empty", filename, "sending")
 	case nil:
 		if *verbose && f.Size > 0 {
-			log.Println("    Checksum passed for", filename)
+			if checksumAdded {
+				log.Println("    Checksum added for", filename, "sending")
+			} else {
+				log.Println("    Checksum passed for", filename, "sending")
+			}
 		}
 	default:
 		log.Println("    Checksum failed for", filename, f.VerifyDetails(), wk.buf.Len())
 		return
 	}
 
-	// Write out the payload
-	writeBuf := make([]byte, maxPayloadSize)
-	var buf_err error
-	var a, b int
-	for buf_err == nil {
-		<-wk.throttler.C
-		a, buf_err = wk.buf.Read(writeBuf)
-		//fmt.Printf("writing: %q\n", writeBuf[:15])
-		if b, err = wk.conn.WriteTo(writeBuf[:a], wk.dst); err != nil {
-			return
+	{ // First send
+		// Create output file handle
+		f1 := flowfile.New(wk.buf, wk.buf.Cap())
+		f1.Attrs = f.Attrs
+
+		// Read the FlowFile through an EncodedReader for dropping on the wire
+		rdr1 := f1.EncodedReader()
+		hdr1 := hdr
+
+		// Write out the payload
+		var writeBuf bytes.Buffer
+		var a int64
+		var b int
+		hdr1.Offset = 0
+		var copy_err error
+		for copy_err == nil {
+			binary.Write(&writeBuf, binary.BigEndian, &hdr1)
+			a, copy_err = io.CopyN(&writeBuf, rdr1, int64(toCopy))
+			<-wk.throttler.C
+			if b, err = wk.conn.WriteTo(writeBuf.Bytes(), wk.dst); err != nil {
+				return
+			}
+			if int(a)+int(ffHeaderSize) != b {
+				err = fmt.Errorf("Buffer to packet size error %d != %d", a, b)
+				return
+			}
+			hdr1.Offset += uint64(toCopy)
+			writeBuf.Reset()
 		}
-		if a != b {
-			err = fmt.Errorf("Buffer to packet size error %d != %d", a, b)
+
+		if copy_err != io.EOF {
+			err = copy_err
 			return
 		}
 	}
 
-	close = false // prevent the connection return to pool while writes are happening
-	go func() {   // spawn child thread to do the send so as to release the parent
-		defer func() {
-			wk.buf.Reset()
-			workers <- wk
-			runtime.GC()
-		}()
-		if *resend > 0 {
+	if *resend > 0 {
+		close = false // prevent the connection return to pool while writes are happening
+		go func() {   // spawn child thread to do the send so as to release the parent
+			defer func() {
+				wk.buf.Reset()
+				workers <- wk
+				runtime.GC()
+			}()
 			if *debug {
 				fmt.Println("  waiting to do resend", filename, wk.conn, *resend)
 			}
@@ -259,27 +270,39 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 			time.Sleep(*resend)
 
 			if *debug {
-				fmt.Println("  resending on same conn", filename, wk.conn)
+				fmt.Println("  resending ", filename)
 			}
 
-			wk.buf.Rewind()
+			// Create output file handle
+			f1 := flowfile.New(wk.buf, wk.buf.Cap())
+			f1.Attrs = f.Attrs
+
+			// Read the FlowFile through an EncodedReader for dropping on the wire
+			rdr1 := f1.EncodedReader()
+			hdr1 := hdr
 
 			// Write out the payload
-			var buf_err error
-			var a, b int
-			for buf_err == nil {
+			var writeBuf bytes.Buffer
+			var a int64
+			var b int
+			hdr1.Offset = 0
+			var copy_err error
+			for copy_err == nil {
+				binary.Write(&writeBuf, binary.BigEndian, &hdr1)
+				a, copy_err = io.CopyN(&writeBuf, rdr1, int64(toCopy))
 				<-wk.throttler.C
-				a, buf_err = wk.buf.Read(writeBuf)
-				if b, err = wk.conn.WriteTo(writeBuf[:a], wk.dst); err != nil {
+				if b, err = wk.conn.WriteTo(writeBuf.Bytes(), wk.dst); err != nil {
 					return
 				}
-				if a != b {
+				if int(a)+int(ffHeaderSize) != b {
 					err = fmt.Errorf("Buffer to packet size error %d != %d", a, b)
 					return
 				}
+				hdr1.Offset += uint64(toCopy)
+				writeBuf.Reset()
 			}
-		}
-	}()
+		}()
+	}
 	return
 }
 
@@ -355,14 +378,3 @@ func setupUDP() {
 	}
 
 }
-
-var (
-	handle *pcap.Handle
-	eth    layers.Ethernet
-	//lo             layers.Loopback
-	ip      layers.IPv4
-	udp     layers.UDP
-	options gopacket.SerializeOptions
-
-	UDP_HEADER_LEN = 8
-)

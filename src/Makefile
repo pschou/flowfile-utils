@@ -18,7 +18,7 @@ build:
 	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-http-to-kcp ff-http-to-kcp.go lib-*.go
 	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-kcp-to-http ff-kcp-to-http.go lib-*.go
 	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-udp-to-http ff-udp-to-http.go lib-*.go
-	go build -ldflags=${FLAGS} -o ../ff-http-to-udp ff-http-to-udp.go lib-*.go
+	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-http-to-udp ff-http-to-udp.go lib-*.go
 	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-stager ff-stager.go lib-*.go
 	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-sender ff-sender.go lib-*.go
 	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-unstager ff-unstager.go lib-*.go

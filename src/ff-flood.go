@@ -18,15 +18,15 @@ var (
 This utility is intended to saturate the bandwidth of a FlowFile endpoint for
 load testing.`
 
-	count         = flag.Int("n", 0, "Count of number of FlowFiles to send")
-	max           = flag.String("max", "20MB", "Max payload size for upload in bytes")
-	min           = flag.String("min", "10MB", "Min Payload size for upload in bytes")
-	hash          = flag.String("hash", "SHA1", "Hash to use in checksum value")
-	threads       = flag.Int("threads", 4, "Parallel concurrent uploads")
-	name          = flag.String("name-format", "file%04d.dat", "File naming format")
-	hs            *flowfile.HTTPTransaction
-	wd, _         = os.Getwd()
-	seenChecksums = make(map[string]string)
+	count       = flag.Int("n", 0, "Count of number of FlowFiles to send")
+	max         = flag.String("max", "20MB", "Max payload size for upload in bytes")
+	min         = flag.String("min", "10MB", "Min Payload size for upload in bytes")
+	hash        = flag.String("hash", "SHA1", "Hash to use in checksum value")
+	addChecksum = flag.Bool("add-checksum", true, "Add a checksum to the attributes")
+	threads     = flag.Int("threads", 4, "Parallel concurrent uploads")
+	name        = flag.String("name-format", "file%04d.dat", "File naming format")
+	hs          *flowfile.HTTPTransaction
+	wd, _       = os.Getwd()
 )
 
 func main() {
@@ -86,8 +86,10 @@ func main() {
 				filename := fmt.Sprintf(*name, j)
 				f.Attrs.Set("filename", filename)
 				f.Attrs.GenerateUUID()
-				if err := f.AddChecksum(*hash); err != nil {
-					log.Fatal(err)
+				if *addChecksum && size > 0 {
+					if err := f.AddChecksum(*hash); err != nil {
+						log.Fatal(err)
+					}
 				}
 				f.Reset()
 				log.Println(th, "sending", filename, units.HumanSize(float64(size)))

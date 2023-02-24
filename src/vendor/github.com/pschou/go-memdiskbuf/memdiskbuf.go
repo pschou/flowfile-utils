@@ -123,9 +123,9 @@ func (b *Buffer) ReadFrom(r io.Reader) (n int64, err error) {
 }
 */
 
-// Reads from the buffer.  The first read will switch the buffer from writing
-// mode to reading mode to prevent further writes.  One can use Reset() to
-// clear out the buffer and return to writing mode.
+// Read reads from the buffer.  The first read will switch the buffer from
+// writing mode to reading mode to prevent further writes.  One can use Reset()
+// to clear out the buffer and return to writing mode.
 func (b *Buffer) Read(p []byte) (n int, err error) {
 	if !b.isReading {
 		if b.ibuf > 0 {
@@ -145,15 +145,12 @@ func (b *Buffer) Read(p []byte) (n int, err error) {
 		if b.i == b.n {
 			return n, io.EOF
 		}
-		p = p[n:]
-		if _, err = b.fh.Seek(0, os.SEEK_SET); err != nil {
-			return
-		}
+		p = p[n:] // Read the remaining from the disk
 	}
 
 	var c int
 	for err == nil && len(p) > 0 {
-		c, err = b.fh.Read(p)
+		c, err = b.fh.ReadAt(p, b.i-int64(len(b.st)))
 		n, b.i, p = n+c, b.i+int64(c), p[c:]
 	}
 	if b.i == b.n {
@@ -162,12 +159,48 @@ func (b *Buffer) Read(p []byte) (n int, err error) {
 	return
 }
 
+// ReadAt reads from the buffer.  The first read will switch the buffer from
+// writing mode to reading mode to prevent further writes.  One can use Reset()
+// to clear out the buffer and return to writing mode.
+func (b *Buffer) ReadAt(p []byte, offset int64) (n int, err error) {
+	if !b.isReading {
+		if b.ibuf > 0 {
+			if err = b.commit(b.ibuf); err != nil {
+				return
+			}
+		}
+		b.isReading = true
+	}
+	if offset < int64(len(b.st)) {
+		if b.n < int64(len(b.st)) {
+			n = copy(p, b.st[offset:b.n])
+		} else {
+			n = copy(p, b.st[offset:])
+		}
+		offset += int64(n)
+		if offset == b.n {
+			return n, io.EOF
+		}
+		p = p[n:] // Read the remaining from the disk
+	}
+
+	var c int
+	for err == nil && len(p) > 0 {
+		c, err = b.fh.ReadAt(p, offset-int64(len(b.st)))
+		n, offset, p = n+c, b.i+int64(c), p[c:]
+	}
+	if offset == b.n {
+		return n, io.EOF
+	}
+	return
+}
+
 // Return the length of the remaining used Buffer.
-func (b Buffer) Len() int {
-	return int(b.n - b.i)
+func (b Buffer) Len() int64 {
+	return b.n - b.i
 }
 
 // Return the length of the Buffer.
-func (b Buffer) Cap() int {
-	return int(b.n)
+func (b Buffer) Cap() int64 {
+	return b.n
 }
