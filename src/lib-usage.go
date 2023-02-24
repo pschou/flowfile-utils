@@ -40,7 +40,7 @@ func RandStringBytes(n int) string {
 	return string(b)
 }
 
-var bufPool = sync.Pool{New: func() any { return makeBuf }}
+var bufPool = sync.Pool{New: func() any { return makeBuf() }}
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
