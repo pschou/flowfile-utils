@@ -94,7 +94,7 @@ type workUnit struct {
 	ip   net.IP
 	port int
 
-	wap         *memdiskbuf.WriterAtBuf
+	wab         *memdiskbuf.WriterAtBuf
 	fh          *os.File
 	tmpfilename string
 	attrs       flowfile.Attributes
@@ -116,8 +116,32 @@ func doWork() {
 				job.fh.Close()
 				os.Remove(job.tmpfilename)
 			}()
-			fmt.Println("Got job", job.hdr)
 
+			// Do verifications
+			var verify bool
+			if !job.noBuf {
+				if err := job.wab.Flush(); err != nil || job.hash == nil {
+					job.noBuf = true
+				} else {
+					f := flowfile.File{Attrs: job.attrs}
+					err = f.VerifyHash(job.hash)
+					verify = err == nil
+				}
+			}
+
+			if job.noBuf {
+				// TODO: do verification even when buffer is missed
+			}
+
+			if !verify {
+				if *verbose {
+					log.Println("Checksum failed for job")
+				}
+				return
+			}
+			if *verbose {
+				log.Println("Checksum passed for job")
+			}
 			job.fh.Seek(0, io.SeekStart)
 
 			scn := flowfile.NewScanner(job.fh)
@@ -209,7 +233,7 @@ func handle(conn *net.UDPConn) {
 				total: total,
 
 				fh:          fh,
-				wap:         memdiskbuf.NewWriterAtBuf(fh, 32<<10),
+				wab:         memdiskbuf.NewWriterAtBuf(fh, 32<<10),
 				tmpfilename: tmpfilename,
 
 				ip:         addr.IP,
@@ -224,22 +248,28 @@ func handle(conn *net.UDPConn) {
 				// is being written to disk.
 				var hdrBuf bytes.Buffer
 				var parsed bool
-				job.wap.StreamFunc = func(p []byte) {
-					if job.hash != nil {
-						job.hash.Write(p)
+				var sf_job *workUnit
+				sf_job = job
+				job.wab.StreamFunc = func(p []byte) {
+					if sf_job.hash != nil {
+						sf_job.hash.Write(p)
 					} else if !parsed {
 						hdrBuf.Write(p)
 
 						// Parse out the FlowFile header to get the checksum attribute
 						// and start checksumming the stream.
-						if err = job.attrs.UnmarshalBinary(hdrBuf.Bytes()); err == nil {
-							f := flowfile.File{Attrs: job.attrs}
+						if err = sf_job.attrs.UnmarshalBinary(hdrBuf.Bytes()); err == nil {
+							// found ff, make an empty flowfile.File just to use verify functions
+							f := flowfile.File{Attrs: sf_job.attrs}
 							if hdrBuf.Len() >= f.HeaderSize() {
+								// found ff and right sized header
 								parsed = true
-								job.hash = job.attrs.NewEmptyChecksum()
-								if job.hash != nil {
+								// making hash
+								sf_job.hash = sf_job.attrs.NewEmptyChecksum()
+								if sf_job.hash != nil {
+									// copy over header buf
 									io.CopyN(io.Discard, &hdrBuf, int64(f.HeaderSize()))
-									io.Copy(job.hash, &hdrBuf)
+									io.Copy(sf_job.hash, &hdrBuf)
 								}
 								hdrBuf.Reset()
 							}
@@ -251,7 +281,9 @@ func handle(conn *net.UDPConn) {
 					}
 				}
 			}
-			fmt.Println("sending job", job.hdr)
+			if *verbose {
+				fmt.Printf("sending job %v\n", job.hdr)
+			}
 
 			copy(UUID[:], hdr.UUID[:])
 		}
@@ -272,10 +304,10 @@ func handle(conn *net.UDPConn) {
 			// Send to WriteAt
 			if !job.noBuf {
 				// Try the buffered WriteAt first
-				if _, err = job.wap.WriteAt(dat[ffHeaderSize:n], int64(hdr.Offset)); err != nil {
+				if _, err = job.wab.WriteAt(dat[ffHeaderSize:n], int64(hdr.Offset)); err != nil {
 					// Something bad happened, so flush it to disk and write all
 					job.fh.Truncate(int64(hdr.Size)) // Build out the file to the right size
-					job.wap.FlushAll()               // Wright all we have to disk
+					job.wab.FlushAll()               // Wright all we have to disk
 					job.fh.Truncate(int64(hdr.Size)) // Ensure we are at the right size
 					job.noBuf = true                 // Prevent any further use of this buffer
 				}

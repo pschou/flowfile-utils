@@ -79,6 +79,8 @@ github.com/pschou/go-flowfile v0.0.0-20230224021329-83434d224d00 h1:TU9wK8M6ey0F
 github.com/pschou/go-flowfile v0.0.0-20230224021329-83434d224d00/go.mod h1:HUbPm7/Wh2nnp9tQ4WF8EJVT4WCXL2FOeha+0alCHBY=
 github.com/pschou/go-flowfile v0.0.0-20230224022426-e936f57a6afd h1:rFA4CaOpr/mp0NC8R345xvGv3E5CXzg+lU4HUGpjuJ0=
 github.com/pschou/go-flowfile v0.0.0-20230224022426-e936f57a6afd/go.mod h1:HUbPm7/Wh2nnp9tQ4WF8EJVT4WCXL2FOeha+0alCHBY=
+github.com/pschou/go-flowfile v0.0.0-20230224120541-5e078975f6c6 h1:S9fPRm9ZSxac3ct6kYKeR6K4t/k9V70TFxYcsFwBgAg=
+github.com/pschou/go-flowfile v0.0.0-20230224120541-5e078975f6c6/go.mod h1:HUbPm7/Wh2nnp9tQ4WF8EJVT4WCXL2FOeha+0alCHBY=
 github.com/pschou/go-iothrottler v0.0.0-20230213180241-30159f7b06f5 h1:4dFqgoL1FBZ3K14f5ETV8pmq2dakB6rfZYnUlqyCx50=
 github.com/pschou/go-iothrottler v0.0.0-20230213180241-30159f7b06f5/go.mod h1:WHzAHzehWSrkxTzDdC4hy9aZSJsRfDuN7M/WPdAOi8M=
 github.com/pschou/go-iothrottler v0.0.0-20230218203057-113f8a0a0017 h1:RrI+dwE1ujincZbknj7w1SarVyDjPLsjVlWYRkP1OTE=
@@ -105,6 +107,8 @@ github.com/pschou/go-memdiskbuf v0.0.0-20230224014737-0de2b594ab80 h1:2aGzqNR0Ff
 github.com/pschou/go-memdiskbuf v0.0.0-20230224014737-0de2b594ab80/go.mod h1:2A0SLSqzLe1e+k/1gOjqdtqRp6MvirNejjGe3kxfAg0=
 github.com/pschou/go-memdiskbuf v0.0.0-20230224014843-540893ec48f9 h1:rwH8Hu1JHcHlDwUoEnTE7BXIRdpIRqcAFbwZ2d8otVQ=
 github.com/pschou/go-memdiskbuf v0.0.0-20230224014843-540893ec48f9/go.mod h1:2A0SLSqzLe1e+k/1gOjqdtqRp6MvirNejjGe3kxfAg0=
+github.com/pschou/go-memdiskbuf v0.0.0-20230224121005-08614f5e4d45 h1:h/FXh+3s0iBk1TUbUGolfhvPTXz90N9PL+sezNf7W6g=
+github.com/pschou/go-memdiskbuf v0.0.0-20230224121005-08614f5e4d45/go.mod h1:2A0SLSqzLe1e+k/1gOjqdtqRp6MvirNejjGe3kxfAg0=
 github.com/pschou/go-numstr v0.0.0-20230217202549-c04767600335 h1:S5kYiM8Zr1m8WVw17FS09KLHwTWbX6rQVIGpY30atbw=
 github.com/pschou/go-numstr v0.0.0-20230217202549-c04767600335/go.mod h1:MgqHolZYrsOEHmo/Pnv/W7p3NhLugbZTzCZ8y/rDE5k=
 github.com/pschou/go-sorting/numstr v0.0.0-20230218015952-a2a98f172ba3 h1:V2fr/o1j1eq5Ml2DsLJt7HkstDyCQaaD0uKLf0lG8Ws=
