@@ -31,7 +31,6 @@ load testing.`
 
 func main() {
 	sender_flags()
-	//attributes = flag.String("attributes", "", "File with additional attributes to add to FlowFiles")
 	parse()
 
 	if len(flag.Args()) != 0 {

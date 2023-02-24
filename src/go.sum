@@ -40,6 +40,8 @@ github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINE
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
 github.com/pschou/go-flowfile v0.0.0-20230224154446-6ff984a0d9fc h1:THap+ZMWpeWfF5KX5IbqM/MkmLBNhibcd886cdhdSOw=
 github.com/pschou/go-flowfile v0.0.0-20230224154446-6ff984a0d9fc/go.mod h1:HUbPm7/Wh2nnp9tQ4WF8EJVT4WCXL2FOeha+0alCHBY=
+github.com/pschou/go-flowfile v0.0.0-20230224183247-9402e412605a h1:AiX6gT3s12Fdag1v4ZK/aMM2As2EJEpm+XtzProPrEI=
+github.com/pschou/go-flowfile v0.0.0-20230224183247-9402e412605a/go.mod h1:HUbPm7/Wh2nnp9tQ4WF8EJVT4WCXL2FOeha+0alCHBY=
 github.com/pschou/go-iothrottler v0.0.0-20230219023204-9f984ea32e61 h1:Kr4xDrRAPkhu9FLwi+CZ43sezmX4fGF6126sEvCdsKI=
 github.com/pschou/go-iothrottler v0.0.0-20230219023204-9f984ea32e61/go.mod h1:WHzAHzehWSrkxTzDdC4hy9aZSJsRfDuN7M/WPdAOi8M=
 github.com/pschou/go-memdiskbuf v0.0.0-20230224165918-1e9ffe9a733b h1:tsiuvM9lQuwEIfG3eHP+nV6CCAt9l3Ons/WuUUszaWE=

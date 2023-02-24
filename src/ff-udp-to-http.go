@@ -130,6 +130,11 @@ func doWork() {
 				}
 
 				if job.noBuf {
+					if len(job.attrs) == 0 {
+						job.fh.Seek(0, io.SeekStart)
+						job.attrs.ReadFrom(job.fh)
+					}
+
 					// Verification even when the buffer is missed
 					job.hash = job.attrs.NewChecksumHash()
 					if job.hash != nil {

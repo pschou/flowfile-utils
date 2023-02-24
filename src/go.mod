@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/inhies/go-bytesize v0.0.0-20220417184213-4913239db9cf
 	github.com/mdlayher/watchdog v0.0.0-20221003142519-49be0df7b3b5
-	github.com/pschou/go-flowfile v0.0.0-20230224154446-6ff984a0d9fc
+	github.com/pschou/go-flowfile v0.0.0-20230224183247-9402e412605a
 	github.com/pschou/go-iothrottler v0.0.0-20230219023204-9f984ea32e61
 	github.com/pschou/go-memdiskbuf v0.0.0-20230224165918-1e9ffe9a733b
 	github.com/pschou/go-unixmode v0.0.0-20230221010515-d14c1c1b2888
