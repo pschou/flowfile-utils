@@ -6,16 +6,18 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"hash"
 	"io"
 	"log"
 	"net"
 	"os"
-	"runtime"
+	"path"
 	"sync"
 	"time"
 
 	"github.com/docker/go-units"
 	"github.com/pschou/go-flowfile"
+	"github.com/pschou/go-memdiskbuf"
 )
 
 var (
@@ -37,6 +39,7 @@ an action field with "UDP-TO-HTTP" value.`
 func main() {
 	service_flags()
 	sender_flags()
+	temp_flags()
 	parse()
 	var err error
 
@@ -54,212 +57,7 @@ func main() {
 	log.Println("Listening on UDP", *udpDstAddr)
 
 	setupUDP()
-}
-
-func handle(conn *net.UDPConn) {
-	var (
-		fileBufs [][]byte
-		UUID     [16]byte
-		//toFlush  chan []byte
-
-		dat []byte
-
-		done bool
-		n    int
-		//addr         *net.UDPAddr
-		idx          uint32
-		count, total uint32
-		hdr          ffHeader
-		err          error
-	)
-
-	//fmt.Println("Allocating listener on", conn)
-
-	// Allocate a buf if we don't have one
-	dat = make([]byte, maxPayloadSize)
-	for {
-		// Read from UDP connection
-		//if *debug && count%1000 == 0 {
-		//	fmt.Println(conn, "reading packet", count, total)
-		//}
-		if n, _, err = conn.ReadFromUDP(dat); err != nil {
-			log.Printf("Error receiving packet", err)
-			continue
-		}
-
-		//dat = dat[:n] // Set the slice end
-		if *debug {
-			//if *debug && count%1000 == 0 {
-			n := 20
-			if len(dat) < 20 {
-				n = len(dat)
-			}
-			fmt.Printf("raw %d: %q %s\n", n, string(dat[:n]), time.Now()) // Debug the raw packet
-		}
-
-		binary.Read(bytes.NewReader(dat), binary.BigEndian, &hdr)
-
-		if hdr.MTU < 100 { // Invalid packet
-			continue
-		}
-
-		//fmt.Printf("compare %02x == %02x, %v done %v\n", hdr.UUID[:], UUID[:], bytes.Equal(hdr.UUID[:], UUID[:]), done)
-		if !bytes.Equal(hdr.UUID[:], UUID[:]) {
-			if len(fileBufs) > 0 && !done {
-				//fmt.Println("calling go process with flush", hdr, fileBufs, false)
-				var t = true
-				go process(hdr, fileBufs, &t)
-				//count, dat = 0, nil
-				dat = make([]byte, maxPayloadSize)
-			}
-
-			//dat = <-byteChan
-			//toFlush <- dat
-			count, total, done = 0, (hdr.Size-1)/uint32(hdr.MTU)+1, false
-			//mid = total +total/2
-			//for i := uint32(0); i < total; i++ {
-			fileBufs = make([][]byte, total)
-			runtime.GC()
-			//}
-			copy(UUID[:], hdr.UUID[:])
-		}
-
-		if done { // short circuit for we are done
-			continue
-		}
-
-		idx = (hdr.Offset + 1) / uint32(hdr.MTU)
-		//fmt.Println("offset", hdr.Offset, "idx", idx, "total", total, "count", count, "n", n, "hdrSize", ffHeaderSize, "mtu", hdr.MTU)
-		if idx < total && n > int(ffHeaderSize) {
-			// Flip pointers!
-			fileBufs[idx], dat = dat, fileBufs[idx]
-			if len(dat) == 0 {
-				// allocate new!
-				dat = make([]byte, maxPayloadSize)
-			}
-			//fmt.Println("assigning buf to", idx, len(fileBufs))
-			count++
-			//fmt.Println("assignment has", fileBufs[idx], buf)
-			if count >= total {
-				if (count%total)%1000 == 0 {
-					//fmt.Println("calling go process", hdr, fileBufs, &done)
-					go process(hdr, fileBufs, &done)
-					//fmt.Println("returned from go process", &done)
-				}
-			}
-			continue
-		}
-	}
-}
-
-type rawFF struct {
-	i, size, mtu uint32
-	cur          []byte
-	dat          [][]byte
-}
-
-func (rf *rawFF) next() error {
-	//fmt.Printf("next %#v\n", rf)
-	if rf.i < uint32(len(rf.dat)) {
-		rf.cur = rf.dat[rf.i]
-		rf.i++
-		//fmt.Println("mtu", rf.mtu, "rf.i", rf.i, "rf.size", rf.size, "math", (rf.size%rf.mtu)+ffHeaderSize)
-		if rf.mtu*rf.i < rf.size {
-			rf.cur = rf.cur[ffHeaderSize : rf.mtu+ffHeaderSize]
-			//fmt.Printf("cur %q\n", string(rf.cur))
-		} else {
-			rf.cur = rf.cur[ffHeaderSize : (rf.size%rf.mtu)+ffHeaderSize]
-		}
-		//fmt.Printf("next return %#v\n", rf)
-		return nil
-	}
-	return io.EOF
-}
-
-func (rf *rawFF) Read(p []byte) (n int, err error) {
-	//fmt.Printf("read called %#v\n", rf)
-	if len(rf.cur) == 0 {
-		err = rf.next()
-	}
-	for err == nil && len(p) > 0 {
-		cp := copy(p, rf.cur)
-		rf.cur = rf.cur[cp:]
-		p, n = p[cp:], n+cp
-		if len(rf.cur) == 0 {
-			err = rf.next()
-		}
-	}
-	return
-}
-
-func process(hdr ffHeader, fileBufs [][]byte, done *bool) {
-	// Verify we have all the sections before we send
-	if len(fileBufs) > 0 {
-		for _, fb := range fileBufs {
-			if len(fb) == 0 {
-				//fmt.Println("found empty,", i)
-				return
-			}
-		}
-	}
-	//log.Printf("making scanner process: %#v\n", *feed)
-
-	/*var buf bytes.Buffer
-	buf.ReadFrom(feed)
-	fmt.Printf("dat: %q\n", buf.Bytes())*/
-	if !*noChecksum && hdr.Size > 0 {
-		if *debug {
-			fmt.Println("doing checksum...")
-		}
-		feed := &rawFF{size: hdr.Size, mtu: uint32(hdr.MTU), dat: fileBufs}
-		scn := flowfile.NewScanner(feed)
-		for scn.Scan() {
-			f := scn.File()
-			if *debug {
-				fmt.Println("doing checksum on", f.Attrs.Get("filename"))
-			}
-			io.Copy(io.Discard, f)
-			verr := f.Verify()
-			if *verbose && verr != nil {
-				log.Println("Checksum failed", verr, f.VerifyDetails())
-				return
-			}
-			if *verbose {
-				fmt.Println("checksum passed for", f.Attrs.Get("filename"))
-			}
-		}
-		*done = true
-	}
-
-	feed := &rawFF{size: hdr.Size, mtu: uint32(hdr.MTU), dat: fileBufs}
-
-	scn := flowfile.NewScanner(feed)
-	for scn.Scan() {
-		if *debug {
-			fmt.Println("Reading file")
-		}
-		f := scn.File()
-		updateChain(f, nil, "UDP-TO-HTTP")
-
-		if *verbose {
-			adat, _ := json.Marshal(f.Attrs)
-			fmt.Printf("    %s\n", adat)
-		}
-
-		log.Printf(" sending %s (%s)", f.Attrs.Get("filename"), units.HumanSize(float64(f.Size)))
-		if err := hs.Send(f); err == nil {
-			if *debug {
-				fmt.Println("file sent")
-			}
-			*done = true
-		}
-		f.Close()
-	}
-	if *verbose {
-		if err := scn.Err(); err != nil {
-			log.Println("Scanner error:", err)
-		}
-	}
+	doWork()
 }
 
 func setupUDP() {
@@ -269,7 +67,6 @@ func setupUDP() {
 	}
 	dstPorts := hypenRange(dstPortSpec)
 
-	wg := sync.WaitGroup{}
 	for _, port := range dstPorts {
 		dst, err := net.ResolveUDPAddr("udp", net.JoinHostPort(host, fmt.Sprintf("%d", port)))
 		if *debug {
@@ -284,11 +81,220 @@ func setupUDP() {
 		if err != nil {
 			log.Fatal("Listen UDP failed:", err)
 		}
-		wg.Add(1)
 		go func() {
 			handle(conn)
-			wg.Done()
 		}()
 	}
-	wg.Wait()
+}
+
+type workUnit struct {
+	hdr        ffHeader
+	seenChunks []byte
+
+	ip   net.IP
+	port int
+
+	wap         *memdiskbuf.WriterAtBuf
+	fh          *os.File
+	tmpfilename string
+	attrs       flowfile.Attributes
+	hash        hash.Hash
+
+	total int
+	noBuf bool
+}
+
+var workChan = make(chan *workUnit, 4)
+
+// Worker unit for sending files
+func doWork() {
+	for {
+		job := <-workChan
+		go func(job *workUnit) {
+			defer func() {
+				// When this thread terminates, make sure files are cleared out
+				job.fh.Close()
+				os.Remove(job.tmpfilename)
+			}()
+			fmt.Println("Got job", job.hdr)
+
+			job.fh.Seek(0, io.SeekStart)
+
+			scn := flowfile.NewScanner(job.fh)
+			for scn.Scan() {
+				if *debug {
+					fmt.Println("Reading file")
+				}
+				f := scn.File()
+				updateChain(f, nil, "UDP-TO-HTTP")
+
+				if *verbose {
+					adat, _ := json.Marshal(f.Attrs)
+					fmt.Printf("    %s\n", adat)
+				}
+
+				log.Printf(" sending %s (%s)", f.Attrs.Get("filename"), units.HumanSize(float64(f.Size)))
+				if err := hs.Send(f); err == nil {
+					if *debug {
+						fmt.Println("file sent")
+					}
+				}
+			}
+		}(job)
+	}
+}
+
+var rcvBufPool = sync.Pool{
+	New: func() any {
+		return make([]byte, maxPayloadSize)
+	},
+}
+
+// Handle connections to the UDP port and parses the packets as they come in.
+func handle(conn *net.UDPConn) {
+	dat := rcvBufPool.Get().([]byte)
+	defer rcvBufPool.Put(dat)
+
+	var (
+		UUID [16]byte
+		addr *net.UDPAddr
+		n    int
+		job  *workUnit
+		err  error
+		done bool
+	)
+
+	for {
+		if n, addr, err = conn.ReadFromUDP(dat); err != nil {
+			log.Printf("Error receiving packet", err)
+			continue
+		}
+
+		// Print out packet for debugging
+		if *debug {
+			n := 20
+			if len(dat) < 20 {
+				n = len(dat)
+			}
+			fmt.Printf("raw %d: %q %s\n", n, string(dat[:n]), time.Now()) // Debug the raw packet
+		}
+
+		// Parse the incoming packet's header for position and UUID info
+		var hdr ffHeader
+		binary.Read(bytes.NewReader(dat), binary.BigEndian, &hdr)
+		if n < int(ffHeaderSize) || hdr.MTU < 100 { // Invalid packet
+			continue
+		}
+
+		// If we have a new UUID
+		if !bytes.Equal(hdr.UUID[:], UUID[:]) {
+			if job != nil {
+				job.fh.Close()
+				os.Remove(job.tmpfilename)
+			}
+			// Create a temporary file for udp writes
+			tmpfilename := path.Join(tmpFolder, RandStringBytes(8))
+			var fh *os.File
+			if fh, err = os.OpenFile(tmpfilename, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0666); err != nil {
+				log.Fatal("Unable to create working file", err)
+			}
+
+			// Reset for new file
+			total := int(hdr.Size-1)/int(hdr.MTU) + 1
+			done = false
+
+			// Populate a new job unit
+			job = &workUnit{
+				hdr:   hdr,
+				total: total,
+
+				fh:          fh,
+				wap:         memdiskbuf.NewWriterAtBuf(fh, 32<<10),
+				tmpfilename: tmpfilename,
+
+				ip:         addr.IP,
+				port:       addr.Port,
+				seenChunks: make([]byte, total),
+			}
+
+			{
+				// We would like to know the checksum value early (if possible) so as
+				// to get a confirmation that the file is good to send!  So use the
+				// StreamFunc to parse out the header than checksum the payload as it
+				// is being written to disk.
+				var hdrBuf bytes.Buffer
+				var parsed bool
+				job.wap.StreamFunc = func(p []byte) {
+					if job.hash != nil {
+						job.hash.Write(p)
+					} else if !parsed {
+						hdrBuf.Write(p)
+
+						// Parse out the FlowFile header to get the checksum attribute
+						// and start checksumming the stream.
+						if err = job.attrs.UnmarshalBinary(hdrBuf.Bytes()); err == nil {
+							f := flowfile.File{Attrs: job.attrs}
+							if hdrBuf.Len() >= f.HeaderSize() {
+								parsed = true
+								job.hash = job.attrs.NewEmptyChecksum()
+								if job.hash != nil {
+									io.CopyN(io.Discard, &hdrBuf, int64(f.HeaderSize()))
+									io.Copy(job.hash, &hdrBuf)
+								}
+								hdrBuf.Reset()
+							}
+
+						} else if err == flowfile.ErrorNoFlowFileHeader || hdrBuf.Len() > 64<<10 {
+							// File is an invalid FlowFile, give up early
+							parsed = true
+						}
+					}
+				}
+			}
+			fmt.Println("sending job", job.hdr)
+
+			copy(UUID[:], hdr.UUID[:])
+		}
+
+		// The current file is done, do nothing
+		if done { // short circuit for we are done
+			continue
+		}
+
+		// Determine the offset
+		idx := int(hdr.Offset+1) / int(hdr.MTU)
+		if idx < job.total {
+			if job.seenChunks[idx] == 1 { // Duplicate packet, ignore
+				continue
+			}
+			job.seenChunks[idx] = 1
+
+			// Send to WriteAt
+			if !job.noBuf {
+				// Try the buffered WriteAt first
+				if _, err = job.wap.WriteAt(dat[ffHeaderSize:n], int64(hdr.Offset)); err != nil {
+					// Something bad happened, so flush it to disk and write all
+					job.fh.Truncate(int64(hdr.Size)) // Build out the file to the right size
+					job.wap.FlushAll()               // Wright all we have to disk
+					job.fh.Truncate(int64(hdr.Size)) // Ensure we are at the right size
+					job.noBuf = true                 // Prevent any further use of this buffer
+				}
+			}
+			if job.noBuf { // Write without buffering
+				job.fh.WriteAt(dat[ffHeaderSize:n], int64(hdr.Offset))
+			}
+
+			done = true
+			for _, ck := range job.seenChunks {
+				if ck == 0 {
+					done = false
+					break
+				}
+			}
+			if done {
+				workChan <- job
+				job = nil
+			}
+		}
+	}
 }

@@ -75,6 +75,10 @@ github.com/pschou/go-flowfile v0.0.0-20230221172107-2c9c6d3995f5 h1:L5P5rxw2VsKO
 github.com/pschou/go-flowfile v0.0.0-20230221172107-2c9c6d3995f5/go.mod h1:HUbPm7/Wh2nnp9tQ4WF8EJVT4WCXL2FOeha+0alCHBY=
 github.com/pschou/go-flowfile v0.0.0-20230221172513-30d326537fd9 h1:N9fnDlByne3JPPFHBUSsjzUJlGOK1GvPTADHfFzAHaU=
 github.com/pschou/go-flowfile v0.0.0-20230221172513-30d326537fd9/go.mod h1:HUbPm7/Wh2nnp9tQ4WF8EJVT4WCXL2FOeha+0alCHBY=
+github.com/pschou/go-flowfile v0.0.0-20230224021329-83434d224d00 h1:TU9wK8M6ey0FaVwOXM1ndPgZuEc3u3k9n+Gs5Qf7ZkM=
+github.com/pschou/go-flowfile v0.0.0-20230224021329-83434d224d00/go.mod h1:HUbPm7/Wh2nnp9tQ4WF8EJVT4WCXL2FOeha+0alCHBY=
+github.com/pschou/go-flowfile v0.0.0-20230224022426-e936f57a6afd h1:rFA4CaOpr/mp0NC8R345xvGv3E5CXzg+lU4HUGpjuJ0=
+github.com/pschou/go-flowfile v0.0.0-20230224022426-e936f57a6afd/go.mod h1:HUbPm7/Wh2nnp9tQ4WF8EJVT4WCXL2FOeha+0alCHBY=
 github.com/pschou/go-iothrottler v0.0.0-20230213180241-30159f7b06f5 h1:4dFqgoL1FBZ3K14f5ETV8pmq2dakB6rfZYnUlqyCx50=
 github.com/pschou/go-iothrottler v0.0.0-20230213180241-30159f7b06f5/go.mod h1:WHzAHzehWSrkxTzDdC4hy9aZSJsRfDuN7M/WPdAOi8M=
 github.com/pschou/go-iothrottler v0.0.0-20230218203057-113f8a0a0017 h1:RrI+dwE1ujincZbknj7w1SarVyDjPLsjVlWYRkP1OTE=
@@ -93,6 +97,14 @@ github.com/pschou/go-memdiskbuf v0.0.0-20230222195324-de3932f80ff2 h1:9y3vd63FzO
 github.com/pschou/go-memdiskbuf v0.0.0-20230222195324-de3932f80ff2/go.mod h1:2A0SLSqzLe1e+k/1gOjqdtqRp6MvirNejjGe3kxfAg0=
 github.com/pschou/go-memdiskbuf v0.0.0-20230222200915-fd67da5760a4 h1:9cFHNiOrFB5oC9OKwT0UN8GoTCpyzPmhjSeacVKdrDI=
 github.com/pschou/go-memdiskbuf v0.0.0-20230222200915-fd67da5760a4/go.mod h1:2A0SLSqzLe1e+k/1gOjqdtqRp6MvirNejjGe3kxfAg0=
+github.com/pschou/go-memdiskbuf v0.0.0-20230223181112-a7c9140e0588 h1:QkGCA8VioMyUZgBG4BRs2S0AkaKQhzqAg+fWyJiwzMc=
+github.com/pschou/go-memdiskbuf v0.0.0-20230223181112-a7c9140e0588/go.mod h1:2A0SLSqzLe1e+k/1gOjqdtqRp6MvirNejjGe3kxfAg0=
+github.com/pschou/go-memdiskbuf v0.0.0-20230223200729-f49987493acf h1:53asqv1NSZ+0ciAgi8Dy+DFm/BiMrCTGGvNsLZk0MsI=
+github.com/pschou/go-memdiskbuf v0.0.0-20230223200729-f49987493acf/go.mod h1:2A0SLSqzLe1e+k/1gOjqdtqRp6MvirNejjGe3kxfAg0=
+github.com/pschou/go-memdiskbuf v0.0.0-20230224014737-0de2b594ab80 h1:2aGzqNR0FfxEEHea9cdyi/m1cr71WnRqBDHv+D9VQIY=
+github.com/pschou/go-memdiskbuf v0.0.0-20230224014737-0de2b594ab80/go.mod h1:2A0SLSqzLe1e+k/1gOjqdtqRp6MvirNejjGe3kxfAg0=
+github.com/pschou/go-memdiskbuf v0.0.0-20230224014843-540893ec48f9 h1:rwH8Hu1JHcHlDwUoEnTE7BXIRdpIRqcAFbwZ2d8otVQ=
+github.com/pschou/go-memdiskbuf v0.0.0-20230224014843-540893ec48f9/go.mod h1:2A0SLSqzLe1e+k/1gOjqdtqRp6MvirNejjGe3kxfAg0=
 github.com/pschou/go-numstr v0.0.0-20230217202549-c04767600335 h1:S5kYiM8Zr1m8WVw17FS09KLHwTWbX6rQVIGpY30atbw=
 github.com/pschou/go-numstr v0.0.0-20230217202549-c04767600335/go.mod h1:MgqHolZYrsOEHmo/Pnv/W7p3NhLugbZTzCZ8y/rDE5k=
 github.com/pschou/go-sorting/numstr v0.0.0-20230218015952-a2a98f172ba3 h1:V2fr/o1j1eq5Ml2DsLJt7HkstDyCQaaD0uKLf0lG8Ws=

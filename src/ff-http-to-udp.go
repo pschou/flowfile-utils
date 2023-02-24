@@ -150,7 +150,7 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 	id, _ := uuid.Parse(f.Attrs.Get("uuid"))
 	hdr := &ffHeader{
 		UUID:   id,
-		Size:   uint32(f.HeaderSize()) + uint32(f.Size),
+		Size:   uint64(f.HeaderSize()) + uint64(f.Size),
 		Offset: 0,
 		MTU:    uint16(maxPayloadSize) - uint16(ffHeaderSize),
 	}
@@ -196,9 +196,9 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 	for err == nil {
 		var n int64
 		n, err = io.CopyN(wk.buf, rdr, int64(toCopy))
-		fmt.Println("len", wk.buf.Len())
+		//fmt.Println("len", wk.buf.Len())
 		if int(n) == toCopy {
-			hdr.Offset = hdr.Offset + uint32(toCopy)
+			hdr.Offset = hdr.Offset + uint64(toCopy)
 			binary.Write(wk.buf, binary.BigEndian, hdr)
 		}
 		//buf.Write(cp[:n])
@@ -234,7 +234,7 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 	for buf_err == nil {
 		<-wk.throttler.C
 		a, buf_err = wk.buf.Read(writeBuf)
-		fmt.Printf("writing: %q\n", writeBuf[:15])
+		//fmt.Printf("writing: %q\n", writeBuf[:15])
 		if b, err = wk.conn.WriteTo(writeBuf[:a], wk.dst); err != nil {
 			return
 		}

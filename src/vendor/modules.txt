@@ -31,13 +31,13 @@ github.com/mdlayher/watchdog
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
-# github.com/pschou/go-flowfile v0.0.0-20230221172513-30d326537fd9
+# github.com/pschou/go-flowfile v0.0.0-20230224022426-e936f57a6afd
 ## explicit; go 1.18
 github.com/pschou/go-flowfile
 # github.com/pschou/go-iothrottler v0.0.0-20230219023204-9f984ea32e61
 ## explicit; go 1.18
 github.com/pschou/go-iothrottler
-# github.com/pschou/go-memdiskbuf v0.0.0-20230222200915-fd67da5760a4
+# github.com/pschou/go-memdiskbuf v0.0.0-20230224014843-540893ec48f9
 ## explicit; go 1.18
 github.com/pschou/go-memdiskbuf
 # github.com/pschou/go-numstr v0.0.0-20230217202549-c04767600335

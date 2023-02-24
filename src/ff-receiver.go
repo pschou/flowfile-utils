@@ -209,7 +209,7 @@ func updateIndexFile(puuid, f string, idx, count int) bool {
 	defer updateIndexMutex.Unlock()
 
 	// If this is a new file, create it and write out current state
-	fh, err := os.OpenFile(f, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0666)
+	fh, err := os.OpenFile(f, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0662)
 	if err == nil {
 		defer fh.Close()
 		b := make([]byte, len(puuid)+count)
@@ -220,7 +220,7 @@ func updateIndexFile(puuid, f string, idx, count int) bool {
 	}
 
 	// If this is a new file, create it and write out current state
-	fh, err = os.OpenFile(f, os.O_RDWR, 0666)
+	fh, err = os.OpenFile(f, os.O_RDWR, 0662)
 	if err != nil {
 		return false
 	}

@@ -63,16 +63,16 @@ func csum(sum int, data []byte) int {
 
 type ffHeader struct {
 	UUID   uuid.UUID
-	Size   uint32
-	Offset uint32
+	Size   uint64
+	Offset uint64
 	MTU    uint16
 }
 
-var ffHeaderSize = func() uint32 {
+var ffHeaderSize = func() uint64 {
 	buf := &bytes.Buffer{}
 	hdr := ffHeader{}
 	binary.Write(buf, binary.BigEndian, &hdr)
-	return uint32(buf.Len())
+	return uint64(buf.Len())
 }()
 
 /*var bufPool = sync.Pool{
