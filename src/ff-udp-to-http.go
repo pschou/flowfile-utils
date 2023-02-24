@@ -12,12 +12,13 @@ import (
 	"log"
 	"net"
 	"os"
-	"path"
 	"sync"
 
 	"github.com/docker/go-units"
+	"github.com/google/uuid"
 	"github.com/pschou/go-flowfile"
 	"github.com/pschou/go-memdiskbuf"
+	"github.com/pschou/go-tempfile"
 )
 
 var (
@@ -114,7 +115,7 @@ func doWork() {
 			defer func() {
 				// When this thread terminates, make sure files are cleared out
 				job.fh.Close()
-				os.Remove(job.tmpfilename)
+				tempfile.Remove(job.tmpfilename)
 			}()
 
 			// Do verifications
@@ -193,7 +194,7 @@ func handle(conn *net.UDPConn) {
 	defer rcvBufPool.Put(dat)
 
 	var (
-		UUID [16]byte
+		UUID uuid.UUID
 		addr *net.UDPAddr
 		n    int
 		job  *workUnit
@@ -226,11 +227,12 @@ func handle(conn *net.UDPConn) {
 		// If we have a new UUID
 		if !bytes.Equal(hdr.UUID[:], UUID[:]) {
 			if job != nil {
+				fmt.Println("  Could not reconstruct UUID:", UUID)
 				job.fh.Close()
-				os.Remove(job.tmpfilename)
+				tempfile.Remove(job.tmpfilename)
 			}
 			// Create a temporary file for udp writes
-			tmpfilename := path.Join(tmpFolder, RandStringBytes(8))
+			tmpfilename := tempfile.New()
 			var fh *os.File
 			if fh, err = os.OpenFile(tmpfilename, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0666); err != nil {
 				log.Fatal("Unable to create working file", err)

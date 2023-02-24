@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
-	"path"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/pschou/go-flowfile"
 	"github.com/pschou/go-memdiskbuf"
+	"github.com/pschou/go-tempfile"
 )
 
 var (
@@ -28,10 +28,10 @@ func temp_flags() {
 }
 
 func makeBuf() *memdiskbuf.Buffer {
-	return memdiskbuf.NewBuffer(path.Join(tmpFolder, RandStringBytes(8)), 200<<10, 16<<10)
+	return memdiskbuf.NewBuffer(tempfile.New(), 200<<10, 16<<10)
 }
 
-func RandStringBytes(n int) string {
+func randStringBytes(n int) string {
 	letterBytes := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	b := make([]byte, n)
 	for i := range b {
@@ -57,6 +57,9 @@ func init() {
 
 func parse() {
 	flag.Parse()
+	if tmpFolder != "" {
+		tempfile.Folder = tmpFolder
+	}
 	if *debug {
 		flowfile.Debug = true
 	}

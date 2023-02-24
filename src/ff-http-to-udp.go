@@ -254,6 +254,7 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 			return
 		}
 	}
+	time.Sleep(*resend)
 
 	if *resend > 0 {
 		close = false // prevent the connection return to pool while writes are happening
@@ -263,11 +264,6 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 				workers <- wk
 				runtime.GC()
 			}()
-			if *debug {
-				fmt.Println("  waiting to do resend", filename, wk.conn, *resend)
-			}
-			// Hold off, then do it all again
-			time.Sleep(*resend)
 
 			if *debug {
 				fmt.Println("  resending ", filename)
@@ -301,6 +297,9 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 				hdr1.Offset += uint64(toCopy)
 				writeBuf.Reset()
 			}
+
+			// Keep the channel open for a second to let buffers flush out
+			time.Sleep(time.Second)
 		}()
 	}
 	return

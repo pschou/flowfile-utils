@@ -63,6 +63,7 @@ func (b *Buffer) Write(p []byte) (n int, err error) {
 func (b *Buffer) commit(ct int) (err error) {
 	if b.fh == nil {
 		if b.fh, err = os.OpenFile(b.path, os.O_RDWR|os.O_CREATE, 0600); err != nil {
+			use(b.path, b.fh)
 			return
 		}
 	}
@@ -91,37 +92,11 @@ func (b *Buffer) Reset() {
 	if b.fh != nil {
 		b.fh.Close()
 		b.fh = nil
+		unuse(b.path)
 		os.Remove(b.path)
 	}
 	b.i, b.n, b.ibuf, b.isReading = 0, 0, 0, false
 }
-
-/*
-// ReadFrom reads from an io.Reader until io.EOF or error
-func (b *Buffer) ReadFrom(r io.Reader) (n int64, err error) {
-	for b.n < int64(len(b.st)) {
-		var c int
-		c, err = r.Read(b.st[b.i:])
-		b.n, n = b.n+int64(c), n+int64(c)
-		if err != nil {
-			if err == io.EOF {
-				err = nil
-			}
-			return
-		}
-	}
-
-	if b.fh == nil {
-		if b.fh, err = os.OpenFile(b.path, os.O_RDWR|os.O_CREATE, 0600); err != nil {
-			return
-		}
-	}
-	var c int64
-	c, err = io.Copy(b.fh, r)
-	b.n, n = b.n+c, n+c
-	return
-}
-*/
 
 // Read reads from the buffer.  The first read will switch the buffer from
 // writing mode to reading mode to prevent further writes.  One can use Reset()

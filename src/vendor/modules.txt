@@ -28,12 +28,15 @@ github.com/pschou/go-flowfile
 # github.com/pschou/go-iothrottler v0.0.0-20230219023204-9f984ea32e61
 ## explicit; go 1.18
 github.com/pschou/go-iothrottler
-# github.com/pschou/go-memdiskbuf v0.0.0-20230224165918-1e9ffe9a733b
+# github.com/pschou/go-memdiskbuf v0.0.0-20230224193926-5c075fe07f50
 ## explicit; go 1.18
 github.com/pschou/go-memdiskbuf
 # github.com/pschou/go-sorting/numstr v0.0.0-20230218015952-a2a98f172ba3
 ## explicit; go 1.18
 github.com/pschou/go-sorting/numstr
+# github.com/pschou/go-tempfile v0.0.0-20230224200042-c3fbcad539ae
+## explicit; go 1.18
+github.com/pschou/go-tempfile
 # github.com/pschou/go-unixmode v0.0.0-20230221010515-d14c1c1b2888
 ## explicit; go 1.18
 github.com/pschou/go-unixmode
