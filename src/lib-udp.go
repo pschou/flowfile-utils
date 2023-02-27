@@ -6,6 +6,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/google/uuid"
 )
@@ -75,6 +76,13 @@ var ffHeaderSize = func() uint64 {
 	return uint64(buf.Len())
 }()
 
+var copyBufPool = sync.Pool{
+	New: func() any {
+		b := make([]byte, 32<<10)
+		return &b
+	},
+}
+
 /*var bufPool = sync.Pool{
 	New: func() any {
 		return new(bytes.Buffer)
@@ -87,12 +95,6 @@ var serBufPool = sync.Pool{
 	},
 }
 
-var rcvBufPool = sync.Pool{
-	New: func() any {
-		b := make([]byte, 9100)
-		return &b
-	},
-}
 
 /*
 var ffHeaderSize = func() int {

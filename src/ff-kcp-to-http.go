@@ -37,13 +37,16 @@ into a HTTP/HTTPS compatible port for speeding up throughput over long distances
 
 	crypto = flag.String("crypto", "salsa20:ThisIsASecret", "Enable or disable crypto\n"+
 		"\"none\" To use no cipher.")
-	hs *flowfile.HTTPTransaction
+
+	hs      *flowfile.HTTPTransaction
+	metrics = flowfile.NewMetrics()
 )
 
 func main() {
 	service_flags()
 	sender_flags()
 	temp_flags()
+	metrics_flags(true)
 	parse()
 	var err error
 
@@ -56,6 +59,7 @@ func main() {
 	}
 	hs.RetryCount = 3
 	hs.RetryDelay = 15 * time.Second
+	send_metrics("KCP-TO-HTTP", func(f *flowfile.File) { hs.Send(f) }, metrics)
 
 	// Setup encryption
 	var block kcp.BlockCrypt
@@ -124,12 +128,22 @@ func post(conn *kcp.UDPSession) (err error) {
 
 	rdr := flowfile.NewScanner(conn)
 
+	// Record metrics
+	metrics.MetricsThreadsActive++
+	defer func() {
+		metrics.MetricsThreadsActive, metrics.MetricsThreadsTerminated =
+			metrics.MetricsThreadsActive-1, metrics.MetricsThreadsTerminated+1
+
+	}()
+
 	// Loop over all the files in the post payload
 	for rdr.Scan() {
 		if httpWriter == nil { // Make sure a connection is open
 			httpWriter = hs.NewHTTPPostWriter()
 		}
+
 		f = rdr.File()
+		metrics.BucketCounter(int64(f.Size))
 
 		// Flatten directory for ease of viewing
 		dir := filepath.Clean(f.Attrs.Get("path"))

@@ -13,9 +13,10 @@ import (
 	"net"
 	"os"
 	"sync"
+	"time"
 
-	"github.com/docker/go-units"
 	"github.com/google/uuid"
+	"github.com/pschou/go-bunit"
 	"github.com/pschou/go-flowfile"
 	"github.com/pschou/go-memdiskbuf"
 	"github.com/pschou/go-tempfile"
@@ -35,12 +36,15 @@ an action field with "UDP-TO-HTTP" value.`
 
 	dst            *net.UDPAddr
 	maxPayloadSize = 1280
+
+	metrics = flowfile.NewMetrics()
 )
 
 func main() {
 	service_flags()
 	sender_flags()
 	temp_flags()
+	metrics_flags(true)
 	parse()
 	var err error
 
@@ -54,6 +58,10 @@ func main() {
 	if hs, err = flowfile.NewHTTPTransaction(*url, tlsConfig); err != nil {
 		log.Fatal(err)
 	}
+	hs.RetryCount = 3
+	hs.RetryDelay = time.Minute
+
+	send_metrics("UDP-TO-HTTP", func(f *flowfile.File) { hs.Send(f) }, metrics)
 
 	log.Println("Listening on UDP", *udpDstAddr)
 
@@ -105,14 +113,18 @@ type workUnit struct {
 	noBuf bool
 }
 
-var workChan = make(chan *workUnit, 4)
+var workChan = make(chan *workUnit, 10000)
 
 // Worker unit for sending files
 func doWork() {
 	for {
 		job := <-workChan
+		metrics.MetricsThreadsQueued, metrics.MetricsThreadsActive =
+			metrics.MetricsThreadsQueued-1, metrics.MetricsThreadsActive+1
 		go func(job *workUnit) {
 			defer func() {
+				metrics.MetricsThreadsActive, metrics.MetricsThreadsTerminated =
+					metrics.MetricsThreadsActive-1, metrics.MetricsThreadsTerminated+1
 				// When this thread terminates, make sure files are cleared out
 				job.fh.Close()
 				tempfile.Remove(job.tmpfilename)
@@ -158,6 +170,7 @@ func doWork() {
 				job.fh.Seek(0, io.SeekStart)
 			}
 
+			metrics.BucketCounter(int64(job.hdr.Size))
 			scn := flowfile.NewScanner(job.fh)
 			for scn.Scan() {
 				if *debug {
@@ -171,7 +184,7 @@ func doWork() {
 					fmt.Printf("    %s\n", adat)
 				}
 
-				log.Printf(" sending %s (%s)", f.Attrs.Get("filename"), units.HumanSize(float64(f.Size)))
+				log.Printf(" sending %s (%v)", f.Attrs.Get("filename"), bunit.NewBytes(int64(f.Size)))
 				if err := hs.Send(f); err == nil {
 					if *debug {
 						fmt.Println("file sent")
@@ -345,6 +358,7 @@ func handle(conn *net.UDPConn) {
 				if *verbose {
 					fmt.Printf("sending job %v\n", job.hdr)
 				}
+				metrics.MetricsThreadsQueued++
 				workChan <- job
 				job = nil
 			}

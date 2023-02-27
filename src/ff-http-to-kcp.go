@@ -50,6 +50,7 @@ func main() {
 	service_flags()
 	listen_flags()
 	temp_flags()
+	metrics_flags(true)
 	parse()
 
 	// Connect to the destination to prepare to send files
@@ -99,15 +100,17 @@ func main() {
 		ReadTimeout:    10 * time.Hour,
 		WriteTimeout:   10 * time.Hour,
 		MaxHeaderBytes: 1 << 20,
+		ConnState:      ConnStateEvent,
 	}
 
 	// Setting up the flow file receiver
 	ffReceiver := flowfile.NewHTTPReceiver(post)
 	http.Handle(*listenPath, ffReceiver)
+	send_metrics("HTTP-TO-KCP", func(f *flowfile.File) { post(flowfile.NewScannerSlice(f), nil, nil) }, ffReceiver.Metrics)
 
+	fmt.Println("handshaking")
 	// Setup a timer to update the maximums and minimums for the sender
 	handshaker(nil, ffReceiver)
-	//send_metrics(func(f *flowfile.File) { hs.Send(f) }, ffReceiver)
 
 	// Open the local port to listen for incoming connections
 	if *enableTLS {
@@ -177,7 +180,9 @@ func post(rdr *flowfile.Scanner, w http.ResponseWriter, r *http.Request) {
 			if *debug {
 				log.Println("err:", err)
 			}
-			w.WriteHeader(http.StatusInternalServerError)
+			if w != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
 			conn.Close()
 		} else {
 			if len(connBuf) < *threads-1 {
@@ -185,7 +190,9 @@ func post(rdr *flowfile.Scanner, w http.ResponseWriter, r *http.Request) {
 			} else {
 				conn.Close()
 			}
-			w.WriteHeader(http.StatusOK)
+			if w != nil {
+				w.WriteHeader(http.StatusOK)
+			}
 		}
 	}()
 

@@ -71,11 +71,14 @@ func updateChain(f *flowfile.File, r *http.Request, label string) {
 	}
 	if r != nil {
 		f.Attrs.CustodyChainAddHTTP(r)
-		if host, port, err := net.SplitHostPort(*listen); err == nil {
-			if host != "" {
-				f.Attrs.Set("custodyChain.0.local.host", host)
+		conn := GetConn(r)
+		if conn != nil {
+			if host, port, err := net.SplitHostPort(conn.LocalAddr().String()); err == nil {
+				if host != "" {
+					f.Attrs.Set("custodyChain.0.local.host", host)
+				}
+				f.Attrs.Set("custodyChain.0.local.port", port)
 			}
-			f.Attrs.Set("custodyChain.0.local.port", port)
 		}
 	}
 	/*if cert != nil {

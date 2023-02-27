@@ -8,7 +8,6 @@ import (
 	"os"
 	"sync"
 
-	"github.com/docker/go-units"
 	"github.com/pschou/go-bunit"
 	"github.com/pschou/go-flowfile"
 )
@@ -39,12 +38,13 @@ func main() {
 		return
 	}
 
-	maxBytes := bunit.MustParseBytes(*max).Int64()
-	minBytes := bunit.MustParseBytes(*min).Int64()
+	maxBytes := bunit.MustParseBytes(*max)
+	minBytes := bunit.MustParseBytes(*min)
 
-	if maxBytes < minBytes {
+	if maxBytes.Int64() < minBytes.Int64() {
 		log.Fatal("Max is smaller than min")
 	}
+	fmt.Println("Sending random FlowFiles sized between", minBytes, "and", maxBytes)
 
 	// Connect to the server and establish a session
 	var err error
@@ -69,10 +69,10 @@ func main() {
 				if *count > 0 && j >= *count {
 					break
 				}
-				if sp := int(maxBytes - minBytes); sp > 0 {
-					size = rand.Intn(sp) + int(minBytes)
+				if sp := int(maxBytes.Int64() - minBytes.Int64()); sp > 0 {
+					size = rand.Intn(sp) + int(minBytes.Int64())
 				} else {
-					size = int(maxBytes)
+					size = int(maxBytes.Int64())
 				}
 				f := flowfile.New(&zero{}, int64(size))
 				f.Attrs.Set("path", "./")
@@ -86,7 +86,7 @@ func main() {
 					}
 				}
 				f.Reset()
-				log.Println(th, "sending", filename, units.HumanSize(float64(size/8)))
+				log.Println(th, "sending", filename, bunit.NewBytes(int64(size)))
 				if err := hs.Send(f); err != nil {
 					log.Println("  failed")
 				}

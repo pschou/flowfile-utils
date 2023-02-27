@@ -34,7 +34,7 @@ func origin_flags() {
 }
 func listen_flags() {
 	enableTLS = flag.Bool("tls", false, "Enforce TLS secure transport on incoming connections")
-	maxSize = flag.String("segment-max-size", "", "Set a maximum size for partitioning files in sending")
+	maxSize = flag.String("segment-max-size", "", "Set a maximum size for partitioning files in sending (example 100MiB)")
 	listen = flag.String("listen", ":8080", "Where to listen to incoming connections (example 1.2.3.4:8080)")
 	listenPath = flag.String("listenPath", "/contentListener", "Path in URL where to expect FlowFiles to be posted")
 }

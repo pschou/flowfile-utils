@@ -11,7 +11,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/docker/go-units"
+	"github.com/pschou/go-bunit"
 	"github.com/pschou/go-flowfile"
 )
 
@@ -77,11 +77,11 @@ func post(f *flowfile.File, w http.ResponseWriter, r *http.Request) (err error) 
 	if *verbose {
 		if err == nil {
 			log.Println("    Checksum passed for file/segment", f.Attrs.Get("filename"),
-				units.HumanSize(float64(f.Size)))
+				bunit.NewBytes(int64(f.Size)))
 		} else {
 			//if err == flowfile.ErrorChecksumMissing {
 			log.Println("    Checksum Error", err, "for", f.Attrs.Get("filename"),
-				units.HumanSize(float64(f.Size)))
+				bunit.NewBytes(int64(f.Size)))
 		}
 	}
 	//}

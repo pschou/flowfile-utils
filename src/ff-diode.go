@@ -48,6 +48,7 @@ func main() {
 		ReadTimeout:    10 * time.Hour,
 		WriteTimeout:   10 * time.Hour,
 		MaxHeaderBytes: 1 << 20,
+		ConnState:      ConnStateEvent,
 	}
 
 	// Setting up the flow file receiver
@@ -56,7 +57,7 @@ func main() {
 
 	// Setup a timer to update the maximums and minimums for the sender
 	handshaker(hs, ffReceiver)
-	send_metrics(func(f *flowfile.File) { hs.Send(f) }, ffReceiver)
+	send_metrics("DIODE", func(f *flowfile.File) { hs.Send(f) }, ffReceiver.Metrics)
 
 	// Open the local port to listen for incoming connections
 	if *enableTLS {
@@ -97,6 +98,10 @@ func post(rdr *flowfile.Scanner, w http.ResponseWriter, r *http.Request) {
 	// Loop over all the files in the post payload
 	for rdr.Scan() {
 		f = rdr.File()
+
+		if f.Attrs.Get("kind") == "metrics" && handle_metrics(f) {
+			continue
+		}
 
 		// Flatten directory for ease of viewing
 		dir := filepath.Clean(f.Attrs.Get("path"))

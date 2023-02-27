@@ -43,6 +43,7 @@ func main() {
 		ReadTimeout:    10 * time.Hour,
 		WriteTimeout:   10 * time.Hour,
 		MaxHeaderBytes: 1 << 20,
+		ConnState:      ConnStateEvent,
 	}
 
 	// Setting up the flow file receiver

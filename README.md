@@ -44,7 +44,7 @@ HTTP/HTTPS endpoint.
 
 FF-Sender Usage:
 ```
-FF-Sender (github.com/pschou/flowfile-utils, version: 0.1.20230226.2304)
+FF-Sender (github.com/pschou/flowfile-utils, version: 0.1.20230227.1511)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote FlowFile server for processing.
@@ -100,7 +100,7 @@ the receiving side.
 
 FF-HTTP-TO-UDP Usage:
 ```
-FF-HTTP-TO-UDP (github.com/pschou/flowfile-utils, version: 0.1.20230226.2304)
+FF-HTTP-TO-UDP (github.com/pschou/flowfile-utils, version: 0.1.20230227.1511)
 
 This utility is intended to take input over a FlowFile compatible port and pass
 all FlowFiles to a UDP endpoint after verifying checksums.  A chain of custody
@@ -142,16 +142,25 @@ Usage: ../ff-http-to-udp [options]
     	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
   -max-http-sessions int
     	Limit the number of allowed concurrent incoming HTTP connections (default 1000)
+  -metrics-ff
+    	Send local metrics as a FlowFile (default true)
+  -metrics-freq duration
+    	Frequency of sending local metrics as a FlowFile (default 5m0s)
+  -metrics-pass
+    	Continue sending metrics downstream (default true)
+  -metrics-url string
+    	Path to Prometheus Collector to send metrics
+    	Example: -metrics-url=http://localhost:9550/collector/project/FFUtils
   -mtu int
     	Maximum transmit unit (default 1200)
   -resend-delay duration
     	Time between first transmit and second, set to 0s to disable. (default 1s)
   -segment-max-size string
-    	Set a maximum size for partitioning files in sending
+    	Set a maximum size for partitioning files in sending (example 100MiB)
   -throttle string
-    	Bandwidth shape in bits per second (per thread), for example 80Mbps (default "80Mibps")
+    	Bandwidth shape in bits per second (per thread), for example 80Mbps (default "70Mbps")
   -throttle-shared
-    	By default each thread is throttled, instead throttle all threads as one (not recommended).
+    	By default each thread is throttled, instead throttle all threads as one. Not recommended
   -throttle-spec int
     	Frame spec defined by carrier/media, used to tune the tx rate.
     	This is the number of bytes added to the mtu which defines the time on the media between frames.
@@ -180,7 +189,7 @@ Usage: ../ff-http-to-udp [options]
 
 Example:
 ```
-$ ./ff-http-to-udp -listen :8082 -throttle 167us -throttle-gap 67ns -segment-max-size 10MB
+$ ./ff-http-to-udp -listen :8082 -throttle 80Mbps -throttle-spec 20 -segment-max-size 10MB
 2023/02/15 12:40:01 Creating senders for UDP from: 10.12.128.249:3100-3200
 2023/02/15 12:40:01 Creating destinations for UDP: 10.12.128.249:2100-2200
 2023/02/15 12:40:01 Creating listener on: :8082
@@ -199,7 +208,7 @@ reconstruct a FlowFile and then do a checksum before forwarding onward.
 
 FF-UDP-TO-HTTP Usage:
 ```
-FlowFile UDP -to-> HTTP (github.com/pschou/flowfile-utils, version: 0.1.20230226.2304)
+FlowFile UDP -to-> HTTP (github.com/pschou/flowfile-utils, version: 0.1.20230227.1511)
 
 This utility is intended to take input via UDP pass all FlowFiles to a UDP
 endpoint after verifying checksums.  A chain of custody is maintained by adding
@@ -221,6 +230,15 @@ Usage: ../ff-udp-to-http [options]
     	Shell to be used for init script run (default "/bin/bash")
   -key string
     	A PEM encoded private key file. (default "someKeyFile")
+  -metrics-ff
+    	Send local metrics as a FlowFile (default true)
+  -metrics-freq duration
+    	Frequency of sending local metrics as a FlowFile (default 5m0s)
+  -metrics-pass
+    	Continue sending metrics downstream (default true)
+  -metrics-url string
+    	Path to Prometheus Collector to send metrics
+    	Example: -metrics-url=http://localhost:9550/collector/project/FFUtils
   -mtu int
     	MTU payload size for pre-allocating memory (default 1500)
   -no-checksums
@@ -258,7 +276,7 @@ FF-Sink listens on a FlowFile endpoint and accepts every file while doing nothin
 
 FF-Sink Usage:
 ```
-FlowFile Sink (github.com/pschou/flowfile-utils, version: 0.1.20230226.2304)
+FlowFile Sink (github.com/pschou/flowfile-utils, version: 0.1.20230227.1511)
 
 This utility is intended to listen for FlowFiles on HTTP/HTTPS and drop them as
 fast as they come in
@@ -284,7 +302,7 @@ Usage: ../ff-sink [options]
   -listenPath string
     	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
   -segment-max-size string
-    	Set a maximum size for partitioning files in sending
+    	Set a maximum size for partitioning files in sending (example 100MiB)
   -tls
     	Enforce TLS secure transport on incoming connections
   -update-chain
@@ -319,7 +337,7 @@ FF Flood sends files (of various sizes) to a FlowFile endpoint to saturate the b
 
 FF-Flood Usage:
 ```
-FF-Flood (github.com/pschou/flowfile-utils, version: 0.1.20230226.2304)
+FF-Flood (github.com/pschou/flowfile-utils, version: 0.1.20230227.1511)
 
 This utility is intended to saturate the bandwidth of a FlowFile endpoint for
 load testing.
@@ -377,7 +395,7 @@ FF Receiver listens on a port for FlowFile FlowFiles and then acts on them accor
 
 FF-Receiver Usage:
 ```
-FlowFile Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230226.2304)
+FlowFile Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230227.1511)
 
 This utility is intended to listen for FlowFiles via HTTP/HTTPS and then parse
 these files and drop them to disk for usage elsewhere.
@@ -409,7 +427,7 @@ Usage: ../ff-receiver [options]
   -script-shell string
     	Shell to be used for script run (default "/bin/bash")
   -segment-max-size string
-    	Set a maximum size for partitioning files in sending
+    	Set a maximum size for partitioning files in sending (example 100MiB)
   -tls
     	Enforce TLS secure transport on incoming connections
   -update-chain
@@ -492,7 +510,7 @@ This tool enables files to be layed down to disk, to be replayed at a later time
 
 FF-Stager Usage:
 ```
-FF-Stager (github.com/pschou/flowfile-utils, version: 0.1.20230226.2304)
+FF-Stager (github.com/pschou/flowfile-utils, version: 0.1.20230227.1511)
 
 This utility is intended to take input over a FlowFile compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
@@ -528,7 +546,7 @@ Usage: ../ff-stager [options]
   -script-shell string
     	Shell to be used for script run (default "/bin/bash")
   -segment-max-size string
-    	Set a maximum size for partitioning files in sending
+    	Set a maximum size for partitioning files in sending (example 100MiB)
   -tls
     	Enforce TLS secure transport on incoming connections
   -update-chain
@@ -603,7 +621,7 @@ The purpose of the ff-unstager is to replay the files layed to disk in the ff-st
 
 FF-Unstager Usage:
 ```
-FF-Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230226.2304)
+FF-Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230227.1511)
 
 This utility is intended to take a directory of FlowFiles and ship them out to
 a listening HTTP/HTTPS endpoint while maintaining the same set of attribute
@@ -681,7 +699,7 @@ have to restart if the connection gets lost.
 
 FF-HTTP-TO-KCP Usage:
 ```
-FF-HTTP-TO-KCP (github.com/pschou/flowfile-utils, version: 0.1.20230226.2304)
+FF-HTTP-TO-KCP (github.com/pschou/flowfile-utils, version: 0.1.20230227.1511)
 
 This utility is intended to take input over a FlowFile compatible port and pass all
 FlowFiles into KCP endpoint for speeding up throughput over long distances.
@@ -715,6 +733,15 @@ Usage: ../ff-http-to-kcp [options]
     	Where to listen to incoming connections (example 1.2.3.4:8080) (default ":8080")
   -listenPath string
     	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
+  -metrics-ff
+    	Send local metrics as a FlowFile (default true)
+  -metrics-freq duration
+    	Frequency of sending local metrics as a FlowFile (default 5m0s)
+  -metrics-pass
+    	Continue sending metrics downstream (default true)
+  -metrics-url string
+    	Path to Prometheus Collector to send metrics
+    	Example: -metrics-url=http://localhost:9550/collector/project/FFUtils
   -mtu int
     	set maximum transmission unit for UDP packets (default 1350)
   -no-checksums
@@ -724,7 +751,7 @@ Usage: ../ff-http-to-kcp [options]
   -readbuf int
     	per-socket read buffer in bytes (default 4194304)
   -segment-max-size string
-    	Set a maximum size for partitioning files in sending
+    	Set a maximum size for partitioning files in sending (example 100MiB)
   -sndwnd int
     	set send window size(num of packets) (default 1024)
   -threads int
@@ -766,7 +793,7 @@ transmission.
 
 FF-KCP-TO-HTTP Usage:
 ```
-FF-KCP-TO-HTTP (github.com/pschou/flowfile-utils, version: 0.1.20230226.2304)
+FF-KCP-TO-HTTP (github.com/pschou/flowfile-utils, version: 0.1.20230227.1511)
 
 This utility is intended to take input over a KCP connection and send FlowFiles
 into a HTTP/HTTPS compatible port for speeding up throughput over long distances.
@@ -796,6 +823,15 @@ Usage: ../ff-kcp-to-http [options]
     	Number of parity packets to send in a FEC grouping (default 3)
   -key string
     	A PEM encoded private key file. (default "someKeyFile")
+  -metrics-ff
+    	Send local metrics as a FlowFile (default true)
+  -metrics-freq duration
+    	Frequency of sending local metrics as a FlowFile (default 5m0s)
+  -metrics-pass
+    	Continue sending metrics downstream (default true)
+  -metrics-url string
+    	Path to Prometheus Collector to send metrics
+    	Example: -metrics-url=http://localhost:9550/collector/project/FFUtils
   -mtu int
     	set maximum transmission unit for UDP packets (default 1350)
   -no-checksums
@@ -883,7 +919,7 @@ What are the pitfalls?
 
 FF-Diode Usage:
 ```
-FF-Diode (github.com/pschou/flowfile-utils, version: 0.1.20230226.2304)
+FF-Diode (github.com/pschou/flowfile-utils, version: 0.1.20230227.1511)
 
 This utility is intended to take input over a FlowFile compatible port and pass all
 FlowFiles into another HTTP/HTTPS port while updating the attributes with the
@@ -911,10 +947,17 @@ Usage: ../ff-diode [options]
     	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
   -metrics-ff
     	Send local metrics as a FlowFile (default true)
+  -metrics-freq duration
+    	Frequency of sending local metrics as a FlowFile (default 5m0s)
+  -metrics-pass
+    	Continue sending metrics downstream (default true)
+  -metrics-url string
+    	Path to Prometheus Collector to send metrics
+    	Example: -metrics-url=http://localhost:9550/collector/project/FFUtils
   -no-checksums
     	Ignore doing checksum checks
   -segment-max-size string
-    	Set a maximum size for partitioning files in sending
+    	Set a maximum size for partitioning files in sending (example 100MiB)
   -tls
     	Enforce TLS secure transport on incoming connections
   -update-chain

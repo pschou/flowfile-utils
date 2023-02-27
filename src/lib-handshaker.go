@@ -16,7 +16,7 @@ func handshaker(hs *flowfile.HTTPTransaction, ffReceiver *flowfile.HTTPReceiver)
 		if bs, err := bunit.ParseBytes(*maxSize); err != nil {
 			log.Fatal("Unable to parse max-size", err)
 		} else {
-			log.Printf("Setting max-size to %A\n", bs)
+			log.Printf("Setting max-size to %v\n", bs)
 			localMaxPartitionSize = bs.Int64()
 			ffReceiver.MaxPartitionSize = bs.Int64()
 		}

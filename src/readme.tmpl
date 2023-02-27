@@ -68,7 +68,7 @@ FF-HTTP-TO-UDP Usage:
 
 Example:
 ```
-$ ./ff-http-to-udp -listen :8082 -throttle 167us -throttle-gap 67ns -segment-max-size 10MB
+$ ./ff-http-to-udp -listen :8082 -throttle 80Mbps -throttle-spec 20 -segment-max-size 10MB
 2023/02/15 12:40:01 Creating senders for UDP from: 10.12.128.249:3100-3200
 2023/02/15 12:40:01 Creating destinations for UDP: 10.12.128.249:2100-2200
 2023/02/15 12:40:01 Creating listener on: :8082

@@ -29,6 +29,18 @@ func NewScannerChan(ch chan *File) *Scanner {
 	}
 }
 
+// Create a new FlowFile reader, for reading from a slice of FlowfFles.
+func NewScannerSlice(ff ...*File) *Scanner {
+	ch := make(chan *File, len(ff))
+	for _, f := range ff {
+		ch <- f
+	}
+	close(ch)
+	return &Scanner{
+		ch: ch,
+	}
+}
+
 // Close out any file remaining (if any)
 func (r *Scanner) Close() (err error) {
 	if r.last != nil {

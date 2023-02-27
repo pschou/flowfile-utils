@@ -9,8 +9,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
-	"time"
 )
 
 // Implements http.Handler and can be used with the GoLang built-in http module:
@@ -22,19 +20,7 @@ type HTTPReceiver struct {
 	connections    int
 	MaxConnections int
 
-	// Custom buckets can be defined by setting new buckets before ingesting data
-	// Note the BucketValues is always N+1 sized, as the last is overflow
-	MetricsFlowFileTransferredBuckets      []int64
-	MetricsFlowFileTransferredBucketValues []int64
-	MetricsFlowFileTransferredSum          int64
-	MetricsFlowFileTransferredCount        int64
-
-	//MetricsFlowFileReceivedSum   *int64
-	//MetricsFlowFileReceivedCount *int64
-	MetricsThreadsActive     int64
-	MetricsThreadsTerminated int64
-	MetricsThreadsQueued     int64
-
+	Metrics *Metrics
 	handler func(*Scanner, http.ResponseWriter, *http.Request)
 }
 
@@ -42,9 +28,8 @@ type HTTPReceiver struct {
 // FlowFile stream and provids a FlowFile scanner to a FlowFile handler.
 func NewHTTPReceiver(handler func(*Scanner, http.ResponseWriter, *http.Request)) *HTTPReceiver {
 	return &HTTPReceiver{
-		handler:                                handler,
-		MetricsFlowFileTransferredBuckets:      []int64{0, 50, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000, 25000, 50000, 75000, 1e5},
-		MetricsFlowFileTransferredBucketValues: make([]int64, 16),
+		handler: handler,
+		Metrics: NewMetrics(),
 	}
 }
 
@@ -66,57 +51,8 @@ func NewHTTPFileReceiver(handler func(*File, http.ResponseWriter, *http.Request)
 			}
 			return
 		},
-		MetricsFlowFileTransferredBuckets:      []int64{0, 50, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000, 25000, 50000, 75000, 1e5},
-		MetricsFlowFileTransferredBucketValues: make([]int64, 16),
+		Metrics: NewMetrics(),
 	}
-}
-
-func (hr *HTTPReceiver) MetricsHandler() http.Handler {
-	return &metrics{hr: hr}
-}
-
-type metrics struct {
-	hr *HTTPReceiver
-}
-
-func (m metrics) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(m.hr.Metrics()))
-}
-
-func (f HTTPReceiver) Metrics() string {
-	w := &strings.Builder{}
-	tm := time.Now().UnixMilli()
-	var bk string
-	for i, v := range f.MetricsFlowFileTransferredBucketValues {
-		if i < len(f.MetricsFlowFileTransferredBuckets) {
-			bk = fmt.Sprintf("%d", f.MetricsFlowFileTransferredBuckets[i])
-		} else {
-			bk = "+Inf"
-		}
-		fmt.Fprintf(w, "flowfiles_transfered_bytes_bucket{le=%q} %d %d\n", bk, v, tm)
-	}
-	fmt.Fprintf(w, "flowfiles_transfered_bytes_sum %d %d\n",
-		f.MetricsFlowFileTransferredSum, tm)
-	fmt.Fprintf(w, "flowfiles_transfered_bytes_count %d %d\n",
-		f.MetricsFlowFileTransferredCount, tm)
-	fmt.Fprintf(w, "flowfiles_threads_active %d %d\n",
-		f.MetricsThreadsActive, tm)
-	fmt.Fprintf(w, "flowfiles_threads_terminated %d %d\n",
-		f.MetricsThreadsTerminated, tm)
-	fmt.Fprintf(w, "flowfiles_threads_queued %d %d\n",
-		f.MetricsThreadsQueued, tm)
-	return w.String()
-}
-
-func (f *HTTPReceiver) bucketCounter(size int64) {
-	idx := 0
-	for ; idx < len(f.MetricsFlowFileTransferredBuckets) &&
-		size <= f.MetricsFlowFileTransferredBuckets[idx]; idx++ {
-	}
-	atomic.AddInt64(&f.MetricsFlowFileTransferredBucketValues[idx], 1)
-	atomic.AddInt64(&f.MetricsFlowFileTransferredSum, size)
-	atomic.AddInt64(&f.MetricsFlowFileTransferredCount, 1)
 }
 
 // Handle for accepting flow files through a http webserver.  The handle here
@@ -134,22 +70,22 @@ func (f *HTTPReceiver) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	atomic.AddInt64(&f.MetricsThreadsQueued, 1)
+	f.Metrics.MetricsThreadsQueued += 1
 	var once sync.Once
 	var active bool
 	doOnce := func() {
-		atomic.AddInt64(&f.MetricsThreadsQueued, -1)
-		atomic.AddInt64(&f.MetricsThreadsActive, 1)
+		f.Metrics.MetricsThreadsQueued -= 1
+		f.Metrics.MetricsThreadsActive += 1
 		active = true
 	}
 	defer func() {
 		once.Do(doOnce)
 		if active {
-			atomic.AddInt64(&f.MetricsThreadsActive, -1)
+			f.Metrics.MetricsThreadsActive -= 1
 		} else {
-			atomic.AddInt64(&f.MetricsThreadsQueued, -1)
+			f.Metrics.MetricsThreadsQueued -= 1
 		}
-		atomic.AddInt64(&f.MetricsThreadsTerminated, 1)
+		f.Metrics.MetricsThreadsTerminated += 1
 	}()
 
 	// What to do if we are busy!
@@ -196,7 +132,7 @@ func (f *HTTPReceiver) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case "application/flowfile-v3":
 			reader := &Scanner{r: Body, every: func(ff *File) {
 				once.Do(doOnce)
-				f.bucketCounter(ff.Size)
+				f.Metrics.BucketCounter(ff.Size)
 			}}
 			f.handler(reader, w, r)
 			reader.Close()
@@ -212,7 +148,7 @@ func (f *HTTPReceiver) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				ch <- &File{r: Body, n: int64(N)}
 				reader := &Scanner{ch: ch, every: func(ff *File) {
 					once.Do(doOnce)
-					f.bucketCounter(ff.Size)
+					f.Metrics.BucketCounter(ff.Size)
 				}}
 				f.handler(reader, w, r)
 				reader.Close()
