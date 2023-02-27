@@ -13,6 +13,7 @@ go:
 	GOPRIVATE=github.com/pschou go get github.com/pschou/go-iothrottler
 	GOPRIVATE=github.com/pschou go get github.com/pschou/go-sorting/numstr
 	GOPRIVATE=github.com/pschou go get github.com/pschou/go-tempfile
+	GOPRIVATE=github.com/pschou go get github.com/pschou/go-bunit
 	go mod vendor
 
 build:

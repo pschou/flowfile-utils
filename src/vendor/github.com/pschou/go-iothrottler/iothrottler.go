@@ -16,18 +16,22 @@ package iothrottler
 
 import (
 	"time"
+
+	"github.com/pschou/go-bunit"
 )
 
 // IOThrottler struct with a channel to release packets at a given rate
 type Limit struct {
-	C             chan int8
-	Bandwidth, fs int
-	t             time.Duration
-	run           bool
+	C         chan int8
+	Bandwidth int64
+	fs        int
+	t         time.Duration
+	run       bool
 }
 
 // Create a new Limit with specified bandwith limitation
-func NewLimit(Bandwidth, MTU, frameSpec int) (t *Limit) {
+func NewLimit(rate *bunit.BitRate, MTU, frameSpec int) (t *Limit) {
+	Bandwidth := rate.Int64()
 	t = &Limit{
 		Bandwidth: Bandwidth,
 		fs:        frameSpec,

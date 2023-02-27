@@ -1,3 +1,6 @@
+# github.com/cymertek/go-big v0.0.0-20221028234842-57aba6a92118
+## explicit; go 1.17
+github.com/cymertek/go-big
 # github.com/djherbis/times v1.5.0
 ## explicit; go 1.16
 github.com/djherbis/times
@@ -9,7 +12,6 @@ github.com/docker/go-units
 github.com/google/uuid
 # github.com/inhies/go-bytesize v0.0.0-20220417184213-4913239db9cf
 ## explicit; go 1.12
-github.com/inhies/go-bytesize
 # github.com/klauspost/cpuid/v2 v2.0.14
 ## explicit; go 1.15
 github.com/klauspost/cpuid/v2
@@ -22,10 +24,13 @@ github.com/mdlayher/watchdog
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
+# github.com/pschou/go-bunit v0.0.0-20230227035021-545b11760718
+## explicit; go 1.18
+github.com/pschou/go-bunit
 # github.com/pschou/go-flowfile v0.0.0-20230224183247-9402e412605a
 ## explicit; go 1.18
 github.com/pschou/go-flowfile
-# github.com/pschou/go-iothrottler v0.0.0-20230219023204-9f984ea32e61
+# github.com/pschou/go-iothrottler v0.0.0-20230227040235-17e89494a72f
 ## explicit; go 1.18
 github.com/pschou/go-iothrottler
 # github.com/pschou/go-memdiskbuf v0.0.0-20230224193926-5c075fe07f50
@@ -80,6 +85,7 @@ golang.org/x/net/ipv4
 golang.org/x/net/ipv6
 # golang.org/x/sys v0.5.0
 ## explicit; go 1.17
+golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows

@@ -4,7 +4,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/inhies/go-bytesize"
+	"github.com/pschou/go-bunit"
 	"github.com/pschou/go-flowfile"
 )
 
@@ -13,12 +13,12 @@ import (
 func handshaker(hs *flowfile.HTTPTransaction, ffReceiver *flowfile.HTTPReceiver) {
 	var localMaxPartitionSize, new int64
 	if *maxSize != "" {
-		if bs, err := bytesize.Parse(*maxSize); err != nil {
+		if bs, err := bunit.ParseBytes(*maxSize); err != nil {
 			log.Fatal("Unable to parse max-size", err)
 		} else {
-			log.Println("Setting max-size to", bs)
-			localMaxPartitionSize = int64(uint64(bs))
-			ffReceiver.MaxPartitionSize = int64(uint64(bs))
+			log.Printf("Setting max-size to %A\n", bs)
+			localMaxPartitionSize = bs.Int64()
+			ffReceiver.MaxPartitionSize = bs.Int64()
 		}
 	}
 

@@ -19,6 +19,7 @@ import (
 
 	"github.com/docker/go-units"
 	"github.com/google/uuid"
+	"github.com/pschou/go-bunit"
 	"github.com/pschou/go-flowfile"
 	"github.com/pschou/go-iothrottler"
 	"github.com/pschou/go-memdiskbuf"
@@ -64,7 +65,8 @@ slow down the number of accepted HTTP connections upstream.`
 	ffWriter   *flowfile.Writer
 	writerLock sync.Mutex
 
-	throttle    = flag.Int("throttle", 83886080, "Bandwidth shape in bits per second (per thread), for example 80Mbps")
+	throttle    *bunit.BitRate
+	throttleStr = flag.String("throttle", "80Mibps", "Bandwidth shape in bits per second (per thread), for example 80Mbps")
 	throttleGap = flag.Int("throttle-spec", 0, "Frame spec defined by carrier/media, used to tune the tx rate.\n"+
 		"This is the number of bytes added to the mtu which defines the time on the media between frames.\n"+
 		"The value can be tuned (like -120 to 120). Frames are sent less frequently with a larger value.")
@@ -84,10 +86,15 @@ func main() {
 	maxPayloadSize = *mtu - 8 //28 // IPv4 Header
 	//maxPayloadSize = *mtu - 48 // IPv6 Header
 
+	var err error
+	throttle, err = bunit.ParseBitRate(*throttleStr)
+	if err != nil {
+		log.Fatal(err)
+	}
 	if *throttleShared {
-		log.Println("Rate limit overall set to:", *throttle, " bps")
+		log.Printf("Rate limit overall set to: %A\n", throttle)
 	} else {
-		log.Println("Rate limit per thread set to:", *throttle, " bps")
+		log.Printf("Rate limit per thread set to: %A\n", throttle)
 	}
 
 	// Connect to the destination
@@ -331,7 +338,7 @@ func setupUDP() {
 	// If a throttler for all is defined
 	var throttler *iothrottler.Limit
 	if *throttleShared {
-		throttler = iothrottler.NewLimit(*throttle, maxPayloadSize, *throttleGap)
+		throttler = iothrottler.NewLimit(throttle, maxPayloadSize, *throttleGap)
 	}
 	workers = make(chan *worker, len(srcPorts))
 
@@ -367,11 +374,11 @@ func setupUDP() {
 		}
 
 		if *throttleShared {
-			fmt.Println("worker", i, "built with shared throttler")
+			fmt.Printf("worker %d built with shared throttler %a\n", i, throttle)
 			wk.throttler = throttler
 		} else {
-			fmt.Println("worker", i, "built with threaded throttler")
-			wk.throttler = iothrottler.NewLimit(*throttle, maxPayloadSize, *throttleGap)
+			fmt.Printf("worker %d built with threaded throttler %a\n", i, throttle)
+			wk.throttler = iothrottler.NewLimit(throttle, maxPayloadSize, *throttleGap)
 		}
 		workers <- wk
 	}

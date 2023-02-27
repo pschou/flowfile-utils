@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/docker/go-units"
+	"github.com/pschou/go-bunit"
 	"github.com/pschou/go-flowfile"
 )
 
@@ -38,21 +39,15 @@ func main() {
 		return
 	}
 
-	maxBytes, err := units.FromHumanSize(*max)
-	if err != nil {
-		log.Fatal("Invalid max size", *max)
-	}
-
-	minBytes, err := units.FromHumanSize(*min)
-	if err != nil {
-		log.Fatal("Invalid min size", *min)
-	}
+	maxBytes := bunit.MustParseBytes(*max).Int64()
+	minBytes := bunit.MustParseBytes(*min).Int64()
 
 	if maxBytes < minBytes {
 		log.Fatal("Max is smaller than min")
 	}
 
 	// Connect to the server and establish a session
+	var err error
 	hs, err = flowfile.NewHTTPTransaction(*url, tlsConfig)
 	if err != nil {
 		log.Fatal(err)
@@ -91,7 +86,7 @@ func main() {
 					}
 				}
 				f.Reset()
-				log.Println(th, "sending", filename, units.HumanSize(float64(size)))
+				log.Println(th, "sending", filename, units.HumanSize(float64(size/8)))
 				if err := hs.Send(f); err != nil {
 					log.Println("  failed")
 				}
