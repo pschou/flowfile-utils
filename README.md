@@ -44,7 +44,7 @@ HTTP/HTTPS endpoint.
 
 FF-Sender Usage:
 ```
-FF-Sender (github.com/pschou/flowfile-utils, version: 0.1.20230227.1511)
+FF-Sender (github.com/pschou/flowfile-utils, version: 0.1.20230227.2349)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote FlowFile server for processing.
@@ -100,7 +100,7 @@ the receiving side.
 
 FF-HTTP-TO-UDP Usage:
 ```
-FF-HTTP-TO-UDP (github.com/pschou/flowfile-utils, version: 0.1.20230227.1511)
+FF-HTTP-TO-UDP (github.com/pschou/flowfile-utils, version: 0.1.20230227.2349)
 
 This utility is intended to take input over a FlowFile compatible port and pass
 all FlowFiles to a UDP endpoint after verifying checksums.  A chain of custody
@@ -154,9 +154,11 @@ Usage: ../ff-http-to-udp [options]
   -mtu int
     	Maximum transmit unit (default 1200)
   -resend-delay duration
-    	Time between first transmit and second, set to 0s to disable. (default 1s)
+    	Time between first transmit and second, set to 0s to disable. (default 333.333333ms)
   -segment-max-size string
     	Set a maximum size for partitioning files in sending (example 100MiB)
+  -threads int
+    	Parallel concurrent uploads (default 10)
   -throttle string
     	Bandwidth shape in bits per second (per thread), for example 80Mbps (default "70Mbps")
   -throttle-shared
@@ -170,11 +172,9 @@ Usage: ../ff-http-to-udp [options]
   -tmp string
     	Where to buffer to disk for large transfers (default "/tmp/")
   -udp-dst-addr string
-    	Target IP:PORT for sending UDP packet, to enable threading specify a port range
-    	IE 10 threads split: 10.12.128.249:2100-2104,2106-2110 (default "127.0.0.1:2100-2107")
+    	Target IP:PORT for sending UDP packet, IE split: 10.12.128.249:2100-2104,2106-2110 (default "127.0.0.1:12100-12199")
   -udp-src-addr string
-    	Source IP:PORT for originating UDP packets, to enable threading specify a port range
-    	IE 10 threads split: :3100-3104,3106-3110, 1 thread: :3100 (default ":3100-3107")
+    	Source IP:PORT for originating, IE split range: :3100-3104,3106-3110 (default ":13100-13199")
   -update-chain
     	Update the connection chain attributes: "custodyChain.#.*"
     	To disable use -update-chain=false (default true)
@@ -208,7 +208,7 @@ reconstruct a FlowFile and then do a checksum before forwarding onward.
 
 FF-UDP-TO-HTTP Usage:
 ```
-FlowFile UDP -to-> HTTP (github.com/pschou/flowfile-utils, version: 0.1.20230227.1511)
+FlowFile UDP -to-> HTTP (github.com/pschou/flowfile-utils, version: 0.1.20230227.2349)
 
 This utility is intended to take input via UDP pass all FlowFiles to a UDP
 endpoint after verifying checksums.  A chain of custody is maintained by adding
@@ -246,7 +246,7 @@ Usage: ../ff-udp-to-http [options]
   -tmp string
     	Where to buffer to disk for large transfers (default "/tmp/")
   -udp-dst-addr string
-    	Local target IP:PORT for UDP packet (default ":2100-2200")
+    	Local target IP:PORT for UDP packet (default ":12100-12199")
   -update-chain
     	Update the connection chain attributes: "custodyChain.#.*"
     	To disable use -update-chain=false (default true)
@@ -276,7 +276,7 @@ FF-Sink listens on a FlowFile endpoint and accepts every file while doing nothin
 
 FF-Sink Usage:
 ```
-FlowFile Sink (github.com/pschou/flowfile-utils, version: 0.1.20230227.1511)
+FlowFile Sink (github.com/pschou/flowfile-utils, version: 0.1.20230227.2349)
 
 This utility is intended to listen for FlowFiles on HTTP/HTTPS and drop them as
 fast as they come in
@@ -337,7 +337,7 @@ FF Flood sends files (of various sizes) to a FlowFile endpoint to saturate the b
 
 FF-Flood Usage:
 ```
-FF-Flood (github.com/pschou/flowfile-utils, version: 0.1.20230227.1511)
+FF-Flood (github.com/pschou/flowfile-utils, version: 0.1.20230227.2349)
 
 This utility is intended to saturate the bandwidth of a FlowFile endpoint for
 load testing.
@@ -395,7 +395,7 @@ FF Receiver listens on a port for FlowFile FlowFiles and then acts on them accor
 
 FF-Receiver Usage:
 ```
-FlowFile Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230227.1511)
+FlowFile Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230227.2349)
 
 This utility is intended to listen for FlowFiles via HTTP/HTTPS and then parse
 these files and drop them to disk for usage elsewhere.
@@ -510,7 +510,7 @@ This tool enables files to be layed down to disk, to be replayed at a later time
 
 FF-Stager Usage:
 ```
-FF-Stager (github.com/pschou/flowfile-utils, version: 0.1.20230227.1511)
+FF-Stager (github.com/pschou/flowfile-utils, version: 0.1.20230227.2349)
 
 This utility is intended to take input over a FlowFile compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
@@ -621,7 +621,7 @@ The purpose of the ff-unstager is to replay the files layed to disk in the ff-st
 
 FF-Unstager Usage:
 ```
-FF-Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230227.1511)
+FF-Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230227.2349)
 
 This utility is intended to take a directory of FlowFiles and ship them out to
 a listening HTTP/HTTPS endpoint while maintaining the same set of attribute
@@ -699,7 +699,7 @@ have to restart if the connection gets lost.
 
 FF-HTTP-TO-KCP Usage:
 ```
-FF-HTTP-TO-KCP (github.com/pschou/flowfile-utils, version: 0.1.20230227.1511)
+FF-HTTP-TO-KCP (github.com/pschou/flowfile-utils, version: 0.1.20230227.2349)
 
 This utility is intended to take input over a FlowFile compatible port and pass all
 FlowFiles into KCP endpoint for speeding up throughput over long distances.
@@ -793,7 +793,7 @@ transmission.
 
 FF-KCP-TO-HTTP Usage:
 ```
-FF-KCP-TO-HTTP (github.com/pschou/flowfile-utils, version: 0.1.20230227.1511)
+FF-KCP-TO-HTTP (github.com/pschou/flowfile-utils, version: 0.1.20230227.2349)
 
 This utility is intended to take input over a KCP connection and send FlowFiles
 into a HTTP/HTTPS compatible port for speeding up throughput over long distances.
@@ -919,7 +919,7 @@ What are the pitfalls?
 
 FF-Diode Usage:
 ```
-FF-Diode (github.com/pschou/flowfile-utils, version: 0.1.20230227.1511)
+FF-Diode (github.com/pschou/flowfile-utils, version: 0.1.20230227.2349)
 
 This utility is intended to take input over a FlowFile compatible port and pass all
 FlowFiles into another HTTP/HTTPS port while updating the attributes with the
@@ -1075,6 +1075,47 @@ a flow that went through a KCP connection, a diode, and then put to disk.  Note
 the timestamps in RFC3339 with nano seconds enables high precision tracking of
 FlowFile latencies.
 
+Examples:
+
+```json
+{
+  "path": "output2/",
+  "filename": "infile.dat",
+  "file.lastModifiedTime": "2023-02-03T12:17:34-05:00",
+  "file.creationTime": "2023-02-03T12:17:34-05:00",
+  "uuid": "86f219fe-2624-445d-a260-033a78a89aaa",
+  "file.permissions": "rwxr-x--x",
+  "custodyChain.3.time": "2023-02-27T21:19:33.073776445-05:00",
+  "custodyChain.3.local.hostname": "centos7.schou.me",
+  "custodyChain.3.action": "SENDER",
+  "checksumType": "SHA256",
+  "checksum": "2d4da04b861bb9dbe77c871415931785a18138d6db035f1bbcd0cf8277c6fc23",
+  "custodyChain.2.time": "2023-02-27T21:19:37.86005549-05:00",
+  "custodyChain.2.local.hostname": "centos7.schou.me",
+  "custodyChain.2.action": "HTTP-TO-UDP",
+  "custodyChain.2.request.uri": "/contentListener",
+  "custodyChain.2.source.host": "::1",
+  "custodyChain.2.source.port": "52792",
+  "custodyChain.2.protocol": "HTTP",
+  "custodyChain.2.local.host": "::1",
+  "custodyChain.2.local.port": "8080",
+  "custodyChain.1.time": "2023-02-27T21:19:38.008201823-05:00",
+  "custodyChain.1.local.hostname": "centos7.schou.me",
+  "custodyChain.1.action": "UDP-TO-HTTP",
+  "custodyChain.0.time": "2023-02-27T21:19:38.009837137-05:00",
+  "custodyChain.0.local.hostname": "centos7.schou.me",
+  "custodyChain.0.action": "DIODE",
+  "custodyChain.0.request.uri": "/contentListener",
+  "custodyChain.0.source.host": "::1",
+  "custodyChain.0.source.port": "51316",
+  "custodyChain.0.protocol": "HTTP",
+  "custodyChain.0.local.host": "::1",
+  "custodyChain.0.local.port": "7002"
+}
+```
+
+Broken up, segmented file:
+
 ```json
 {
   "path": "output2/",
@@ -1082,37 +1123,41 @@ FlowFile latencies.
   "file.lastModifiedTime": "2023-02-05T19:46:38-05:00",
   "file.creationTime": "2023-02-05T19:46:38-05:00",
   "file.permissions": "rw-rw-r--",
-  "custodyChain.3.time": "2023-02-21T09:27:27.834231264-05:00",
+  "custodyChain.3.time": "2023-02-27T21:30:52.285694345-05:00",
   "custodyChain.3.local.hostname": "centos7.schou.me",
   "custodyChain.3.action": "SENDER",
-  "fragment.identifier": "cff5e3e4-f11c-43d1-8242-0d4c50039097",
+  "fragment.identifier": "f3cbeaba-7a23-4224-a00e-83ffede5cf61",
   "segment.original.size": "153600000",
   "segment.original.filename": "random",
   "segment.original.checksumType": "SHA256",
   "segment.original.checksum": "396abebff84e327ec40ca695e46d536467f746f6d2f129308702781cb64df95d",
   "merge.reason": "MAX_BYTES_THRESHOLD_REACHED",
-  "fragment.offset": "115343360",
-  "fragment.index": "12",
-  "fragment.count": "15",
-  "uuid": "b541fed3-5507-4f34-b1e6-c33eadb04eea",
+  "fragment.offset": "150000000",
+  "fragment.index": "16",
+  "fragment.count": "16",
+  "uuid": "0302e7dd-3c74-4b92-8a34-fc3ea4e5504e",
   "checksumType": "SHA256",
-  "checksum": "87fef5d2a7956b105248e1137a533cd7d79e1bd04451ac1f5826263997f95ba5",
-  "custodyChain.2.time": "2023-02-21T09:27:40.677422781-05:00",
+  "checksum": "1c148d4690d8f96f9465aa2523e94eafac95c576faf6df69ec19b0f766c26ed5",
+  "custodyChain.2.time": "2023-02-27T21:31:04.139123244-05:00",
   "custodyChain.2.local.hostname": "centos7.schou.me",
-  "custodyChain.2.action": "HTTP-UDP",
+  "custodyChain.2.action": "HTTP-TO-UDP",
   "custodyChain.2.request.uri": "/contentListener",
   "custodyChain.2.source.host": "::1",
+  "custodyChain.2.source.port": "53202",
   "custodyChain.2.protocol": "HTTP",
+  "custodyChain.2.local.host": "::1",
   "custodyChain.2.local.port": "8080",
-  "custodyChain.1.time": "2023-02-21T09:27:42.781802683-05:00",
+  "custodyChain.1.time": "2023-02-27T21:31:04.68476102-05:00",
   "custodyChain.1.local.hostname": "centos7.schou.me",
   "custodyChain.1.action": "UDP-TO-HTTP",
-  "custodyChain.0.time": "2023-02-21T09:27:42.783044223-05:00",
+  "custodyChain.0.time": "2023-02-27T21:31:04.685546823-05:00",
   "custodyChain.0.local.hostname": "centos7.schou.me",
   "custodyChain.0.action": "DIODE",
   "custodyChain.0.request.uri": "/contentListener",
   "custodyChain.0.source.host": "::1",
+  "custodyChain.0.source.port": "51738",
   "custodyChain.0.protocol": "HTTP",
-  "custodyChain.0.local.port": "8082"
+  "custodyChain.0.local.host": "::1",
+  "custodyChain.0.local.port": "7002"
 }
 ```

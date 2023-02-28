@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"flag"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -19,7 +18,7 @@ var (
 	metricsPass      bool
 	metricsTarget    string
 	metricsFrequency time.Duration
-	metricsBuilder   strings.Builder
+	metricsBuilder   = &strings.Builder{}
 )
 
 // This function periodically sends metrics to the prom collector
@@ -37,7 +36,7 @@ func handle_metrics(f *flowfile.File) bool {
 	b := buf.Bytes()
 
 	toWrite := bytes.NewReader(b)
-	io.Copy(&metricsBuilder, toWrite)
+	io.Copy(metricsBuilder, toWrite)
 	if metricsPass {
 		// Reset the flowfile
 		ff := flowfile.New(bytes.NewReader(b), int64(buf.Len()))
@@ -50,8 +49,8 @@ func handle_metrics(f *flowfile.File) bool {
 func send_metrics(proc string, send func(*flowfile.File), metrics *flowfile.Metrics) {
 	if metricsFF {
 		act := func() {
-			var cur strings.Builder
-			cur, metricsBuilder = metricsBuilder, strings.Builder{}
+			var cur *strings.Builder
+			cur, metricsBuilder = metricsBuilder, &strings.Builder{}
 			//cur.Write([]byte("\n# Local metrics\n"))
 			hn, _ := os.Hostname()
 			cur.Write([]byte(metrics.String("host", hn, "action", proc)))
@@ -64,7 +63,7 @@ func send_metrics(proc string, send func(*flowfile.File), metrics *flowfile.Metr
 			ff.Attrs.GenerateUUID()
 			ff.AddChecksum("SHA1")
 			ff.ChecksumInit()
-			fmt.Println("flowfile", ff)
+			//fmt.Println("flowfile", ff)
 			send(ff)
 
 			if strings.HasPrefix(metricsTarget, "http") {

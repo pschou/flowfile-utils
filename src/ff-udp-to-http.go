@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -29,7 +28,7 @@ This utility is intended to take input via UDP pass all FlowFiles to a UDP
 endpoint after verifying checksums.  A chain of custody is maintained by adding
 an action field with "UDP-TO-HTTP" value.`
 
-	udpDstAddr = flag.String("udp-dst-addr", ":2100-2200", "Local target IP:PORT for UDP packet")
+	udpDstAddr = flag.String("udp-dst-addr", ":12100-12199", "Local target IP:PORT for UDP packet")
 	mtu        = flag.Int("mtu", 1500, "MTU payload size for pre-allocating memory")
 	noChecksum = flag.Bool("no-checksums", false, "Ignore doing checksum checks")
 	hs         *flowfile.HTTPTransaction
@@ -107,6 +106,7 @@ type workUnit struct {
 	fh          *os.File
 	tmpfilename string
 	attrs       flowfile.Attributes
+	size        uint64
 	hash        hash.Hash
 
 	total int
@@ -131,7 +131,7 @@ func doWork() {
 			}()
 
 			// Do verifications
-			if job.hdr.Size > 0 { // When the payload has content, do checksums
+			if job.size > 0 { // When the payload has content, do checksums
 				var verifyErr = errors.New("No checksum done")
 				if !job.noBuf {
 					if err := job.wab.Flush(); err != nil || job.hash == nil {
@@ -167,10 +167,15 @@ func doWork() {
 				if *verbose {
 					log.Println("Checksum passed for job")
 				}
-				job.fh.Seek(0, io.SeekStart)
+			} else if *debug {
+				job.wab.Flush()
 			}
 
-			metrics.BucketCounter(int64(job.hdr.Size))
+			// add to metrics counter
+			metrics.BucketCounter(int64(job.size))
+
+			// go to the start and send the payload
+			job.fh.Seek(0, io.SeekStart)
 			scn := flowfile.NewScanner(job.fh)
 			for scn.Scan() {
 				if *debug {
@@ -180,8 +185,7 @@ func doWork() {
 				updateChain(f, nil, "UDP-TO-HTTP")
 
 				if *verbose {
-					adat, _ := json.Marshal(f.Attrs)
-					fmt.Printf("    %s\n", adat)
+					fmt.Println("    ", f.Attrs)
 				}
 
 				log.Printf(" sending %s (%v)", f.Attrs.Get("filename"), bunit.NewBytes(int64(f.Size)))
@@ -222,13 +226,13 @@ func handle(conn *net.UDPConn) {
 		}
 
 		// Print out packet for debugging
-		if *debug {
+		/*if *debug {
 			n := 30
 			if len(dat) < 30 {
 				n = len(dat)
 			}
 			fmt.Printf("raw %d: %q %s\n", n, string(dat[:n])) // Debug the raw packet
-		}
+		}*/
 
 		// Parse the incoming packet's header for position and UUID info
 		var hdr ffHeader
@@ -286,15 +290,18 @@ func handle(conn *net.UDPConn) {
 
 						// Parse out the FlowFile header to get the checksum attribute
 						// and start checksumming the stream.
-						if err = sf_job.attrs.UnmarshalBinary(hdrBuf.Bytes()); err == nil {
+						b := hdrBuf.Bytes()
+						if err = sf_job.attrs.UnmarshalBinary(b); err == nil {
 							// found ff, make an empty flowfile.File just to use verify functions
 							f := flowfile.File{Attrs: sf_job.attrs}
-							if hdrBuf.Len() >= f.HeaderSize() {
+							if hdrSize := f.HeaderSize(); hdrBuf.Len() >= hdrSize+8 {
 								// found ff and right sized header
 								parsed = true
 								if *verbose {
 									log.Println("Attrs:", sf_job.attrs)
 								}
+								sf_job.size = binary.BigEndian.Uint64(b[hdrSize : hdrSize+8])
+
 								// making hash
 								sf_job.hash = sf_job.attrs.NewChecksumHash()
 								if sf_job.hash != nil {
@@ -344,6 +351,9 @@ func handle(conn *net.UDPConn) {
 				}
 			}
 			if job.noBuf { // Write without buffering
+				//if *debug {
+				//	fmt.Println("fall back to nobuf")
+				//}
 				job.fh.WriteAt(dat[ffHeaderSize:n], int64(hdr.Offset))
 			}
 
@@ -355,9 +365,9 @@ func handle(conn *net.UDPConn) {
 				}
 			}
 			if done {
-				if *verbose {
-					fmt.Printf("sending job %v\n", job.hdr)
-				}
+				//if *verbose {
+				//	fmt.Printf("sending job %v\n", job.hdr)
+				//}
 				metrics.MetricsThreadsQueued++
 				workChan <- job
 				job = nil

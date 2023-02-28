@@ -487,6 +487,47 @@ a flow that went through a KCP connection, a diode, and then put to disk.  Note
 the timestamps in RFC3339 with nano seconds enables high precision tracking of
 FlowFile latencies.
 
+Examples:
+
+```json
+{
+  "path": "output2/",
+  "filename": "infile.dat",
+  "file.lastModifiedTime": "2023-02-03T12:17:34-05:00",
+  "file.creationTime": "2023-02-03T12:17:34-05:00",
+  "uuid": "86f219fe-2624-445d-a260-033a78a89aaa",
+  "file.permissions": "rwxr-x--x",
+  "custodyChain.3.time": "2023-02-27T21:19:33.073776445-05:00",
+  "custodyChain.3.local.hostname": "centos7.schou.me",
+  "custodyChain.3.action": "SENDER",
+  "checksumType": "SHA256",
+  "checksum": "2d4da04b861bb9dbe77c871415931785a18138d6db035f1bbcd0cf8277c6fc23",
+  "custodyChain.2.time": "2023-02-27T21:19:37.86005549-05:00",
+  "custodyChain.2.local.hostname": "centos7.schou.me",
+  "custodyChain.2.action": "HTTP-TO-UDP",
+  "custodyChain.2.request.uri": "/contentListener",
+  "custodyChain.2.source.host": "::1",
+  "custodyChain.2.source.port": "52792",
+  "custodyChain.2.protocol": "HTTP",
+  "custodyChain.2.local.host": "::1",
+  "custodyChain.2.local.port": "8080",
+  "custodyChain.1.time": "2023-02-27T21:19:38.008201823-05:00",
+  "custodyChain.1.local.hostname": "centos7.schou.me",
+  "custodyChain.1.action": "UDP-TO-HTTP",
+  "custodyChain.0.time": "2023-02-27T21:19:38.009837137-05:00",
+  "custodyChain.0.local.hostname": "centos7.schou.me",
+  "custodyChain.0.action": "DIODE",
+  "custodyChain.0.request.uri": "/contentListener",
+  "custodyChain.0.source.host": "::1",
+  "custodyChain.0.source.port": "51316",
+  "custodyChain.0.protocol": "HTTP",
+  "custodyChain.0.local.host": "::1",
+  "custodyChain.0.local.port": "7002"
+}
+```
+
+Broken up, segmented file:
+
 ```json
 {
   "path": "output2/",
@@ -494,37 +535,41 @@ FlowFile latencies.
   "file.lastModifiedTime": "2023-02-05T19:46:38-05:00",
   "file.creationTime": "2023-02-05T19:46:38-05:00",
   "file.permissions": "rw-rw-r--",
-  "custodyChain.3.time": "2023-02-21T09:27:27.834231264-05:00",
+  "custodyChain.3.time": "2023-02-27T21:30:52.285694345-05:00",
   "custodyChain.3.local.hostname": "centos7.schou.me",
   "custodyChain.3.action": "SENDER",
-  "fragment.identifier": "cff5e3e4-f11c-43d1-8242-0d4c50039097",
+  "fragment.identifier": "f3cbeaba-7a23-4224-a00e-83ffede5cf61",
   "segment.original.size": "153600000",
   "segment.original.filename": "random",
   "segment.original.checksumType": "SHA256",
   "segment.original.checksum": "396abebff84e327ec40ca695e46d536467f746f6d2f129308702781cb64df95d",
   "merge.reason": "MAX_BYTES_THRESHOLD_REACHED",
-  "fragment.offset": "115343360",
-  "fragment.index": "12",
-  "fragment.count": "15",
-  "uuid": "b541fed3-5507-4f34-b1e6-c33eadb04eea",
+  "fragment.offset": "150000000",
+  "fragment.index": "16",
+  "fragment.count": "16",
+  "uuid": "0302e7dd-3c74-4b92-8a34-fc3ea4e5504e",
   "checksumType": "SHA256",
-  "checksum": "87fef5d2a7956b105248e1137a533cd7d79e1bd04451ac1f5826263997f95ba5",
-  "custodyChain.2.time": "2023-02-21T09:27:40.677422781-05:00",
+  "checksum": "1c148d4690d8f96f9465aa2523e94eafac95c576faf6df69ec19b0f766c26ed5",
+  "custodyChain.2.time": "2023-02-27T21:31:04.139123244-05:00",
   "custodyChain.2.local.hostname": "centos7.schou.me",
-  "custodyChain.2.action": "HTTP-UDP",
+  "custodyChain.2.action": "HTTP-TO-UDP",
   "custodyChain.2.request.uri": "/contentListener",
   "custodyChain.2.source.host": "::1",
+  "custodyChain.2.source.port": "53202",
   "custodyChain.2.protocol": "HTTP",
+  "custodyChain.2.local.host": "::1",
   "custodyChain.2.local.port": "8080",
-  "custodyChain.1.time": "2023-02-21T09:27:42.781802683-05:00",
+  "custodyChain.1.time": "2023-02-27T21:31:04.68476102-05:00",
   "custodyChain.1.local.hostname": "centos7.schou.me",
   "custodyChain.1.action": "UDP-TO-HTTP",
-  "custodyChain.0.time": "2023-02-21T09:27:42.783044223-05:00",
+  "custodyChain.0.time": "2023-02-27T21:31:04.685546823-05:00",
   "custodyChain.0.local.hostname": "centos7.schou.me",
   "custodyChain.0.action": "DIODE",
   "custodyChain.0.request.uri": "/contentListener",
   "custodyChain.0.source.host": "::1",
+  "custodyChain.0.source.port": "51738",
   "custodyChain.0.protocol": "HTTP",
-  "custodyChain.0.local.port": "8082"
+  "custodyChain.0.local.host": "::1",
+  "custodyChain.0.local.port": "7002"
 }
 ```

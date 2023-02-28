@@ -24,13 +24,13 @@ func GetConn(r *http.Request) net.Conn {
 	connsMutex.Lock()
 	c := conns[r.RemoteAddr]
 	connsMutex.Unlock()
-	if c != nil {
+	/*if c != nil {
 		err := connCheck(c)
 		if err != nil {
 			return nil
 		}
-	}
-	return conns[r.RemoteAddr]
+	}*/
+	return c
 }
 
 func connCheck(conn net.Conn) error {

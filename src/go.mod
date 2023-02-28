@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/mdlayher/watchdog v0.0.0-20221003142519-49be0df7b3b5
 	github.com/pschou/go-bunit v0.0.0-20230227134742-7f9fa377cf74
-	github.com/pschou/go-flowfile v0.0.0-20230227200626-5dfcef882985
+	github.com/pschou/go-flowfile v0.0.0-20230228044047-47e6e0a54278
 	github.com/pschou/go-iothrottler v0.0.0-20230227040235-17e89494a72f
 	github.com/pschou/go-memdiskbuf v0.0.0-20230224193926-5c075fe07f50
 	github.com/pschou/go-tempfile v0.0.0-20230224200042-c3fbcad539ae

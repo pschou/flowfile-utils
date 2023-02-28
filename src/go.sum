@@ -44,6 +44,16 @@ github.com/pschou/go-bunit v0.0.0-20230227134742-7f9fa377cf74 h1:PB1cnBkiMU/1lgI
 github.com/pschou/go-bunit v0.0.0-20230227134742-7f9fa377cf74/go.mod h1:LzVrfDPAEnMIp9EDkwm/Z4o6vCOIYMvDpvWZSPRPVwE=
 github.com/pschou/go-flowfile v0.0.0-20230227200626-5dfcef882985 h1:JZMFXToy6jfOvDOmNA6CXtQtYzD0NN2nkMxc0B65e5w=
 github.com/pschou/go-flowfile v0.0.0-20230227200626-5dfcef882985/go.mod h1:HUbPm7/Wh2nnp9tQ4WF8EJVT4WCXL2FOeha+0alCHBY=
+github.com/pschou/go-flowfile v0.0.0-20230228021224-578f424b79f7 h1:Lu2Ue3wKejO6SE5FF/QgmBOSO65CVMy/pb0cJJauAcA=
+github.com/pschou/go-flowfile v0.0.0-20230228021224-578f424b79f7/go.mod h1:HUbPm7/Wh2nnp9tQ4WF8EJVT4WCXL2FOeha+0alCHBY=
+github.com/pschou/go-flowfile v0.0.0-20230228021321-ddddab90f83e h1:n3XMRnUB00eT7i1tVyJN4X8uzxVV59WTPJOJ+b4iFA0=
+github.com/pschou/go-flowfile v0.0.0-20230228021321-ddddab90f83e/go.mod h1:HUbPm7/Wh2nnp9tQ4WF8EJVT4WCXL2FOeha+0alCHBY=
+github.com/pschou/go-flowfile v0.0.0-20230228024146-a346d31282dd h1:wPvuszIqpCiA91rNFABNXXkAFTBmOrjz3cxe6FGwW34=
+github.com/pschou/go-flowfile v0.0.0-20230228024146-a346d31282dd/go.mod h1:HUbPm7/Wh2nnp9tQ4WF8EJVT4WCXL2FOeha+0alCHBY=
+github.com/pschou/go-flowfile v0.0.0-20230228025157-daa7461c400c h1:yuW7IC0I8F/gUgplIAh+DY/UMLvPHCh2WMGbdiGLnDU=
+github.com/pschou/go-flowfile v0.0.0-20230228025157-daa7461c400c/go.mod h1:HUbPm7/Wh2nnp9tQ4WF8EJVT4WCXL2FOeha+0alCHBY=
+github.com/pschou/go-flowfile v0.0.0-20230228044047-47e6e0a54278 h1:kAH0LohSTMXUMlWyEIhxm8VmMu+jakEH1/pOY+dJ4bI=
+github.com/pschou/go-flowfile v0.0.0-20230228044047-47e6e0a54278/go.mod h1:HUbPm7/Wh2nnp9tQ4WF8EJVT4WCXL2FOeha+0alCHBY=
 github.com/pschou/go-iothrottler v0.0.0-20230227040235-17e89494a72f h1:AsiSEwRS4pPXV4sZVsfuVYy72oksQNvigxyhgaSzjSY=
 github.com/pschou/go-iothrottler v0.0.0-20230227040235-17e89494a72f/go.mod h1:fZjsgh59EyWm++/muQUptMHQr7ij4Z+ZT+XkrQ/tXpc=
 github.com/pschou/go-memdiskbuf v0.0.0-20230224193926-5c075fe07f50 h1:XLtmSFxy8FCJ+lSp8DM4ki08Zdsgnxw6iaxT34dgRUw=
