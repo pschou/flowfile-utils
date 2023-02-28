@@ -167,7 +167,7 @@ func doWork() {
 				if *verbose {
 					log.Println("Checksum passed for job")
 				}
-			} else if *debug {
+			} else {
 				job.wab.Flush()
 			}
 
@@ -244,6 +244,7 @@ func handle(conn *net.UDPConn) {
 		// If we have a new UUID
 		if !bytes.Equal(hdr.UUID[:], UUID[:]) {
 			if job != nil {
+				job.wab.Reset(nil)
 				fmt.Println("  Could not reconstruct UUID:", UUID)
 				job.fh.Close()
 				tempfile.Remove(job.tmpfilename)
@@ -265,7 +266,7 @@ func handle(conn *net.UDPConn) {
 				total: total,
 
 				fh:          fh,
-				wab:         memdiskbuf.NewWriterAtBuf(fh, 32<<10),
+				wab:         memdiskbuf.NewWriterAtBuf(fh, 32<<20),
 				tmpfilename: tmpfilename,
 
 				ip:         addr.IP,

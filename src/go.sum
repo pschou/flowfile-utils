@@ -54,6 +54,8 @@ github.com/pschou/go-flowfile v0.0.0-20230228025157-daa7461c400c h1:yuW7IC0I8F/g
 github.com/pschou/go-flowfile v0.0.0-20230228025157-daa7461c400c/go.mod h1:HUbPm7/Wh2nnp9tQ4WF8EJVT4WCXL2FOeha+0alCHBY=
 github.com/pschou/go-flowfile v0.0.0-20230228044047-47e6e0a54278 h1:kAH0LohSTMXUMlWyEIhxm8VmMu+jakEH1/pOY+dJ4bI=
 github.com/pschou/go-flowfile v0.0.0-20230228044047-47e6e0a54278/go.mod h1:HUbPm7/Wh2nnp9tQ4WF8EJVT4WCXL2FOeha+0alCHBY=
+github.com/pschou/go-flowfile v0.0.0-20230228051627-500d5471c767 h1:HnYVByMSi1h5H942xA+Tvhn5Og0HRm2uv7AfMa6NiEQ=
+github.com/pschou/go-flowfile v0.0.0-20230228051627-500d5471c767/go.mod h1:HUbPm7/Wh2nnp9tQ4WF8EJVT4WCXL2FOeha+0alCHBY=
 github.com/pschou/go-iothrottler v0.0.0-20230227040235-17e89494a72f h1:AsiSEwRS4pPXV4sZVsfuVYy72oksQNvigxyhgaSzjSY=
 github.com/pschou/go-iothrottler v0.0.0-20230227040235-17e89494a72f/go.mod h1:fZjsgh59EyWm++/muQUptMHQr7ij4Z+ZT+XkrQ/tXpc=
 github.com/pschou/go-memdiskbuf v0.0.0-20230224193926-5c075fe07f50 h1:XLtmSFxy8FCJ+lSp8DM4ki08Zdsgnxw6iaxT34dgRUw=
