@@ -56,6 +56,8 @@ github.com/pschou/go-flowfile v0.0.0-20230228044047-47e6e0a54278 h1:kAH0LohSTMXU
 github.com/pschou/go-flowfile v0.0.0-20230228044047-47e6e0a54278/go.mod h1:HUbPm7/Wh2nnp9tQ4WF8EJVT4WCXL2FOeha+0alCHBY=
 github.com/pschou/go-flowfile v0.0.0-20230228051627-500d5471c767 h1:HnYVByMSi1h5H942xA+Tvhn5Og0HRm2uv7AfMa6NiEQ=
 github.com/pschou/go-flowfile v0.0.0-20230228051627-500d5471c767/go.mod h1:HUbPm7/Wh2nnp9tQ4WF8EJVT4WCXL2FOeha+0alCHBY=
+github.com/pschou/go-flowfile v0.0.0-20230301020414-6ecc1a33f18b h1:cenW+BiaB4Q01o4uLfoq/UQuuIyvjU9cqjCZYCbhkFc=
+github.com/pschou/go-flowfile v0.0.0-20230301020414-6ecc1a33f18b/go.mod h1:HUbPm7/Wh2nnp9tQ4WF8EJVT4WCXL2FOeha+0alCHBY=
 github.com/pschou/go-iothrottler v0.0.0-20230227040235-17e89494a72f h1:AsiSEwRS4pPXV4sZVsfuVYy72oksQNvigxyhgaSzjSY=
 github.com/pschou/go-iothrottler v0.0.0-20230227040235-17e89494a72f/go.mod h1:fZjsgh59EyWm++/muQUptMHQr7ij4Z+ZT+XkrQ/tXpc=
 github.com/pschou/go-memdiskbuf v0.0.0-20230224193926-5c075fe07f50 h1:XLtmSFxy8FCJ+lSp8DM4ki08Zdsgnxw6iaxT34dgRUw=
@@ -76,6 +78,8 @@ github.com/templexxx/cpufeat v0.0.0-20180724012125-cef66df7f161 h1:89CEmDvlq/F7S
 github.com/templexxx/cpufeat v0.0.0-20180724012125-cef66df7f161/go.mod h1:wM7WEvslTq+iOEAMDLSzhVuOt5BRZ05WirO+b09GHQU=
 github.com/templexxx/xor v0.0.0-20191217153810-f85b25db303b h1:fj5tQ8acgNUr6O8LEplsxDhUIe2573iLkJc+PqnzZTI=
 github.com/templexxx/xor v0.0.0-20191217153810-f85b25db303b/go.mod h1:5XA7W9S6mni3h5uvOC75dA3m9CCCaS83lltmc0ukdi4=
+github.com/tevino/tcp-shaker v0.0.0-20220630153628-43820e287162 h1:fVoLfz8hIlgtN10WZwjlPE7jXR8xmV8iTz3q/d0FgSw=
+github.com/tevino/tcp-shaker v0.0.0-20220630153628-43820e287162/go.mod h1:TDNcC6Ns/4k8t1TFzDthrnI9jQdKW9sa3g5yHIm57mM=
 github.com/tjfoc/gmsm v1.4.1 h1:aMe1GlZb+0bLjn+cKTPEvvn9oUEBlJitaZiiBwsbgho=
 github.com/tjfoc/gmsm v1.4.1/go.mod h1:j4INPkHWMrhJb38G+J6W4Tw0AbuN8Thu3PbdVYhVcTE=
 github.com/xtaci/kcp-go v5.4.20+incompatible h1:TN1uey3Raw0sTz0Fg8GkfM0uH3YwzhnZWQ1bABv5xAg=
@@ -104,6 +108,7 @@ golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJ
 golang.org/x/sys v0.0.0-20180830151530-49385e6e1522/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20190412213103-97732733099d/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20191110163157-d32e6e3b99c4/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20220704084225-05e143d24a9e/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20221006211917-84dc82d7e875 h1:AzgQNqF+FKwyQ5LbVrVqOcuuFB67N47F9+htZYH0wFM=

@@ -33,6 +33,11 @@ func main() {
 	sender_flags()
 	parse()
 
+	if len(flag.Args()) != 0 {
+		flag.Usage()
+		return
+	}
+
 	log.Println("Creating sender,", *url)
 
 	var err error

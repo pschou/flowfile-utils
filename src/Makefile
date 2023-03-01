@@ -17,6 +17,7 @@ go:
 	go mod vendor
 
 build:
+	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-socket ff-socket.go lib-*.go
 	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-http-to-kcp ff-http-to-kcp.go lib-*.go
 	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-kcp-to-http ff-kcp-to-http.go lib-*.go
 	CGO_ENABLED=0 go build -ldflags=${FLAGS} -o ../ff-udp-to-http ff-udp-to-http.go lib-*.go

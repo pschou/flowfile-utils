@@ -33,7 +33,14 @@ var (
 func main() {
 	service_flags()
 	listen_flags()
+	listen_max()
 	parse()
+
+	if len(flag.Args()) != 0 {
+		flag.Usage()
+		return
+	}
+
 	fmt.Println("Output set to", *basePath)
 
 	// Configure the go HTTP server

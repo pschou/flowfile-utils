@@ -27,6 +27,7 @@ var (
 
 func main() {
 	service_flags()
+	listen_max()
 	listen_flags()
 	parse()
 

@@ -77,6 +77,7 @@ slow down the number of accepted HTTP connections upstream.`
 
 func main() {
 	service_flags()
+	listen_max()
 	listen_flags()
 	temp_flags()
 	metrics_flags(true)

@@ -30,6 +30,7 @@ an action field with "UDP-TO-HTTP" value.`
 
 	udpDstAddr = flag.String("udp-dst-addr", ":12100-12199", "Local target IP:PORT for UDP packet")
 	mtu        = flag.Int("mtu", 1500, "MTU payload size for pre-allocating memory")
+	udpBufSize = flag.String("udp-buf", "100kB", "Set read buffer size, note: this is multiplied by the number of listening ports in memory usage")
 	noChecksum = flag.Bool("no-checksums", false, "Ignore doing checksum checks")
 	hs         *flowfile.HTTPTransaction
 
@@ -89,6 +90,7 @@ func setupUDP() {
 		if err != nil {
 			log.Fatal("Listen UDP failed:", err)
 		}
+		conn.SetReadBuffer(int(bunit.MustParseBytes(*udpBufSize).Int64()))
 		go func() {
 			handle(conn)
 		}()

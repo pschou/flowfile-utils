@@ -11,4 +11,5 @@
   sed -i -e '/FF-Flood Usage:/r /dev/stdin' README.md < <(echo "\`\`\`";../ff-flood -h 2>&1;echo "\`\`\`")
   sed -i -e '/FF-HTTP-TO-KCP Usage:/r /dev/stdin' README.md < <(echo "\`\`\`";../ff-http-to-kcp -h 2>&1;echo "\`\`\`")
   sed -i -e '/FF-KCP-TO-HTTP Usage:/r /dev/stdin' README.md < <(echo "\`\`\`";../ff-kcp-to-http -h 2>&1;echo "\`\`\`")
+  sed -i -e '/FF-SOCKET Usage:/r /dev/stdin' README.md < <(echo "\`\`\`";../ff-socket -h 2>&1;echo "\`\`\`")
 	mv README.md ..

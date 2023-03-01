@@ -24,6 +24,7 @@ A set of FlowFile routines for working with FlowFile feeds.  The utilities inclu
 
 [FF-KCP-to-HTTP](#ff-kcp-to-http) - listens for a KCP feed and sends it to a FlowFile endpoint, verifying and correcting errors
 
+[FF-Socket](#ff-socket) - tcp connection socket emulator using FlowFile transport
 
 For more documentation about the go-flowfile library: https://pkg.go.dev/github.com/pschou/go-flowfile .
 
@@ -44,7 +45,7 @@ HTTP/HTTPS endpoint.
 
 FF-Sender Usage:
 ```
-FF-Sender (github.com/pschou/flowfile-utils, version: 0.1.20230228.0018)
+FF-Sender (github.com/pschou/flowfile-utils, version: 0.1.20230228.2259)
 
 This utility is intended to capture a set of files or directory of files and
 send them to a remote FlowFile server for processing.
@@ -100,7 +101,7 @@ the receiving side.
 
 FF-HTTP-TO-UDP Usage:
 ```
-FF-HTTP-TO-UDP (github.com/pschou/flowfile-utils, version: 0.1.20230228.0018)
+FF-HTTP-TO-UDP (github.com/pschou/flowfile-utils, version: 0.1.20230228.2259)
 
 This utility is intended to take input over a FlowFile compatible port and pass
 all FlowFiles to a UDP endpoint after verifying checksums.  A chain of custody
@@ -208,7 +209,7 @@ reconstruct a FlowFile and then do a checksum before forwarding onward.
 
 FF-UDP-TO-HTTP Usage:
 ```
-FlowFile UDP -to-> HTTP (github.com/pschou/flowfile-utils, version: 0.1.20230228.0018)
+FlowFile UDP -to-> HTTP (github.com/pschou/flowfile-utils, version: 0.1.20230228.2259)
 
 This utility is intended to take input via UDP pass all FlowFiles to a UDP
 endpoint after verifying checksums.  A chain of custody is maintained by adding
@@ -245,6 +246,8 @@ Usage: ../ff-udp-to-http [options]
     	Ignore doing checksum checks
   -tmp string
     	Where to buffer to disk for large transfers (default "/tmp/")
+  -udp-buf string
+    	Set read buffer size, note: this is multiplied by the number of listening ports in memory usage (default "100kB")
   -udp-dst-addr string
     	Local target IP:PORT for UDP packet (default ":12100-12199")
   -update-chain
@@ -261,6 +264,15 @@ Usage: ../ff-udp-to-http [options]
     	Default is disabled (-watchdog=0s)
 ```
 
+This FF HTTP to UDP listens on UDP ports and then forwards the FlowFiles to an HTTP
+endpoint.  As UDP is unordered and can have lots of loss, one should add extra buffers
+like this:
+
+```
+# sysctl -w net.core.rmem_max=2500000
+```
+and add the corresponding line to /etc/sysctl.conf to persist this over restarts.
+
 Example:
 ```
 $ ../ff-udp-to-http
@@ -276,7 +288,7 @@ FF-Sink listens on a FlowFile endpoint and accepts every file while doing nothin
 
 FF-Sink Usage:
 ```
-FlowFile Sink (github.com/pschou/flowfile-utils, version: 0.1.20230228.0018)
+FlowFile Sink (github.com/pschou/flowfile-utils, version: 0.1.20230228.2259)
 
 This utility is intended to listen for FlowFiles on HTTP/HTTPS and drop them as
 fast as they come in
@@ -337,7 +349,7 @@ FF Flood sends files (of various sizes) to a FlowFile endpoint to saturate the b
 
 FF-Flood Usage:
 ```
-FF-Flood (github.com/pschou/flowfile-utils, version: 0.1.20230228.0018)
+FF-Flood (github.com/pschou/flowfile-utils, version: 0.1.20230228.2259)
 
 This utility is intended to saturate the bandwidth of a FlowFile endpoint for
 load testing.
@@ -395,7 +407,7 @@ FF Receiver listens on a port for FlowFile FlowFiles and then acts on them accor
 
 FF-Receiver Usage:
 ```
-FlowFile Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230228.0018)
+FlowFile Receiver (github.com/pschou/flowfile-utils, version: 0.1.20230228.2259)
 
 This utility is intended to listen for FlowFiles via HTTP/HTTPS and then parse
 these files and drop them to disk for usage elsewhere.
@@ -510,7 +522,7 @@ This tool enables files to be layed down to disk, to be replayed at a later time
 
 FF-Stager Usage:
 ```
-FF-Stager (github.com/pschou/flowfile-utils, version: 0.1.20230228.0018)
+FF-Stager (github.com/pschou/flowfile-utils, version: 0.1.20230228.2259)
 
 This utility is intended to take input over a FlowFile compatible port and drop all
 FlowFiles into directory along with associated attributes which can then be
@@ -621,7 +633,7 @@ The purpose of the ff-unstager is to replay the files layed to disk in the ff-st
 
 FF-Unstager Usage:
 ```
-FF-Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230228.0018)
+FF-Unstager (github.com/pschou/flowfile-utils, version: 0.1.20230228.2259)
 
 This utility is intended to take a directory of FlowFiles and ship them out to
 a listening HTTP/HTTPS endpoint while maintaining the same set of attribute
@@ -699,7 +711,7 @@ have to restart if the connection gets lost.
 
 FF-HTTP-TO-KCP Usage:
 ```
-FF-HTTP-TO-KCP (github.com/pschou/flowfile-utils, version: 0.1.20230228.0018)
+FF-HTTP-TO-KCP (github.com/pschou/flowfile-utils, version: 0.1.20230228.2259)
 
 This utility is intended to take input over a FlowFile compatible port and pass all
 FlowFiles into KCP endpoint for speeding up throughput over long distances.
@@ -793,7 +805,7 @@ transmission.
 
 FF-KCP-TO-HTTP Usage:
 ```
-FF-KCP-TO-HTTP (github.com/pschou/flowfile-utils, version: 0.1.20230228.0018)
+FF-KCP-TO-HTTP (github.com/pschou/flowfile-utils, version: 0.1.20230228.2259)
 
 This utility is intended to take input over a KCP connection and send FlowFiles
 into a HTTP/HTTPS compatible port for speeding up throughput over long distances.
@@ -863,6 +875,71 @@ $ ./ff-kcp-to-http -v -kcp-data 10 -kcp-parity 3
 2023/02/15 22:26:18 Creating sender, http://localhost:8080/contentListener
 ```
 
+## FF Socket
+
+FF Socket enables wrapping a TCP connection inside FlowFiles for transport of the individual packets.
+
+Example:
+
+```
+host1$ ./ff-socket -debug -listen :12000 -url http://localhost:11000/contentListener incoming-at :19550
+host2$ ./ff-socket -debug -listen :11000 -url http://localhost:12000/contentListener forward-to localhost:9550
+```
+
+FF-SOCKET Usage:
+```
+FF-Socket (github.com/pschou/flowfile-utils, version: 0.1.20230228.2259)
+
+This utility is intended to send and receive input over a FlowFile compatible
+port and drop all FlowFiles into directory along with associated attributes
+which can then be unstaged using the FF-Unstager.
+
+Operations can happen in either FORWARD mode or CONNECT mode.  With FORWARD mode
+a TCP port is opened and accepts incoming connections forwarding the packets
+via FlowFiles.  With CONNECT mode FlowFile packets are received and translated
+into a TCP session.
+
+For example:
+listen$ ./ff-socket incoming-at :2222            # Either :PORT or IP:PORT
+target$ ./ff-socket forward-to myserver.com:2222 # Final destination for TCP
+
+Usage: ../ff-socket [options] [forward-to IP:PORT] / [incoming-at IP:PORT]
+  -CA string
+    	A PEM encoded CA's certificate file. (default "someCertCAFile")
+  -attributes string
+    	File with additional attributes to add to FlowFiles
+  -cert string
+    	A PEM encoded certificate file. (default "someCertFile")
+  -debug
+    	Turn on debug in FlowFile library
+  -key string
+    	A PEM encoded private key file. (default "someKeyFile")
+  -listen string
+    	Where to listen to incoming connections (example 1.2.3.4:8080) (default ":8080")
+  -listenPath string
+    	Path in URL where to expect FlowFiles to be posted (default "/contentListener")
+  -metrics-ff
+    	Send local metrics as a FlowFile (default true)
+  -metrics-freq duration
+    	Frequency of sending local metrics as a FlowFile (default 5m0s)
+  -metrics-pass
+    	Continue sending metrics downstream (default true)
+  -metrics-url string
+    	Path to Prometheus Collector to send metrics
+    	Example: -metrics-url=http://localhost:9550/collector/project/FFUtils
+  -tls
+    	Enforce TLS secure transport on incoming connections
+  -update-chain
+    	Update the connection chain attributes: "custodyChain.#.*"
+    	To disable use -update-chain=false (default true)
+  -url string
+    	Where to send the files (default "http://localhost:8080/contentListener")
+  -v	Turn on verbose (shorthand)
+  -verbose
+    	Turn on verbose
+```
+
+
 ## FF Diode
 
 A simple FlowFile Diode that does one thing, takes in data and passes it on to
@@ -919,7 +996,7 @@ What are the pitfalls?
 
 FF-Diode Usage:
 ```
-FF-Diode (github.com/pschou/flowfile-utils, version: 0.1.20230228.0018)
+FF-Diode (github.com/pschou/flowfile-utils, version: 0.1.20230228.2259)
 
 This utility is intended to take input over a FlowFile compatible port and pass all
 FlowFiles into another HTTP/HTTPS port while updating the attributes with the

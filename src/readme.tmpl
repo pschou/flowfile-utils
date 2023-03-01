@@ -24,6 +24,7 @@ A set of FlowFile routines for working with FlowFile feeds.  The utilities inclu
 
 [FF-KCP-to-HTTP](#ff-kcp-to-http) - listens for a KCP feed and sends it to a FlowFile endpoint, verifying and correcting errors
 
+[FF-Socket](#ff-socket) - tcp connection socket emulator using FlowFile transport
 
 For more documentation about the go-flowfile library: https://pkg.go.dev/github.com/pschou/go-flowfile .
 
@@ -86,6 +87,15 @@ reconstruct a FlowFile and then do a checksum before forwarding onward.
 ![FF-UDP-to-HTTP](images/ff-udp-to-http.png)
 
 FF-UDP-TO-HTTP Usage:
+
+This FF HTTP to UDP listens on UDP ports and then forwards the FlowFiles to an HTTP
+endpoint.  As UDP is unordered and can have lots of loss, one should add extra buffers
+like this:
+
+```
+# sysctl -w net.core.rmem_max=2500000
+```
+and add the corresponding line to /etc/sysctl.conf to persist this over restarts.
 
 Example:
 ```
@@ -329,6 +339,20 @@ Example:
 $ ./ff-kcp-to-http -v -kcp-data 10 -kcp-parity 3
 2023/02/15 22:26:18 Creating sender, http://localhost:8080/contentListener
 ```
+
+## FF Socket
+
+FF Socket enables wrapping a TCP connection inside FlowFiles for transport of the individual packets.
+
+Example:
+
+```
+host1$ ./ff-socket -debug -listen :12000 -url http://localhost:11000/contentListener incoming-at :19550
+host2$ ./ff-socket -debug -listen :11000 -url http://localhost:12000/contentListener forward-to localhost:9550
+```
+
+FF-SOCKET Usage:
+
 
 ## FF Diode
 

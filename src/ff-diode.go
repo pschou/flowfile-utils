@@ -27,11 +27,17 @@ certificate and chaining any previous certificates.`
 
 func main() {
 	service_flags()
+	listen_max()
 	listen_flags()
 	sender_flags()
 	metrics_flags(true)
 	parse()
 	var err error
+
+	if len(flag.Args()) != 0 {
+		flag.Usage()
+		return
+	}
 
 	// Connect to the destination to prepare to send files
 	log.Println("Creating sender,", *url)

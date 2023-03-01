@@ -48,6 +48,7 @@ FlowFiles into KCP endpoint for speeding up throughput over long distances.`
 
 func main() {
 	service_flags()
+	listen_max()
 	listen_flags()
 	temp_flags()
 	metrics_flags(true)

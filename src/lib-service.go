@@ -32,9 +32,11 @@ func origin_flags() {
 	retries = flag.Int("retries", 5, "Retries after failing to send a file to a FlowFile listener")
 	retryTimeout = flag.Duration("retry-timeout", 10*time.Second, "Time between retries")
 }
+func listen_max() {
+	maxSize = flag.String("segment-max-size", "", "Set a maximum size for partitioning files in sending (example 100MiB)")
+}
 func listen_flags() {
 	enableTLS = flag.Bool("tls", false, "Enforce TLS secure transport on incoming connections")
-	maxSize = flag.String("segment-max-size", "", "Set a maximum size for partitioning files in sending (example 100MiB)")
 	listen = flag.String("listen", ":8080", "Where to listen to incoming connections (example 1.2.3.4:8080)")
 	listenPath = flag.String("listenPath", "/contentListener", "Path in URL where to expect FlowFiles to be posted")
 }

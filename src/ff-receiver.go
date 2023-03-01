@@ -36,8 +36,14 @@ var (
 
 func main() {
 	service_flags()
+	listen_max()
 	listen_flags()
 	parse()
+
+	if len(flag.Args()) != 0 {
+		flag.Usage()
+		return
+	}
 
 	fmt.Println("Output set to", *basePath)
 
